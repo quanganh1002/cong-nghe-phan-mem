@@ -1,0 +1,34 @@
+Học phần: Công nghệ phần mềm.
+Đề tài: Thuyết minh tự động đa ngôn ngữ
+	- Là một hệ thống cho phép người dùng tải video/audio lên, hệ thống tự động nhận diện giọng nói → dịch sang nhiều ngôn ngữ → tạo 	giọng đọc (TTS) hoặc phụ đề tương ứng, rồi trả về sản phẩm cho người dùng xem/tải về. Ba phần trong đề (FE, BE 3 lớp, BE services) 	là 3 mảnh ghép của cùng 1 hệ thống — nhóm nào chọn phần nào thì đầu tư sâu phần đó, nhưng vẫn phải hiểu tổng thể để tích hợp được 	với nhau.
+	- Chức năng cốt lõi của toàn hệ thống: 
+		+ Đăng ký/đăng nhập, quản lý tài khoản
+		+ Upload video/audio (hoặc dán link YouTube...)
+		+ Chọn ngôn ngữ nguồn + danh sách ngôn ngữ đích cần thuyết minh
+		+ Xử lý: Speech-to-Text → Dịch máy → Text-to-Speech (hoặc sinh phụ đề .srt)
+		+ Theo dõi tiến trình xử lý (vì tác vụ chạy nền, mất thời gian)
+		+ Xem trước kết quả: video kèm audio thuyết minh hoặc phụ đề, cho phép chuyển đổi giữa các ngôn ngữ
+		+ Tải về sản phẩm cuối (video ghép sẵn / file phụ đề / file audio riêng)
+		+ Lịch sử các project đã xử lý
+	- 1. FE Dev (React Native + React.js, Web/Mobile, CI/CD): là phần frontend, "bộ mặt" của hệ thống, cần làm rõ ràng, đầy đủ màn 	hình và luồng:
+
+	- Các màn hình/chức năng FE cần có:
+		+ Auth: Đăng ký, đăng nhập, quên mật khẩu
+		+ Dashboard: danh sách project đã tạo, trạng thái (đang xử lý/hoàn tất/lỗi)
+		+ Upload: chọn file, chọn ngôn ngữ nguồn/đích, gửi request lên BE
+		+ Trạng thái xử lý: progress bar / polling / websocket để cập nhật tiến trình real-time
+		+ Player kết quả: video player custom có nút chuyển ngôn ngữ audio/phụ đề
+		+ Tải xuống / chia sẻ kết quả
+		+ Profile/Settings
+		+ Responsive Web (React.js) + bản Mobile (React Native) — nên dùng chung tầng logic gọi API, chỉ khác UI layer
+	- CI/CD cho FE:
+		+ Lint + unit test tự động khi push (GitHub Actions)
+		+ Build tự động: Web build lên Vercel/Netlify, Mobile build qua Expo EAS Build
+		+ Có thể thêm bước test tự động (Jest, React Testing Library) trước khi deploy
+		+ Versioning rõ ràng theo nhánh (dev/staging/main)
+
+
+	- Phân công nhiệm vụ: 
+		+ Người 1: Web (React.js)
+		+ Người 2: Mobile (React Native)
+		+ Người 3: Tầng gọi API dùng chung (service layer, quản lý state, mock API khi BE chưa xong) + phụ trách CI/CD pipeline 		cho cả 2 platform
