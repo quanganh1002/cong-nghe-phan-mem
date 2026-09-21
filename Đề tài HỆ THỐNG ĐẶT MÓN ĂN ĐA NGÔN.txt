@@ -1,0 +1,887 @@
+Đề tài: HỆ THỐNG ĐẶT MÓN ĂN ĐA NGÔN NGỮ
+	Web: React.js
+	Mobile: React Native
+	Backend/API: có thể dùng Node.js/Express hoặc công nghệ mà môn yêu cầu
+	Database: MySQL/SQL Server
+	Đa ngôn ngữ: Việt / Anh / Nhật
+	Thuyết minh: Text → Speech
+
+
+
+
+
+1. Tổng quan hệ thống
+
+Có 2 loại người dùng:
+
+                    HỆ THỐNG
+                       │
+             ┌─────────┴─────────┐
+             ↓                   ↓
+        👤 KHÁCH HÀNG         👨‍💼 ADMIN
+             │                   │
+       Web + Mobile              Web
+             │                   │
+             └─────────┬─────────┘
+                       ↓
+                    API
+                       ↓
+                   DATABASE
+- Khách hàng
+
+	Có thể:
+
+	Đăng ký
+	Đăng nhập
+	Xem món ăn
+	Tìm kiếm món
+	Lọc món
+	Xem chi tiết món
+	Đổi ngôn ngữ
+	Nghe thuyết minh món
+	Thêm giỏ hàng
+	Đặt món
+	Theo dõi đơn hàng
+	Xem lịch sử đơn
+- Admin
+
+	Có thể:
+
+	Đăng nhập quản trị
+	Quản lý món ăn
+	Quản lý danh mục
+	Quản lý bản dịch
+	Quản lý đơn hàng
+	Quản lý khách hàng
+	Quản lý nội dung thuyết minh
+	Xem thống kê
+
+
+
+
+
+2. 👤 Chức năng KHÁCH HÀNG
+	2.1. Đăng ký / đăng nhập
+	Đăng ký:
+		Họ tên
+		Email
+		Số điện thoại
+		Mật khẩu
+		Xác nhận mật khẩu
+	Đăng nhập:
+		Email
+		Mật khẩu
+        	↓
+    		Đăng nhập
+
+	Có thể làm thêm:
+		Đăng xuất
+		Quên mật khẩu
+		MVP: đăng ký + đăng nhập + đăng xuất là đủ.
+
+
+
+
+
+3. 🏠 Trang chủ
+
+Trang chủ có:
+
+┌─────────────────────────────────────┐
+│ LOGO        🔎 Tìm kiếm    🌐 VI    │
+├─────────────────────────────────────┤
+│                                     │
+│     🍜 ĐẶT MÓN NGON - DỄ DÀNG      │
+│                                     │
+├─────────────────────────────────────┤
+│ Danh mục                            │
+│ [Món chính] [Đồ uống] [Tráng miệng]│
+├─────────────────────────────────────┤
+│ Món nổi bật                         │
+│                                     │
+│ 🍜 Phở bò       🍛 Cơm tấm          │
+│ 45.000đ          40.000đ            │
+└─────────────────────────────────────┘
+
+Có:
+	Món nổi bật
+	Món mới
+	Danh mục
+	Tìm kiếm
+	Chuyển ngôn ngữ
+	Giỏ hàng
+
+
+
+
+
+4. 🍜 Danh sách món ăn
+
+Ví dụ:
+
+MÓN ĂN
+
+🔎 Tìm món...
+
+[ Tất cả ] [ Món chính ] [ Đồ uống ]
+
+┌──────────┐ ┌──────────┐
+│   🍜     │ │   🍛     │
+│ Phở bò   │ │ Cơm tấm  │
+│ 45.000đ  │ │ 40.000đ  │
+│ + Thêm   │ │ + Thêm   │
+└──────────┘ └──────────┘
+
+Chức năng:
+	Xem danh sách
+	Tìm kiếm
+	Lọc theo danh mục
+	Sắp xếp giá
+	Chọn món
+
+
+
+
+
+5. 🍜 Chi tiết món ăn
+
+Đây là màn hình quan trọng nhất của đồ án.
+
+Ví dụ:
+
+- 🇻🇳 Tiếng Việt
+        	[Ảnh món]
+
+	PHỞ BÒ
+
+	45.000 VNĐ
+
+	Phở bò là món ăn truyền thống của Việt Nam,
+	gồm bánh phở, thịt bò và nước dùng được ninh
+	từ xương bò.
+
+	🔊 Nghe thuyết minh
+
+	[ - ] 1 [ + ]
+
+       		THÊM VÀO GIỎ
+
+- Nếu đổi sang English:
+
+	        [Ảnh món]
+
+	BEEF PHO
+
+	45.000 VND
+
+	Beef pho is a traditional Vietnamese dish
+	made with rice noodles, beef and broth.
+
+	🔊 Listen
+
+	[ - ] 1 [ + ]
+
+       		ADD TO CART
+
+
+
+
+
+6. 🌐 Chức năng ĐA NGÔN NGỮ
+
+Đây là chức năng trung tâm của đề tài.
+
+- Cho người dùng chọn:
+
+	🌐 Ngôn ngữ
+
+	● 🇻🇳 Tiếng Việt
+	○ 🇬🇧 English
+	○ 🇯🇵 日本語
+
+- Khi đổi ngôn ngữ:
+
+	Tên món
+     	↓
+	Mô tả
+      	↓
+	Thành phần
+      	↓
+	Thông tin thuyết minh
+      	↓
+	Giao diện
+
+- Ví dụ:
+Tiếng Việt	English		日本語
+Phở bò		Beef Pho	牛肉フォー
+Cơm tấm		Broken Rice	コムタム
+Bánh mì		Banh Mi		バインミー
+
+
+
+
+
+7. 🔊 Thuyết minh tự động
+
+- Đây là phần tạo điểm nhấn cho đề tài.
+
+- Người dùng chọn ngôn ngữ:
+
+	🇻🇳 Việt
+      	↓
+	Nội dung tiếng Việt
+      	↓
+	🔊 Text-to-Speech
+
+- Hoặc:
+
+	🇬🇧 English
+      	↓
+	Nội dung tiếng Anh
+      	↓
+	🔊 Text-to-Speech
+
+
+- Ví dụ:
+
+Phở bò là món ăn truyền thống của Việt Nam...
+
+- Người dùng bấm:
+
+	🔊 Nghe thuyết minh
+
+	→ hệ thống đọc nội dung.
+
+- Có thể có:
+	▶️ Phát
+	⏸️ Tạm dừng
+	🔁 Phát lại
+
+- Không cần làm AI quá phức tạp. Text-to-Speech + nội dung đa ngôn ngữ đã đủ để thể hiện chức năng tự động thuyết minh.
+
+
+
+
+
+8. 🛒 Giỏ hàng
+
+- Ví dụ:
+
+	GIỎ HÀNG
+
+	🍜 Phở bò
+	45.000đ
+	[-] 2 [+]
+
+	🍛 Cơm tấm
+	40.000đ
+	[-] 1 [+]
+
+	------------------
+	Tạm tính: 130.000đ
+
+       		ĐẶT HÀNG
+
+-Chức năng:
+	Thêm món
+	Xóa món
+	Tăng số lượng
+	Giảm số lượng
+	Tính tổng tiền
+
+
+
+
+
+9. 📦 Đặt hàng
+
+- Thông tin:
+
+	Họ tên
+	Số điện thoại
+	Địa chỉ
+	Ghi chú
+	Phương thức thanh toán
+
+- Ví dụ:
+
+	THÔNG TIN ĐẶT HÀNG
+
+	Tên: Nguyễn Văn A
+	SĐT: 09xxxxxxxx
+	Địa chỉ: ...
+
+	Thanh toán:
+	○ Tiền mặt
+	○ Chuyển khoản
+
+	Tổng: 130.000đ
+
+        	ĐẶT HÀNG
+
+- MVP: chỉ cần thanh toán tiền mặt/chuyển khoản giả lập, chưa cần tích hợp ngân hàng thật.
+
+
+
+
+
+10. 📦 Theo dõi đơn hàng
+
+- Sau khi đặt:
+
+	Đơn #DH001
+
+	✓ Đã đặt hàng
+   	↓
+	✓ Đã xác nhận
+   	↓
+	● Đang chuẩn bị
+   	↓
+	○ Đang giao
+   	↓
+	○ Hoàn thành
+
+- Admin thay đổi trạng thái → khách hàng nhìn thấy trạng thái mới.
+
+
+
+
+
+11. 📜 Lịch sử đơn hàng
+
+- Khách hàng xem:
+
+	Đơn #DH001
+	15/09/2026
+	130.000đ
+	Trạng thái: Hoàn thành
+
+	[ Xem chi tiết ]
+
+
+
+
+
+12. 👤 Hồ sơ cá nhân
+	THÔNG TIN CÁ NHÂN
+
+	Ảnh đại diện
+
+	Họ tên
+	Email
+	Số điện thoại
+
+	[ Chỉnh sửa ]
+
+	Địa chỉ
+	Đơn hàng của tôi
+	Đăng xuất
+
+
+
+
+
+13. 👨‍💼 CHỨC NĂNG ADMIN
+
+- Admin dùng Web React.js.
+
+	13.1. Dashboard
+	┌─────────────────────────────────────┐
+	│             DASHBOARD               │
+	├───────────┬───────────┬─────────────┤
+	│  Đơn hàng │ Khách hàng│   Món ăn    │
+	│    125    │    320    │      50     │
+	├───────────┴───────────┴─────────────┤
+	│                                     │
+	│       📊 Doanh thu                  │
+	│                                     │
+	└─────────────────────────────────────┘
+
+Có thể thống kê:
+	Tổng số món
+	Tổng đơn hàng
+	Tổng khách hàng
+	Doanh thu
+
+
+
+
+
+14. 🍜 Admin quản lý món ăn
+
+- CRUD:
+	Create
+	Read
+	Update
+	Delete
+
+	QUẢN LÝ MÓN ĂN
+
+	[ + Thêm món ]
+
+	------------------------------------------------
+	Ảnh | Tên | Giá | Danh mục | Trạng thái | ...
+	------------------------------------------------
+	🍜  | Phở  |45k | Món chính | Đang bán   | Sửa
+	🍛  | Cơm  |40k | Món chính | Đang bán   | Sửa
+
+- Admin có thể:
+	Thêm
+	Sửa
+	Xóa
+	Ẩn món
+	Hiện món
+	Cập nhật giá
+	Upload hình
+
+
+
+
+
+15. 🌐 Admin quản lý bản dịch
+
+- Cái này cực kỳ quan trọng.
+
+- Ví dụ:
+
+	MÓN: PHỞ BÒ
+
+	┌──────────┬─────────────────────────────┐
+	│ Ngôn ngữ │ Nội dung                    │
+	├──────────┼─────────────────────────────┤
+	│ 🇻🇳 VI    │ Phở bò là món ăn...        │
+	│ 🇬🇧 EN    │ Beef pho is a traditional...│
+	│ 🇯🇵 JP    │ 牛肉フォーはベトナムの...     │
+	└──────────┴─────────────────────────────┘
+
+              		[ LƯU ]
+
+- Admin có thể chỉnh nội dung từng ngôn ngữ.
+
+
+
+
+
+16. 🔊 Admin quản lý thuyết minh
+
+- Có thể có:
+
+	Món: Phở bò
+
+	🇻🇳 Nội dung thuyết minh
+	[................................]
+
+	🇬🇧 Nội dung thuyết minh
+	[................................]
+
+	🇯🇵 Nội dung thuyết minh
+	[................................]
+
+	[ Lưu ]
+
+- Khi khách bấm 🔊:
+
+	Nội dung tương ứng
+       	↓
+	Text-to-Speech
+       	↓
+	🔊 Âm thanh
+
+
+
+
+
+17. 📂 Admin quản lý danh mục
+
+- Ví dụ:
+
+-Danh mục
+	🍜 Món chính
+	🥤 Đồ uống
+	🍰 Tráng miệng
+	🍟 Ăn vặt
+
+-Admin:
+	Thêm
+	Sửa
+	Xóa
+
+
+
+
+
+18. 📦 Admin quản lý đơn hàng
+	ĐƠN HÀNG
+
+	DH001 | Nguyễn A | 130.000đ | Đang giao
+	DH002 | Nguyễn B |  90.000đ | Hoàn thành
+	DH003 | Nguyễn C | 150.000đ | Chờ xác nhận
+
+- Admin cập nhật:
+
+	Chờ xác nhận
+      	↓
+	Đã xác nhận
+      	↓
+	Đang chuẩn bị
+      	↓
+	Đang giao
+      	↓
+	Hoàn thành
+
+
+
+
+
+19. 👥 Admin quản lý khách hàng
+	KHÁCH HÀNG
+
+	ID | Họ tên | Email | SĐT | Trạng thái
+
+- Có thể:
+	Xem danh sách
+	Xem thông tin
+	Khóa/mở tài khoản
+
+- Không cần làm quá nhiều.
+
+
+
+
+
+
+20. 📱 MÀN HÌNH MOBILE
+
+- Mobile React Native dành chủ yếu cho khách hàng.
+
+- Tao đề xuất khoảng 8 màn hình:
+
+	1. Splash
+      	 ↓
+	2. Đăng nhập / Đăng ký
+       	↓
+	3. Trang chủ
+      	 ↓
+	4. Danh sách món
+       	↓
+	5. Chi tiết món
+      	 ↓
+	6. Giỏ hàng
+      	 ↓
+	7. Đặt hàng
+      	 ↓
+	8. Theo dõi đơn hàng
+
+Thêm:
+	9. Lịch sử đơn
+	10. Cá nhân
+	11. Cài đặt ngôn ngữ
+
+
+
+
+
+21. 💻 MÀN HÌNH WEB
+
+- Web có thể chia thành 2 phần.
+- Khách hàng
+	Trang chủ
+	Món ăn
+	Chi tiết món
+	Giỏ hàng
+	Đặt hàng
+	Đơn hàng
+	Tài khoản
+- Admin
+	Dashboard
+	│
+	├── Quản lý món ăn
+	├── Quản lý danh mục
+	├── Quản lý bản dịch
+	├── Quản lý thuyết minh
+	├── Quản lý đơn hàng
+	├── Quản lý khách hàng
+	└── Thống kê
+
+
+
+
+
+22. 🗄️ DATABASE
+
+- Đừng làm database quá khủng. Với đồ án này khoảng 8–10 bảng là hợp lý.
+
+- Tao đề xuất:
+	USERS
+	CATEGORIES
+	FOODS
+	FOOD_TRANSLATIONS
+	ORDERS
+	ORDER_DETAILS
+	ADDRESSES
+	LANGUAGES
+
+- Có thể thêm:
+
+	REVIEWS
+	PAYMENTS
+
+nếu nhóm còn thời gian.
+
+- Quan hệ database
+
+	Sơ đồ đơn giản:
+
+                 	USERS
+                  	│
+                   	│ 1:N
+                   	↓
+                 	ORDERS
+                   	│
+                   	│ 1:N
+                   	↓
+             		ORDER_DETAILS
+                   	│
+                   	│ N:1
+                   	↓
+                 	FOODS
+                   	│
+          ┌────────┴────────┐
+          ↓                 ↓
+      CATEGORIES      FOOD_TRANSLATIONS
+                              │
+                              ↓
+                          LANGUAGES
+
+
+
+
+
+23. Chi tiết từng bảng
+- USERS:
+	UserID
+	FullName
+	Email
+	Password
+	Phone
+ 	Role
+	CreatedAt
+
+-Role:
+	CUSTOMER
+	ADMIN
+
+- CATEGORIES:
+	CategoryID
+	CategoryName
+	Description
+
+- FOODS:
+	FoodID
+	CategoryID
+	FoodName
+	Price
+	Image
+	Description
+	Status
+	CreatedAt
+
+- LANGUAGES:
+	LanguageID
+	LanguageCode
+	LanguageName
+
+- Ví dụ:
+
+1 | vi | Tiếng Việt
+2 | en | English
+3 | ja | 日本語
+
+- FOOD_TRANSLATIONS:
+
+Đây là bảng rất quan trọng.
+	TranslationID
+	FoodID
+	LanguageID
+	FoodName
+	Description
+	NarrationText
+
+Ví dụ:
+
+FoodID | LanguageID | FoodName
+---------------------------------
+1      | 1          | Phở bò
+1      | 2          | Beef Pho
+1      | 3          | 牛肉フォー
+
+Như vậy một món có nhiều ngôn ngữ.
+
+- ORDERS:
+	OrderID
+	UserID
+	TotalAmount
+	Address
+	Phone
+	Note
+	Status
+	OrderDate
+	ORDER_DETAILS
+	OrderDetailID
+	OrderID
+	FoodID
+	Quantity
+	UnitPrice
+
+
+
+
+
+24. Luồng hoạt động hoàn chỉnh
+
+Ví dụ khách nước ngoài sử dụng app:
+
+          MỞ APP
+             ↓
+      Chọn 🇬🇧 English
+             ↓
+       Xem danh sách món
+             ↓
+          Chọn Phở
+             ↓
+      Xem Beef Pho
+             ↓
+       🔊 Listen
+             ↓
+     Nghe thuyết minh
+             ↓
+        Add to Cart
+             ↓
+       Xem giỏ hàng
+             ↓
+        Place Order
+             ↓
+       Đơn được tạo
+             ↓
+       Admin xác nhận
+             ↓
+       Chuẩn bị món
+             ↓
+        Đang giao
+             ↓
+        Hoàn thành
+
+Đây chính là use case rất đẹp để nhóm đem thuyết trình.
+
+
+
+
+
+
+25. 👥 CHIA VIỆC CHO 3 NGƯỜI
+
+Nếu nhóm có 3 SV, tao chia như này:
+
+👨‍💻 Người 1 — Frontend Web + UI
+
+- Phụ trách:
+React.js
+Trang chủ
+Danh sách món
+Chi tiết món
+Giỏ hàng
+Đặt hàng
+Admin Dashboard
+UI/UX Web
+Responsive
+React.js
+   │
+   ├── Customer Web
+   └── Admin Web
+
+👨‍💻 Người 2 — Mobile
+
+- Phụ trách:
+React Native
+Login/Register
+Trang chủ Mobile
+Danh sách món
+Chi tiết món
+Đa ngôn ngữ
+Giỏ hàng
+Đặt món
+Theo dõi đơn
+Profile
+React Native
+     │
+     └── Customer Mobile
+
+👨‍💻 Người 3 — Backend + Database
+
+- Phụ trách:
+API
+Database
+Login/Register API
+Food API
+Category API
+Translation API
+Order API
+User API
+Authentication
+Phân quyền Admin
+Kết nối Web/Mobile
+React.js ───┐
+            ├── API ─── Database
+React Native┘
+26. 🎯 MVP — Phần NÊN làm trước
+
+Đừng ngay lập tức làm hết.
+
+Đầu tiên nhóm nên hoàn thành:
+
+Phase 1
+✓ Database
+✓ Backend API
+✓ Login/Register
+✓ CRUD món ăn
+✓ Danh sách món
+✓ Chi tiết món
+Phase 2
+✓ Giỏ hàng
+✓ Đặt hàng
+✓ Quản lý đơn
+Phase 3
+✓ Đa ngôn ngữ
+✓ Thuyết minh Text-to-Speech
+Phase 4
+✓ React Native
+✓ Hoàn thiện UI
+✓ Testing
+✓ Báo cáo
+
+27. ⭐ Phần tạo điểm nhấn cho đồ án
+
+Nếu thầy hỏi:
+
+“Điểm đặc biệt của hệ thống các em là gì?”
+
+Nhóm có thể trình bày:
+
+Hệ thống không chỉ hỗ trợ đặt món ăn trên Web và Mobile mà còn hỗ trợ hiển thị thông tin món ăn bằng nhiều ngôn ngữ và tự động thuyết minh nội dung món ăn bằng giọng nói theo ngôn ngữ mà người dùng lựa chọn.
+
+Luồng demo rất trực quan:
+
+🇻🇳
+Phở bò
+↓
+🔊 Nghe thuyết minh
+↓
+Đổi 🇬🇧
+↓
+Beef Pho
+↓
+🔊 Listen
+↓
+Đặt món
+↓
+📦 Theo dõi đơn hàng
