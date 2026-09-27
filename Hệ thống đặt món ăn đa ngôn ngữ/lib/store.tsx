@@ -1,0 +1,190 @@
+"use client"
+
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react"
+import { DEFAULT_LANG, getLanguage, type LangCode } from "./languages"
+import { translations, type Dict } from "./i18n"
+import { FOODS } from "./foods"
+
+export type OrderStatus = "ordered" | "confirmed" | "preparing" | "delivering" | "completed"
+
+export const ORDER_STEPS: OrderStatus[] = ["ordered", "confirmed", "preparing", "delivering", "completed"]
+
+export interface CartItem {
+  foodId: string
+  quantity: number
+}
+
+export interface OrderItem {
+  foodId: string
+  quantity: number
+  unitPrice: number
+}
+
+export interface Order {
+  id: string
+  items: OrderItem[]
+  total: number
+  name: string
+  phone: string
+  address: string
+  note: string
+  payment: "cod" | "bank"
+  status: OrderStatus
+  date: string // ISO
+}
+
+interface AppState {
+  lang: LangCode
+  setLang: (l: LangCode) => void
+  dict: Dict
+  cart: CartItem[]
+  addToCart: (foodId: string, quantity?: number) => void
+  removeFromCart: (foodId: string) => void
+  setQuantity: (foodId: string, quantity: number) => void
+  clearCart: () => void
+  cartCount: number
+  cartTotal: number
+  orders: Order[]
+  placeOrder: (o: Omit<Order, "id" | "status" | "date">) => Order
+}
+
+const AppContext = createContext<AppState | null>(null)
+
+const LANG_KEY = "foodlingo:lang"
+const CART_KEY = "foodlingo:cart"
+const ORDERS_KEY = "foodlingo:orders"
+
+function price(foodId: string): number {
+  return FOODS.find((f) => f.id === foodId)?.price ?? 0
+}
+
+function seedOrders(): Order[] {
+  return [
+    {
+      id: "DH003",
+      items: [{ foodId: "bun-cha", quantity: 3, unitPrice: price("bun-cha") }],
+      total: price("bun-cha") * 3,
+      name: "Nguyễn Văn A",
+      phone: "0901234567",
+      address: "123 Lê Lợi, Q1, TP.HCM",
+      note: "",
+      payment: "cod",
+      status: "completed",
+      date: "2026-09-05T09:30:00.000Z",
+    },
+    {
+      id: "DH002",
+      items: [{ foodId: "nem-ran", quantity: 2, unitPrice: price("nem-ran") }],
+      total: price("nem-ran") * 2 + 20000,
+      name: "Nguyễn Văn A",
+      phone: "0901234567",
+      address: "123 Lê Lợi, Q1, TP.HCM",
+      note: "",
+      payment: "bank",
+      status: "delivering",
+      date: "2026-09-15T09:32:00.000Z",
+    },
+  ]
+}
+
+export function AppProvider({ children }: { children: ReactNode }) {
+  const [lang, setLangState] = useState<LangCode>(DEFAULT_LANG)
+  const [cart, setCart] = useState<CartItem[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
+  const [hydrated, setHydrated] = useState(false)
+
+  // Load persisted state once on mount
+  useEffect(() => {
+    try {
+      const l = localStorage.getItem(LANG_KEY) as LangCode | null
+      if (l) setLangState(l)
+      const c = localStorage.getItem(CART_KEY)
+      if (c) setCart(JSON.parse(c))
+      const o = localStorage.getItem(ORDERS_KEY)
+      setOrders(o ? JSON.parse(o) : seedOrders())
+    } catch {
+      setOrders(seedOrders())
+    }
+    setHydrated(true)
+  }, [])
+
+  // Persist + reflect language on <html>
+  useEffect(() => {
+    if (!hydrated) return
+    localStorage.setItem(LANG_KEY, lang)
+    const meta = getLanguage(lang)
+    document.documentElement.lang = lang
+    document.documentElement.dir = meta.dir
+  }, [lang, hydrated])
+
+  useEffect(() => {
+    if (hydrated) localStorage.setItem(CART_KEY, JSON.stringify(cart))
+  }, [cart, hydrated])
+
+  useEffect(() => {
+    if (hydrated) localStorage.setItem(ORDERS_KEY, JSON.stringify(orders))
+  }, [orders, hydrated])
+
+  const setLang = useCallback((l: LangCode) => setLangState(l), [])
+
+  const addToCart = useCallback((foodId: string, quantity = 1) => {
+    setCart((prev) => {
+      const existing = prev.find((i) => i.foodId === foodId)
+      if (existing) {
+        return prev.map((i) => (i.foodId === foodId ? { ...i, quantity: i.quantity + quantity } : i))
+      }
+      return [...prev, { foodId, quantity }]
+    })
+  }, [])
+
+  const removeFromCart = useCallback((foodId: string) => {
+    setCart((prev) => prev.filter((i) => i.foodId !== foodId))
+  }, [])
+
+  const setQuantity = useCallback((foodId: string, quantity: number) => {
+    setCart((prev) =>
+      quantity <= 0
+        ? prev.filter((i) => i.foodId !== foodId)
+        : prev.map((i) => (i.foodId === foodId ? { ...i, quantity } : i)),
+    )
+  }, [])
+
+  const clearCart = useCallback(() => setCart([]), [])
+
+  const placeOrder = useCallback((o: Omit<Order, "id" | "status" | "date">): Order => {
+    const order: Order = {
+      ...o,
+      id: "DH" + String(Math.floor(1000 + Math.random() * 9000)),
+      status: "confirmed",
+      date: new Date().toISOString(),
+    }
+    setOrders((prev) => [order, ...prev])
+    return order
+  }, [])
+
+  const cartCount = cart.reduce((n, i) => n + i.quantity, 0)
+  const cartTotal = cart.reduce((sum, i) => sum + price(i.foodId) * i.quantity, 0)
+
+  const value: AppState = {
+    lang,
+    setLang,
+    dict: translations[lang],
+    cart,
+    addToCart,
+    removeFromCart,
+    setQuantity,
+    clearCart,
+    cartCount,
+    cartTotal,
+    orders,
+    placeOrder,
+  }
+
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>
+}
+
+export function useApp(): AppState {
+  const ctx = useContext(AppContext)
+  if (!ctx) throw new Error("useApp must be used within AppProvider")
+  return ctx
+}
