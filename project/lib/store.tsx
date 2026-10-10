@@ -33,6 +33,15 @@ export interface Order {
   date: string // ISO
 }
 
+export interface User {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  address?: string
+  createdAt: string // ISO
+}
+
 interface AppState {
   lang: LangCode
   setLang: (l: LangCode) => void
@@ -46,6 +55,12 @@ interface AppState {
   cartTotal: number
   orders: Order[]
   placeOrder: (o: Omit<Order, "id" | "status" | "date">) => Order
+  /** null = chưa đăng nhập */
+  user: User | null
+  /** false until localStorage has been read (avoids a flash of the guest state) */
+  hydrated: boolean
+  login: (u: User) => void
+  logout: () => void
 }
 
 const AppContext = createContext<AppState | null>(null)
@@ -53,6 +68,7 @@ const AppContext = createContext<AppState | null>(null)
 const LANG_KEY = "foodlingo:lang"
 const CART_KEY = "foodlingo:cart"
 const ORDERS_KEY = "foodlingo:orders"
+const USER_KEY = "foodlingo:user"
 
 function price(foodId: string): number {
   return FOODS.find((f) => f.id === foodId)?.price ?? 0
@@ -91,6 +107,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<LangCode>(DEFAULT_LANG)
   const [cart, setCart] = useState<CartItem[]>([])
   const [orders, setOrders] = useState<Order[]>([])
+  const [user, setUser] = useState<User | null>(null)
   const [hydrated, setHydrated] = useState(false)
 
   // Load persisted state once on mount
@@ -100,6 +117,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (l) setLangState(l)
       const c = localStorage.getItem(CART_KEY)
       if (c) setCart(JSON.parse(c))
+      const u = localStorage.getItem(USER_KEY)
+      if (u) setUser(JSON.parse(u))
       const o = localStorage.getItem(ORDERS_KEY)
       setOrders(o ? JSON.parse(o) : seedOrders())
     } catch {
@@ -124,6 +143,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (hydrated) localStorage.setItem(ORDERS_KEY, JSON.stringify(orders))
   }, [orders, hydrated])
+
+  useEffect(() => {
+    if (!hydrated) return
+    if (user) localStorage.setItem(USER_KEY, JSON.stringify(user))
+    else localStorage.removeItem(USER_KEY)
+  }, [user, hydrated])
 
   const setLang = useCallback((l: LangCode) => setLangState(l), [])
 
@@ -162,6 +187,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return order
   }, [])
 
+  const login = useCallback((u: User) => setUser(u), [])
+  const logout = useCallback(() => setUser(null), [])
+
   const cartCount = cart.reduce((n, i) => n + i.quantity, 0)
   const cartTotal = cart.reduce((sum, i) => sum + price(i.foodId) * i.quantity, 0)
 
@@ -178,6 +206,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     cartTotal,
     orders,
     placeOrder,
+    user,
+    hydrated,
+    login,
+    logout,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

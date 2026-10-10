@@ -96,6 +96,16 @@ export interface Dict {
   languageTitle: string
   languageNote: string
   save: string
+  // profile (guest / account)
+  guestTitle: string
+  guestDesc: string
+  login: string
+  register: string
+  accountInfo: string
+  fullName: string
+  email: string
+  memberSince: string
+  totalOrders: string
 }
 
 export const translations: Record<LangCode, Dict> = {
@@ -184,6 +194,15 @@ export const translations: Record<LangCode, Dict> = {
     languageTitle: "Ngôn ngữ / Language",
     languageNote: "Thay đổi ngôn ngữ sẽ cập nhật toàn bộ tên món, mô tả và giọng thuyết minh.",
     save: "Lưu",
+    guestTitle: "Bạn chưa đăng nhập",
+    guestDesc: "Vui lòng đăng nhập hoặc đăng ký để xem thông tin tài khoản và theo dõi đơn hàng.",
+    login: "Đăng nhập",
+    register: "Đăng ký",
+    accountInfo: "Thông tin tài khoản",
+    fullName: "Họ và tên",
+    email: "Email",
+    memberSince: "Thành viên từ",
+    totalOrders: "Tổng đơn hàng",
   },
   en: {
     appTagline: "Delicious food - Multilingual",
@@ -270,6 +289,15 @@ export const translations: Record<LangCode, Dict> = {
     languageTitle: "Language",
     languageNote: "Changing the language updates all dish names, descriptions and narration voice.",
     save: "Save",
+    guestTitle: "You are not logged in",
+    guestDesc: "Please log in or register to view your account details and track your orders.",
+    login: "Log in",
+    register: "Register",
+    accountInfo: "Account information",
+    fullName: "Full name",
+    email: "Email",
+    memberSince: "Member since",
+    totalOrders: "Total orders",
   },
   ja: {
     appTagline: "美味しい料理 - 多言語対応",
@@ -356,6 +384,15 @@ export const translations: Record<LangCode, Dict> = {
     languageTitle: "言語 / Language",
     languageNote: "言語を変更すると、料理名・説明・音声ガイドがすべて更新されます。",
     save: "保存",
+    guestTitle: "ログインしていません",
+    guestDesc: "アカウント情報の確認や注文の追跡には、ログインまたは新規登録が必要です。",
+    login: "ログイン",
+    register: "新規登録",
+    accountInfo: "アカウント情報",
+    fullName: "氏名",
+    email: "メールアドレス",
+    memberSince: "登録日",
+    totalOrders: "注文数",
   },
   zh: {
     appTagline: "美食 - 多语言",
@@ -442,6 +479,15 @@ export const translations: Record<LangCode, Dict> = {
     languageTitle: "语言 / Language",
     languageNote: "切换语言将更新所有菜名、描述和语音介绍。",
     save: "保存",
+    guestTitle: "您尚未登录",
+    guestDesc: "请登录或注册，以查看账户信息并跟踪订单。",
+    login: "登录",
+    register: "注册",
+    accountInfo: "账户信息",
+    fullName: "姓名",
+    email: "邮箱",
+    memberSince: "注册时间",
+    totalOrders: "订单总数",
   },
   es: {
     appTagline: "Comida deliciosa - Multilingüe",
@@ -528,6 +574,15 @@ export const translations: Record<LangCode, Dict> = {
     languageTitle: "Idioma / Language",
     languageNote: "Cambiar el idioma actualiza todos los nombres, descripciones y la voz de narración.",
     save: "Guardar",
+    guestTitle: "No has iniciado sesión",
+    guestDesc: "Inicia sesión o regístrate para ver los datos de tu cuenta y seguir tus pedidos.",
+    login: "Iniciar sesión",
+    register: "Registrarse",
+    accountInfo: "Información de la cuenta",
+    fullName: "Nombre completo",
+    email: "Correo electrónico",
+    memberSince: "Miembro desde",
+    totalOrders: "Pedidos totales",
   },
   fr: {
     appTagline: "Cuisine délicieuse - Multilingue",
@@ -614,6 +669,15 @@ export const translations: Record<LangCode, Dict> = {
     languageTitle: "Langue / Language",
     languageNote: "Changer la langue met à jour tous les noms, descriptions et la voix de narration.",
     save: "Enregistrer",
+    guestTitle: "Vous n'êtes pas connecté",
+    guestDesc: "Connectez-vous ou inscrivez-vous pour consulter votre compte et suivre vos commandes.",
+    login: "Se connecter",
+    register: "S'inscrire",
+    accountInfo: "Informations du compte",
+    fullName: "Nom complet",
+    email: "E-mail",
+    memberSince: "Membre depuis",
+    totalOrders: "Total des commandes",
   },
   ar: {
     appTagline: "طعام لذيذ - متعدد اللغات",
@@ -700,6 +764,15 @@ export const translations: Record<LangCode, Dict> = {
     languageTitle: "اللغة / Language",
     languageNote: "تغيير اللغة يحدّث جميع أسماء الأطباق والأوصاف وصوت الوصف.",
     save: "حفظ",
+    guestTitle: "لم تقم بتسجيل الدخول",
+    guestDesc: "يرجى تسجيل الدخول أو إنشاء حساب لعرض معلومات حسابك وتتبع طلباتك.",
+    login: "تسجيل الدخول",
+    register: "إنشاء حساب",
+    accountInfo: "معلومات الحساب",
+    fullName: "الاسم الكامل",
+    email: "البريد الإلكتروني",
+    memberSince: "عضو منذ",
+    totalOrders: "إجمالي الطلبات",
   },
   pt: {
     appTagline: "Comida deliciosa - Multilíngue",
@@ -786,6 +859,15 @@ export const translations: Record<LangCode, Dict> = {
     languageTitle: "Idioma / Language",
     languageNote: "Mudar o idioma atualiza todos os nomes, descrições e a voz da narração.",
     save: "Salvar",
+    guestTitle: "Você não está conectado",
+    guestDesc: "Faça login ou cadastre-se para ver os dados da sua conta e acompanhar seus pedidos.",
+    login: "Entrar",
+    register: "Cadastrar",
+    accountInfo: "Informações da conta",
+    fullName: "Nome completo",
+    email: "E-mail",
+    memberSince: "Membro desde",
+    totalOrders: "Total de pedidos",
   },
   ru: {
     appTagline: "Вкусная еда - Многоязычно",
@@ -872,6 +954,15 @@ export const translations: Record<LangCode, Dict> = {
     languageTitle: "Язык / Language",
     languageNote: "Смена языка обновит все названия блюд, описания и голос озвучки.",
     save: "Сохранить",
+    guestTitle: "Вы не вошли в аккаунт",
+    guestDesc: "Войдите или зарегистрируйтесь, чтобы увидеть данные аккаунта и отслеживать заказы.",
+    login: "Войти",
+    register: "Регистрация",
+    accountInfo: "Данные аккаунта",
+    fullName: "Полное имя",
+    email: "Эл. почта",
+    memberSince: "Участник с",
+    totalOrders: "Всего заказов",
   },
   hi: {
     appTagline: "स्वादिष्ट भोजन - बहुभाषी",
@@ -958,6 +1049,15 @@ export const translations: Record<LangCode, Dict> = {
     languageTitle: "भाषा / Language",
     languageNote: "भाषा बदलने से सभी व्यंजन नाम, विवरण और विवरण आवाज़ अपडेट हो जाएँगे।",
     save: "सहेजें",
+    guestTitle: "आप लॉग इन नहीं हैं",
+    guestDesc: "अपने खाते की जानकारी देखने और ऑर्डर ट्रैक करने के लिए कृपया लॉग इन या रजिस्टर करें।",
+    login: "लॉग इन",
+    register: "रजिस्टर",
+    accountInfo: "खाते की जानकारी",
+    fullName: "पूरा नाम",
+    email: "ईमेल",
+    memberSince: "सदस्य बने",
+    totalOrders: "कुल ऑर्डर",
   },
 }
 
