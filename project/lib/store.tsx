@@ -67,40 +67,13 @@ const AppContext = createContext<AppState | null>(null)
 
 const LANG_KEY = "foodlingo:lang"
 const CART_KEY = "foodlingo:cart"
-const ORDERS_KEY = "foodlingo:orders"
+// v2: bỏ các đơn mẫu cũ đã lưu trong trình duyệt
+const ORDERS_KEY = "foodlingo:orders:v2"
+const LEGACY_ORDERS_KEY = "foodlingo:orders"
 const USER_KEY = "foodlingo:user"
 
 function price(foodId: string): number {
   return FOODS.find((f) => f.id === foodId)?.price ?? 0
-}
-
-function seedOrders(): Order[] {
-  return [
-    {
-      id: "DH003",
-      items: [{ foodId: "bun-cha", quantity: 3, unitPrice: price("bun-cha") }],
-      total: price("bun-cha") * 3,
-      name: "Nguyễn Văn A",
-      phone: "0901234567",
-      address: "123 Lê Lợi, Q1, TP.HCM",
-      note: "",
-      payment: "cod",
-      status: "completed",
-      date: "2026-09-05T09:30:00.000Z",
-    },
-    {
-      id: "DH002",
-      items: [{ foodId: "nem-ran", quantity: 2, unitPrice: price("nem-ran") }],
-      total: price("nem-ran") * 2 + 20000,
-      name: "Nguyễn Văn A",
-      phone: "0901234567",
-      address: "123 Lê Lợi, Q1, TP.HCM",
-      note: "",
-      payment: "bank",
-      status: "delivering",
-      date: "2026-09-15T09:32:00.000Z",
-    },
-  ]
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -120,9 +93,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const u = localStorage.getItem(USER_KEY)
       if (u) setUser(JSON.parse(u))
       const o = localStorage.getItem(ORDERS_KEY)
-      setOrders(o ? JSON.parse(o) : seedOrders())
+      setOrders(o ? JSON.parse(o) : [])
+      localStorage.removeItem(LEGACY_ORDERS_KEY)
     } catch {
-      setOrders(seedOrders())
+      // dữ liệu lưu trữ bị lỗi → bắt đầu lại với danh sách trống
     }
     setHydrated(true)
   }, [])
