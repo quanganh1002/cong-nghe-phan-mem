@@ -28,7 +28,7 @@ export interface Order {
   phone: string
   address: string
   note: string
-  payment: "cod" | "bank"
+  payment: "cod" | "bank" | "qr" | "wallet"
   status: OrderStatus
   date: string // ISO
 }
