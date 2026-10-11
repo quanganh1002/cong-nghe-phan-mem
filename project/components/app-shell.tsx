@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { Home, UtensilsCrossed, ShoppingBag, ClipboardList, User } from "lucide-react"
 import { useApp } from "@/lib/store"
 import { LanguageSwitcher } from "@/components/language-switcher"
+import { Logo } from "@/components/logo"
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
@@ -23,19 +24,6 @@ function useNav() {
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/"
   return pathname === href || pathname.startsWith(href + "/")
-}
-
-function Logo() {
-  return (
-    <Link href="/" className="flex items-center gap-2 font-extrabold">
-      <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-        <UtensilsCrossed className="size-5" />
-      </span>
-      <span className="text-lg tracking-tight">
-        Food<span className="text-primary">Lingo</span>
-      </span>
-    </Link>
-  )
 }
 
 function CartBadge() {
