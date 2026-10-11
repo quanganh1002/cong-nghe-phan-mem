@@ -1,12 +1,30 @@
 "use client"
 
 import Link from "next/link"
-import { ChevronRight, ClipboardList, Globe, LogIn, LogOut, Mail, MapPin, Phone, User as UserIcon, UserPlus, CalendarDays, ShoppingBag } from "lucide-react"
+import { useEffect, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react"
+import { CalendarDays, ChevronRight, CircleCheck, ClipboardList, Globe, LogIn, LogOut, Mail, MapPin, Pencil, Phone, ShoppingBag, User as UserIcon, UserPlus } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { LanguageSwitcher } from "@/components/language-switcher"
-import { useApp } from "@/lib/store"
+import { useApp, type User } from "@/lib/store"
+import type { LangCode } from "@/lib/languages"
 import { cn } from "@/lib/utils"
-import type { ReactNode } from "react"
+
+/** Chuỗi riêng cho form chỉnh sửa (các nhãn còn lại dùng lại từ dict) */
+const EDIT_TEXT: Record<LangCode, { cancel: string; invalidEmail: string; invalidPhone: string; saved: string }> = {
+  vi: { cancel: "Hủy", invalidEmail: "Email không hợp lệ", invalidPhone: "Số điện thoại không hợp lệ", saved: "Đã cập nhật thông tin" },
+  en: { cancel: "Cancel", invalidEmail: "Invalid email address", invalidPhone: "Invalid phone number", saved: "Profile updated" },
+  ja: { cancel: "キャンセル", invalidEmail: "メールアドレスが正しくありません", invalidPhone: "電話番号が正しくありません", saved: "情報を更新しました" },
+  zh: { cancel: "取消", invalidEmail: "邮箱格式不正确", invalidPhone: "手机号码格式不正确", saved: "信息已更新" },
+  es: { cancel: "Cancelar", invalidEmail: "Correo electrónico no válido", invalidPhone: "Número de teléfono no válido", saved: "Información actualizada" },
+  fr: { cancel: "Annuler", invalidEmail: "Adresse e-mail invalide", invalidPhone: "Numéro de téléphone invalide", saved: "Informations mises à jour" },
+  ar: { cancel: "إلغاء", invalidEmail: "البريد الإلكتروني غير صالح", invalidPhone: "رقم الهاتف غير صالح", saved: "تم تحديث المعلومات" },
+  pt: { cancel: "Cancelar", invalidEmail: "E-mail inválido", invalidPhone: "Número de telefone inválido", saved: "Informações atualizadas" },
+  ru: { cancel: "Отмена", invalidEmail: "Неверный адрес эл. почты", invalidPhone: "Неверный номер телефона", saved: "Данные обновлены" },
+  hi: { cancel: "रद्द करें", invalidEmail: "अमान्य ईमेल", invalidPhone: "अमान्य फ़ोन नंबर", saved: "जानकारी अपडेट हो गई" },
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const PHONE_RE = /^\+?[0-9\s.-]{8,15}$/
 
 export default function ProfilePage() {
   const { dict, hydrated, user } = useApp()
@@ -68,6 +86,16 @@ function GuestView() {
 /* ------------------------------------------------------------------ */
 function AccountView() {
   const { dict, lang, user, orders, logout } = useApp()
+  const [editing, setEditing] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  // tự ẩn thông báo "đã cập nhật" sau 3 giây
+  useEffect(() => {
+    if (!saved) return
+    const t = setTimeout(() => setSaved(false), 3000)
+    return () => clearTimeout(t)
+  }, [saved])
+
   if (!user) return null
 
   const initials = user.name
@@ -106,15 +134,48 @@ function AccountView() {
         style={{ animationDelay: "60ms" }}
         className="animate-fade-up mt-4 rounded-2xl border border-border bg-card p-4 shadow-sm"
       >
-        <h3 className="mb-3 text-sm font-bold text-muted-foreground">{dict.accountInfo}</h3>
-        <dl className="divide-y divide-border">
-          <InfoRow icon={<UserIcon className="size-4" />} label={dict.fullName} value={user.name} />
-          <InfoRow icon={<Mail className="size-4" />} label={dict.email} value={user.email} />
-          <InfoRow icon={<Phone className="size-4" />} label={dict.phone} value={user.phone} />
-          <InfoRow icon={<MapPin className="size-4" />} label={dict.address} value={user.address} />
-          <InfoRow icon={<CalendarDays className="size-4" />} label={dict.memberSince} value={memberSince} />
-          <InfoRow icon={<ShoppingBag className="size-4" />} label={dict.totalOrders} value={String(orders.length)} />
-        </dl>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h3 className="text-sm font-bold text-muted-foreground">{dict.accountInfo}</h3>
+          {!editing && (
+            <button
+              onClick={() => {
+                setSaved(false)
+                setEditing(true)
+              }}
+              className="flex items-center gap-1.5 rounded-full bg-accent px-3 py-1.5 text-xs font-bold text-primary transition-all active:scale-95 hover:bg-primary hover:text-primary-foreground"
+            >
+              <Pencil className="size-3.5" />
+              {dict.editProfile}
+            </button>
+          )}
+        </div>
+
+        {saved && (
+          <p className="animate-pop mb-3 flex items-center gap-2 rounded-xl bg-chart-3/15 px-3 py-2 text-sm font-semibold text-chart-3">
+            <CircleCheck className="size-4 shrink-0" />
+            {EDIT_TEXT[lang].saved}
+          </p>
+        )}
+
+        {editing ? (
+          <EditForm
+            user={user}
+            onCancel={() => setEditing(false)}
+            onSaved={() => {
+              setEditing(false)
+              setSaved(true)
+            }}
+          />
+        ) : (
+          <dl className="divide-y divide-border">
+            <InfoRow icon={<UserIcon className="size-4" />} label={dict.fullName} value={user.name} />
+            <InfoRow icon={<Mail className="size-4" />} label={dict.email} value={user.email} />
+            <InfoRow icon={<Phone className="size-4" />} label={dict.phone} value={user.phone} />
+            <InfoRow icon={<MapPin className="size-4" />} label={dict.address} value={user.address} />
+            <InfoRow icon={<CalendarDays className="size-4" />} label={dict.memberSince} value={memberSince} />
+            <InfoRow icon={<ShoppingBag className="size-4" />} label={dict.totalOrders} value={String(orders.length)} />
+          </dl>
+        )}
       </section>
 
       {/* Menu */}
@@ -151,6 +212,125 @@ function AccountView() {
         {dict.logout}
       </button>
     </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* Form chỉnh sửa: họ tên, email, số điện thoại, địa chỉ nhận hàng       */
+/* ------------------------------------------------------------------ */
+type EditableKey = "name" | "email" | "phone" | "address"
+
+function EditForm({ user, onCancel, onSaved }: { user: User; onCancel: () => void; onSaved: () => void }) {
+  const { dict, lang, login } = useApp()
+  const t = EDIT_TEXT[lang]
+  const [form, setForm] = useState<Record<EditableKey, string>>({
+    name: user.name,
+    email: user.email,
+    phone: user.phone ?? "",
+    address: user.address ?? "",
+  })
+  const [errors, setErrors] = useState<Partial<Record<EditableKey, string>>>({})
+
+  const onChange = (key: EditableKey) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setForm((f) => ({ ...f, [key]: e.target.value }))
+    setErrors((prev) => ({ ...prev, [key]: undefined }))
+  }
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault()
+    const v = {
+      name: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+      address: form.address.trim(),
+    }
+
+    const next: Partial<Record<EditableKey, string>> = {}
+    if (!v.name) next.name = dict.required
+    if (!v.email) next.email = dict.required
+    else if (!EMAIL_RE.test(v.email)) next.email = t.invalidEmail
+    if (!v.phone) next.phone = dict.required
+    else if (!PHONE_RE.test(v.phone)) next.phone = t.invalidPhone
+    // địa chỉ không bắt buộc
+    setErrors(next)
+    if (Object.keys(next).length > 0) return
+
+    // `login` chỉ ghi đè user hiện tại trong store và lưu vào localStorage → dùng để cập nhật hồ sơ
+    login({ ...user, name: v.name, email: v.email, phone: v.phone, address: v.address || undefined })
+    onSaved()
+  }
+
+  return (
+    <form onSubmit={submit} noValidate className="space-y-4">
+      <Field label={dict.fullName} error={errors.name}>
+        <input
+          value={form.name}
+          onChange={onChange("name")}
+          autoComplete="name"
+          aria-invalid={!!errors.name}
+          className={INPUT_CLASS}
+        />
+      </Field>
+      <Field label={dict.email} error={errors.email}>
+        <input
+          type="email"
+          value={form.email}
+          onChange={onChange("email")}
+          autoComplete="email"
+          aria-invalid={!!errors.email}
+          className={INPUT_CLASS}
+        />
+      </Field>
+      <Field label={dict.phone} error={errors.phone}>
+        <input
+          type="tel"
+          inputMode="tel"
+          value={form.phone}
+          onChange={onChange("phone")}
+          autoComplete="tel"
+          aria-invalid={!!errors.phone}
+          className={INPUT_CLASS}
+        />
+      </Field>
+      <Field label={dict.address} error={errors.address}>
+        <textarea
+          rows={2}
+          value={form.address}
+          onChange={onChange("address")}
+          autoComplete="street-address"
+          className={cn(INPUT_CLASS, "h-auto resize-none py-2.5")}
+        />
+      </Field>
+
+      <div className="flex gap-3 pt-1">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 rounded-full border border-border bg-card px-5 py-3 font-bold transition-all active:scale-95 hover:bg-muted"
+        >
+          {t.cancel}
+        </button>
+        <button
+          type="submit"
+          className="flex-1 rounded-full bg-primary px-5 py-3 font-bold text-primary-foreground shadow-md transition-transform active:scale-95"
+        >
+          {dict.save}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+const INPUT_CLASS =
+  "h-11 w-full min-w-0 rounded-xl border border-input bg-background px-3 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm"
+
+function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">{label}</span>
+      {children}
+      {error && <span className="mt-1 block text-xs font-medium text-destructive">{error}</span>}
+    </label>
   )
 }
 
