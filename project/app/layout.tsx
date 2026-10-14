@@ -30,7 +30,14 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="vi" className={`light ${nunito.variable}`} style={{ colorScheme: "light" }}>
+    <html lang="vi" className={`light ${nunito.variable}`} style={{ colorScheme: "light" }} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem("foodlingo:theme")==="dark"){var r=document.documentElement;r.classList.replace("light","dark");r.style.colorScheme="dark"}}catch(e){}`,
+          }}
+        />
+      </head>
       <body className={`${nunito.className} antialiased`}>
         <AppProvider>{children}</AppProvider>
       </body>

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { Home, UtensilsCrossed, ShoppingBag, ClipboardList, User } from "lucide-react"
 import { useApp } from "@/lib/store"
 import { LanguageSwitcher } from "@/components/language-switcher"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { Logo } from "@/components/logo"
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
@@ -74,7 +75,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             })}
           </nav>
 
-          <LanguageSwitcher />
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 

@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react"
 import type { ReactNode } from "react"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { Logo } from "@/components/logo"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { Toaster } from "@/components/ui/sonner"
 
 /** Khung dùng chung cho trang đăng nhập và đăng ký: nền ấm + thẻ form nổi có đổ bóng. */
@@ -29,7 +30,10 @@ export function AuthLayout({
         >
           <ArrowLeft className="size-5 rtl:rotate-180" />
         </Link>
-        <LanguageSwitcher />
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher />
+          <ThemeToggle />
+        </div>
       </header>
 
       <main className="flex flex-1 items-center justify-center px-4 pb-10 pt-2">
