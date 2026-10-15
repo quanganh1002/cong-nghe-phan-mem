@@ -10,3 +10,4 @@ dist/
 coverage/
 .next/
 out/
+.md/
