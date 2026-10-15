@@ -12,7 +12,8 @@ const TTL = 4 * 60 * 60 * 1000
 const TABLE_RE = /^[A-Za-z0-9-]{1,10}$/
 
 export function isValidTable(v: string | null | undefined): v is string {
-  return !!v && TABLE_RE.test(v)
+  // "none" là mã của QR đặt online (không ngồi tại quán), không phải số bàn
+  return !!v && v.toLowerCase() !== "none" && TABLE_RE.test(v)
 }
 
 export function readTable(): string | null {

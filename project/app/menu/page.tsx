@@ -18,10 +18,12 @@ function MenuContent() {
   const initialCat = (params.get("cat") as Category | null) ?? "all"
 
   // Khách quét QR ở bàn → link có dạng /menu?table=5 → nhớ số bàn lại
+  // Quét QR chung (đặt online) → link /menu?table=none → xóa số bàn đang nhớ, đặt kiểu giao hàng
   const [table, setTable] = useTable()
   useEffect(() => {
     const t = params.get("table")
-    if (isValidTable(t)) setTable(t)
+    if (t === "none") setTable(null)
+    else if (isValidTable(t)) setTable(t)
   }, [params, setTable])
 
   const [cat, setCat] = useState<Category | "all">(
