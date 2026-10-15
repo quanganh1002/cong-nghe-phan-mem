@@ -1,0 +1,142 @@
+[
+  {
+    "table": "1",
+    "name": "Tài",
+    "phone": "0123456789",
+    "address": "Bàn 1 · tại quán",
+    "note": "",
+    "payment": "cod",
+    "transferNote": "FL642062B1",
+    "items": [
+      {
+        "foodId": "pho-bo",
+        "quantity": 1,
+        "unitPrice": 45000
+      }
+    ],
+    "total": 45000,
+    "id": "234387",
+    "createdAt": "2026-10-15T12:51:02.343Z",
+    "status": "completed"
+  },
+  {
+    "table": null,
+    "name": "Tiến Tài Nguyễn",
+    "phone": "0901234567",
+    "address": "123 Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+    "note": "",
+    "payment": "cod",
+    "transferNote": "FL575124",
+    "items": [
+      {
+        "foodId": "pho-bo",
+        "quantity": 1,
+        "unitPrice": 45000
+      }
+    ],
+    "total": 45000,
+    "id": "975328",
+    "createdAt": "2026-10-15T13:39:39.754Z",
+    "status": "completed"
+  },
+  {
+    "table": null,
+    "name": "Tiến Tài Nguyễn",
+    "phone": "0901234567",
+    "address": "123 Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+    "note": "",
+    "payment": "cod",
+    "transferNote": "FL465287",
+    "items": [
+      {
+        "foodId": "pho-bo",
+        "quantity": 1,
+        "unitPrice": 45000
+      }
+    ],
+    "total": 45000,
+    "id": "019657",
+    "createdAt": "2026-10-15T13:54:30.196Z",
+    "status": "completed"
+  },
+  {
+    "table": "5",
+    "name": "Bàn 5",
+    "phone": "",
+    "address": "Bàn 5 · tại quán",
+    "note": "",
+    "payment": "cod",
+    "transferNote": "FL799354B5",
+    "items": [
+      {
+        "foodId": "pho-bo",
+        "quantity": 1,
+        "unitPrice": 45000
+      }
+    ],
+    "total": 45000,
+    "id": "189196",
+    "createdAt": "2026-10-15T14:00:31.891Z",
+    "status": "completed"
+  },
+  {
+    "table": null,
+    "name": "Tiến Tài Nguyễn",
+    "phone": "0901234567",
+    "address": "123 Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+    "note": "",
+    "payment": "cod",
+    "transferNote": "FL913569",
+    "items": [
+      {
+        "foodId": "pho-bo",
+        "quantity": 1,
+        "unitPrice": 45000
+      }
+    ],
+    "total": 45000,
+    "id": "684585",
+    "createdAt": "2026-10-15T15:11:36.845Z",
+    "status": "ordered"
+  },
+  {
+    "table": "1",
+    "name": "Bàn 1",
+    "phone": "",
+    "address": "Bàn 1 · tại quán",
+    "note": "",
+    "payment": "cod",
+    "transferNote": "FL201992B1",
+    "items": [
+      {
+        "foodId": "pho-bo",
+        "quantity": 1,
+        "unitPrice": 45000
+      }
+    ],
+    "total": 45000,
+    "id": "494075",
+    "createdAt": "2026-10-15T15:13:24.940Z",
+    "status": "ordered"
+  },
+  {
+    "table": "1",
+    "name": "Bàn 1",
+    "phone": "",
+    "address": "Bàn 1 · tại quán",
+    "note": "",
+    "payment": "qr",
+    "transferNote": "FL378281B1",
+    "items": [
+      {
+        "foodId": "pho-bo",
+        "quantity": 1,
+        "unitPrice": 45000
+      }
+    ],
+    "total": 45000,
+    "id": "012396",
+    "createdAt": "2026-10-15T15:16:20.123Z",
+    "status": "completed"
+  }
+]
