@@ -16,6 +16,7 @@ import {
   QrCode,
   ShoppingBag,
   User as UserIcon,
+  UtensilsCrossed,
   Wallet,
   type LucideIcon,
 } from "lucide-react"
@@ -23,6 +24,8 @@ import { toast } from "sonner"
 import { AppShell } from "@/components/app-shell"
 import { useApp } from "@/lib/store"
 import { getFood, formatPrice } from "@/lib/foods"
+import { useTable } from "@/lib/table"
+import { linkOrder } from "@/lib/order-links"
 import { cn } from "@/lib/utils"
  
 /* ====== SỬA THÔNG TIN NHẬN TIỀN CỦA BẠN Ở ĐÂY ====== */
@@ -77,6 +80,16 @@ const TEXT = {
     keepShopping: "Tiếp tục chọn món",
     empty: "Giỏ hàng đang trống",
     browse: "Xem thực đơn",
+    // Gọi món tại bàn (vào từ QR)
+    dineIn: "Gọi món tại bàn",
+    tableNo: "Bàn",
+    dineInDesc: "Món sẽ được mang ra tận bàn của bạn",
+    notDineIn: "Không ngồi tại quán?",
+    guestInfo: "Thông tin người gọi món (không bắt buộc)",
+    codTable: "Tiền mặt tại quầy",
+    codTableDesc: "Thanh toán tại quầy hoặc cho nhân viên",
+    atShop: "tại quán",
+    sendFail: "Không gửi được đơn tới quán. Kiểm tra mạng rồi bấm lại nhé.",
   },
   en: {
     title: "Checkout",
@@ -119,6 +132,15 @@ const TEXT = {
     keepShopping: "Keep shopping",
     empty: "Your cart is empty",
     browse: "Browse menu",
+    dineIn: "Dine-in order",
+    tableNo: "Table",
+    dineInDesc: "Your food will be served to your table",
+    notDineIn: "Not dining in?",
+    guestInfo: "Your details (optional)",
+    codTable: "Cash at the counter",
+    codTableDesc: "Pay at the counter or to our staff",
+    atShop: "dine-in",
+    sendFail: "Couldn't send your order to the shop. Check your connection and try again.",
   },
 }
  
@@ -132,6 +154,7 @@ const METHODS: { key: Method; icon: LucideIcon; label: "cod" | "qr" | "bank" | "
 export default function CheckoutPage() {
   const { lang, cart, cartTotal, user, hydrated, placeOrder, clearCart } = useApp()
   const t = lang === "vi" ? TEXT.vi : TEXT.en
+  const [table, setTable] = useTable()
  
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
@@ -163,11 +186,14 @@ export default function CheckoutPage() {
     if (!done) setTotal(cartTotal)
   }, [cartTotal, done])
  
+  // Nội dung CK có kèm số bàn (vd FL123456B5) để quán dễ đối soát
+  const transferNote = table ? `${memo}B${table}` : memo
+
   const qrUrl = useMemo(
     () =>
       `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-compact2.png?amount=${cartTotal}` +
-      `&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(ACCOUNT_NAME)}`,
-    [cartTotal, memo],
+      `&addInfo=${encodeURIComponent(transferNote)}&accountName=${encodeURIComponent(ACCOUNT_NAME)}`,
+    [cartTotal, transferNote],
   )
  
   const copy = async (text: string) => {
@@ -181,9 +207,15 @@ export default function CheckoutPage() {
  
   const validate = () => {
     const e: typeof errors = {}
-    if (!name.trim()) e.name = t.errName
-    if (!/^(\+?84|0)\d{9,10}$/.test(phone.replace(/[\s.-]/g, ""))) e.phone = t.errPhone
-    if (!address.trim()) e.address = t.errAddress
+    const phoneOk = /^(\+?84|0)\d{9,10}$/.test(phone.replace(/[\s.-]/g, ""))
+    if (table) {
+      // Ngồi tại bàn: không bắt buộc gì, chỉ kiểm tra SĐT nếu khách có nhập
+      if (phone.trim() && !phoneOk) e.phone = t.errPhone
+    } else {
+      if (!name.trim()) e.name = t.errName
+      if (!phoneOk) e.phone = t.errPhone
+      if (!address.trim()) e.address = t.errAddress
+    }
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -192,18 +224,38 @@ export default function CheckoutPage() {
     if (!validate()) return
     setLoading(true)
     try {
-      await new Promise((r) => setTimeout(r, 700)) // giả lập xử lý thanh toán
-      const order = placeOrder({
+      const payload = {
         items: cart.map((i) => ({ foodId: i.foodId, quantity: i.quantity, unitPrice: getFood(i.foodId)?.price ?? 0 })),
         total: cartTotal,
-        name: name.trim(),
+        name: name.trim() || (table ? `${t.tableNo} ${table}` : ""),
         phone: phone.trim(),
-        address: address.trim(),
+        // Đơn tại bàn: ghi số bàn vào chỗ địa chỉ để trang Đơn hàng hiển thị luôn
+        address: table ? `${t.tableNo} ${table} · ${t.atShop}` : address.trim(),
         note: note.trim(),
         payment: method,
-      })
+      }
+
+      // 1) Gửi đơn về máy của quán (trang bếp /admin sẽ thấy)
+      let serverId: string
+      try {
+        const res = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...payload, table, transferNote }),
+        })
+        if (!res.ok) throw new Error(String(res.status))
+        serverId = ((await res.json()) as { id: string }).id
+      } catch {
+        toast.error(t.sendFail) // giữ nguyên giỏ hàng để khách bấm lại
+        return
+      }
+
+      // 2) Lưu thêm một bản trên máy khách để xem ở trang "Đơn hàng",
+      //    và nhớ mã đơn bên quán để trang đó lấy được trạng thái bếp cập nhật
+      const local = placeOrder(payload)
+      linkOrder(local.id, serverId)
       setTotal(cartTotal)
-      setDone({ id: order.id })
+      setDone({ id: serverId })
       clearCart()
     } finally {
       setLoading(false)
@@ -224,6 +276,11 @@ export default function CheckoutPage() {
             <p className="text-sm text-muted-foreground">
               {t.orderCode}: <b className="text-foreground">#{done.id}</b>
             </p>
+            {table && (
+              <p className="text-sm text-muted-foreground">
+                {t.tableNo}: <b className="text-foreground">{table}</b>
+              </p>
+            )}
             <p className="text-lg font-extrabold text-primary">{formatPrice(total)}</p>
           </div>
           <div className="mt-2 flex flex-wrap justify-center gap-3">
@@ -275,13 +332,38 @@ export default function CheckoutPage() {
  
         <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_380px]">
           <div className="space-y-4">
-            {/* Thông tin nhận hàng */}
+            {/* Đang ngồi tại bàn (vào từ QR) */}
+            {table && (
+              <section className="flex items-center gap-3 rounded-2xl bg-gradient-to-br from-accent to-secondary p-4 shadow-sm">
+                <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground">
+                  <UtensilsCrossed className="size-6" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-muted-foreground">{t.dineIn}</p>
+                  <p className="text-xl font-extrabold">
+                    {t.tableNo} {table}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{t.dineInDesc}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTable(null)}
+                  className="shrink-0 self-start rounded-full px-2.5 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:bg-background/60"
+                >
+                  {t.notDineIn}
+                </button>
+              </section>
+            )}
+
+            {/* Thông tin nhận hàng (tại bàn thì chỉ cần tên/SĐT, không bắt buộc) */}
             <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-              <h2 className="mb-3 font-bold">{t.receiver}</h2>
+              <h2 className="mb-3 font-bold">{table ? t.guestInfo : t.receiver}</h2>
               <div className="space-y-3">
                 <Field icon={<UserIcon className="size-4" />} label={t.name} value={name} onChange={setName} error={errors.name} autoComplete="name" />
                 <Field icon={<Phone className="size-4" />} label={t.phone} value={phone} onChange={setPhone} error={errors.phone} type="tel" autoComplete="tel" />
-                <Field icon={<MapPin className="size-4" />} label={t.address} value={address} onChange={setAddress} error={errors.address} autoComplete="street-address" />
+                {!table && (
+                  <Field icon={<MapPin className="size-4" />} label={t.address} value={address} onChange={setAddress} error={errors.address} autoComplete="street-address" />
+                )}
                 <Field label={t.note} value={note} onChange={setNote} />
               </div>
             </section>
@@ -307,8 +389,10 @@ export default function CheckoutPage() {
                         <Icon className="size-5" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block font-bold">{t[m.label]}</span>
-                        <span className="block text-xs text-muted-foreground">{t[`${m.label}Desc` as "codDesc"]}</span>
+                        <span className="block font-bold">{m.key === "cod" && table ? t.codTable : t[m.label]}</span>
+                        <span className="block text-xs text-muted-foreground">
+                          {m.key === "cod" && table ? t.codTableDesc : t[`${m.label}Desc` as "codDesc"]}
+                        </span>
                       </span>
                       <span className={cn("grid size-5 shrink-0 place-items-center rounded-full border-2", active ? "border-primary bg-primary text-primary-foreground" : "border-border")}>
                         {active && <Check className="size-3" />}
@@ -328,7 +412,7 @@ export default function CheckoutPage() {
                   </div>
                   <p className="text-2xl font-extrabold text-primary">{formatPrice(cartTotal)}</p>
                   <p className="text-xs text-muted-foreground">
-                    {t.content}: <b className="text-foreground">{memo}</b>
+                    {t.content}: <b className="text-foreground">{transferNote}</b>
                   </p>
                   <p className="max-w-xs text-xs text-muted-foreground">{t.scanHint}</p>
                 </div>
@@ -340,7 +424,7 @@ export default function CheckoutPage() {
                   <Row label={t.accNo} value={ACCOUNT_NO} onCopy={() => copy(ACCOUNT_NO)} />
                   <Row label={t.accName} value={ACCOUNT_NAME} />
                   <Row label={t.amount} value={formatPrice(cartTotal)} onCopy={() => copy(String(cartTotal))} />
-                  <Row label={t.content} value={memo} onCopy={() => copy(memo)} />
+                  <Row label={t.content} value={transferNote} onCopy={() => copy(transferNote)} />
                 </div>
               )}
  
@@ -349,7 +433,7 @@ export default function CheckoutPage() {
                   <Row label={t.walletNo} value={WALLET_PHONE} onCopy={() => copy(WALLET_PHONE)} />
                   <Row label={t.accName} value={ACCOUNT_NAME} />
                   <Row label={t.amount} value={formatPrice(cartTotal)} onCopy={() => copy(String(cartTotal))} />
-                  <Row label={t.content} value={memo} onCopy={() => copy(memo)} />
+                  <Row label={t.content} value={transferNote} onCopy={() => copy(transferNote)} />
                 </div>
               )}
             </section>

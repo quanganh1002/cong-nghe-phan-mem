@@ -1,12 +1,13 @@
 "use client"
 
-import { Suspense, useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { Search, SlidersHorizontal, X } from "lucide-react"
+import { Search, SlidersHorizontal, UtensilsCrossed, X } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { FoodCard } from "@/components/food-card"
 import { useApp } from "@/lib/store"
 import { FOODS, CATEGORIES, type Category } from "@/lib/foods"
+import { isValidTable, useTable } from "@/lib/table"
 import { cn } from "@/lib/utils"
 
 type Sort = "popular" | "priceLow" | "priceHigh"
@@ -15,6 +16,13 @@ function MenuContent() {
   const { dict, lang } = useApp()
   const params = useSearchParams()
   const initialCat = (params.get("cat") as Category | null) ?? "all"
+
+  // Khách quét QR ở bàn → link có dạng /menu?table=5 → nhớ số bàn lại
+  const [table, setTable] = useTable()
+  useEffect(() => {
+    const t = params.get("table")
+    if (isValidTable(t)) setTable(t)
+  }, [params, setTable])
 
   const [cat, setCat] = useState<Category | "all">(
     CATEGORIES.some((c) => c.key === initialCat) ? (initialCat as Category) : "all",
@@ -60,6 +68,29 @@ function MenuContent() {
   return (
     <div className="px-4 pt-4">
       <h1 className="text-2xl font-extrabold">{dict.menuTitle}</h1>
+
+      {/* Đang ngồi tại bàn (vào từ QR) */}
+      {table && (
+        <div className="animate-fade-up mt-3 flex items-center gap-3 rounded-2xl bg-accent px-4 py-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+            <UtensilsCrossed className="size-4" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="font-bold text-accent-foreground">
+              {lang === "vi" ? `Bạn đang ngồi bàn ${table}` : `You're at table ${table}`}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {lang === "vi" ? "Món sẽ được mang ra tận bàn" : "Your food will be served to your table"}
+            </p>
+          </div>
+          <button
+            onClick={() => setTable(null)}
+            className="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:bg-background/60"
+          >
+            {lang === "vi" ? "Không ngồi tại quán" : "Not dining in"}
+          </button>
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative mt-4">

@@ -6,6 +6,7 @@ import { CalendarDays, ChefHat, CircleCheck, ClipboardList, MapPin, PackageCheck
 import { AppShell } from "@/components/app-shell"
 import { useApp, ORDER_STEPS, type Order, type OrderStatus } from "@/lib/store"
 import { getFood, formatPrice } from "@/lib/foods"
+import { useServerOrders } from "@/lib/order-links"
 import type { Dict } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 
@@ -22,6 +23,9 @@ export default function OrdersPage() {
 
   // Đơn đặt trước đứng trên cùng → sắp xếp theo ngày đặt tăng dần
   const sorted = [...orders].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+  // Lấy trạng thái thật từ quán (trang bếp /admin cập nhật), tự làm mới mỗi 5 giây
+  const live = useServerOrders(orders.map((o) => o.id))
 
   if (!hydrated) {
     return (
@@ -63,7 +67,7 @@ export default function OrdersPage() {
 
         <ul className="mt-4 space-y-3">
           {sorted.map((order, i) => (
-            <OrderCard key={order.id} order={order} index={i} />
+            <OrderCard key={order.id} order={order} index={i} live={live[order.id]} />
           ))}
         </ul>
       </div>
@@ -71,9 +75,20 @@ export default function OrdersPage() {
   )
 }
 
-function OrderCard({ order, index }: { order: Order; index: number }) {
+function OrderCard({
+  order,
+  index,
+  live,
+}: {
+  order: Order
+  index: number
+  live?: { serverId: string; status?: OrderStatus }
+}) {
   const { dict, lang } = useApp()
-  const meta = STEP_META[order.status]
+  // Đơn đã gửi về quán: dùng trạng thái + mã đơn bên quán (trùng với trang bếp)
+  const status: OrderStatus = live?.status ?? order.status
+  const code = live?.serverId ?? order.id
+  const meta = STEP_META[status]
   const date = new Date(order.date).toLocaleString(lang, {
     year: "numeric",
     month: "2-digit",
@@ -91,7 +106,7 @@ function OrderCard({ order, index }: { order: Order; index: number }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-extrabold">
-            {dict.orderNo} #{order.id}
+            {dict.orderNo} #{code}
           </p>
           <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
             <CalendarDays className="size-3.5" />
@@ -104,7 +119,7 @@ function OrderCard({ order, index }: { order: Order; index: number }) {
       </div>
 
       {/* Lộ trình đơn hàng */}
-      <Timeline status={order.status} />
+      <Timeline status={status} />
 
       {/* Món trong đơn */}
       <ul className="space-y-2 border-t border-border pt-3">
