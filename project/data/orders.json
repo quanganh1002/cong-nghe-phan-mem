@@ -1,0 +1,22 @@
+[
+  {
+    "table": "1",
+    "name": "Tài",
+    "phone": "0123456789",
+    "address": "Bàn 1 · tại quán",
+    "note": "",
+    "payment": "cod",
+    "transferNote": "FL642062B1",
+    "items": [
+      {
+        "foodId": "pho-bo",
+        "quantity": 1,
+        "unitPrice": 45000
+      }
+    ],
+    "total": 45000,
+    "id": "234387",
+    "createdAt": "2026-10-15T12:51:02.343Z",
+    "status": "completed"
+  }
+]
