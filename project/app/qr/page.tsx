@@ -6,8 +6,8 @@ import { Download, Printer, TriangleAlert } from "lucide-react"
 
 /**
  * Trang tạo mã QR để in dán lên bàn.
- *  - 1 mã chung  → /menu
- *  - mỗi bàn 1 mã → /menu?table=1, /menu?table=2, ...
+ *  - 1 mã chung (dán ngoài cửa, tờ rơi, Facebook) → /menu?table=none → đặt giao hàng, BẮT đăng nhập
+ *  - mỗi bàn 1 mã → /menu?table=1, /menu?table=2, ... → gọi món tại bàn, KHÔNG cần đăng nhập
  * Mở /qr trên máy tính → nhập link web đã deploy + số bàn → bấm In.
  */
 
@@ -33,7 +33,8 @@ export default function QrPage() {
   const cards = useMemo<Card[]>(() => {
     if (!validBase) return []
     const list: Card[] = [
-      { key: "menu", title: "Thực đơn", subtitle: "Quét để xem món & đặt hàng", url: `${cleanBase}/menu` },
+      // table=none: xóa số bàn khách từng quét trước đó → bắt buộc đăng nhập khi đặt giao hàng
+      { key: "menu", title: "Đặt giao hàng", subtitle: "Quét để đặt món giao tận nơi (cần đăng nhập)", url: `${cleanBase}/menu?table=none` },
     ]
     for (let i = 1; i <= count; i++) {
       list.push({
@@ -75,7 +76,7 @@ export default function QrPage() {
       <section className="rounded-3xl border border-border bg-card p-5 shadow-sm print:hidden">
         <h1 className="text-2xl font-extrabold">Tạo mã QR gọi món</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          In ra rồi dán lên bàn. Khách quét mã bàn nào thì đơn hàng tự ghi số bàn đó.
+          Mã từng bàn: dán lên bàn, khách quét là gọi món luôn, không cần tài khoản. Mã "Đặt giao hàng": dán ngoài cửa hoặc đăng Facebook, khách phải đăng nhập/đăng ký mới đặt được.
         </p>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_160px_200px]">

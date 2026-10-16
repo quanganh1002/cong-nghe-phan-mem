@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { AuthField } from "@/components/auth-field"
 import { AuthLayout } from "@/components/auth-layout"
 import { authenticate, EMAIL_RE } from "@/lib/auth"
+import { readNext } from "@/lib/require-login"
 import { useApp } from "@/lib/store"
 
 export default function LoginPage() {
@@ -18,10 +19,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>({})
   const [loading, setLoading] = useState(false)
+  const [next, setNext] = useState("/")
 
-  // Đã đăng nhập thì không cần ở trang này nữa
+  useEffect(() => setNext(readNext()), [])
+
+  // Đã đăng nhập → quay lại trang khách đang xem dở (vd /checkout, /food/pho-bo)
   useEffect(() => {
-    if (hydrated && user) router.replace("/")
+    if (hydrated && user) router.replace(readNext())
   }, [hydrated, user, router])
 
   async function onSubmit(e: FormEvent) {
@@ -42,7 +46,7 @@ export default function LoginPage() {
       }
       login(found)
       toast.success(dict.loginSuccess)
-      router.replace("/")
+      router.replace(readNext())
     } finally {
       setLoading(false)
     }
@@ -55,7 +59,7 @@ export default function LoginPage() {
       footer={
         <>
           {dict.noAccount}{" "}
-          <Link href="/register" className="font-bold text-primary hover:underline">
+          <Link href={`/register?next=${encodeURIComponent(next)}`} className="font-bold text-primary hover:underline">
             {dict.register}
           </Link>
         </>

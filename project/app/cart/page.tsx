@@ -8,10 +8,12 @@ import { AppShell } from "@/components/app-shell"
 import { QuantityStepper } from "@/components/quantity-stepper"
 import { useApp } from "@/lib/store"
 import { getFood, formatPrice } from "@/lib/foods"
+import { useRequireLogin } from "@/lib/require-login"
 
 export default function CartPage() {
   const { dict, lang, cart, cartTotal, setQuantity, removeFromCart } = useApp()
   const router = useRouter()
+  const requireLogin = useRequireLogin()
 
   if (cart.length === 0) {
     return (
@@ -91,7 +93,9 @@ export default function CartPage() {
               <span className="text-xl font-extrabold text-primary">{formatPrice(cartTotal)}</span>
             </div>
             <button
-              onClick={() => router.push("/checkout")}
+              onClick={() => {
+                if (requireLogin("/checkout")) router.push("/checkout")
+              }}
               className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3.5 font-bold text-primary-foreground shadow-md transition-all active:scale-[0.98] hover:shadow-lg"
             >
               {dict.checkout}

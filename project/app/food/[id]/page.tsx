@@ -12,6 +12,7 @@ import { useApp } from "@/lib/store"
 import { getFood, formatPrice, FOODS } from "@/lib/foods"
 import { getLanguage } from "@/lib/languages"
 import { useSpeech } from "@/hooks/use-speech"
+import { useRequireLogin } from "@/lib/require-login"
 import { cn } from "@/lib/utils"
 
 export default function FoodDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -19,6 +20,7 @@ export default function FoodDetailPage({ params }: { params: Promise<{ id: strin
   const { dict, lang, addToCart } = useApp()
   const router = useRouter()
   const speech = useSpeech()
+  const requireLogin = useRequireLogin()
   const [qty, setQty] = useState(1)
 
   const food = getFood(id)
@@ -64,6 +66,7 @@ export default function FoodDetailPage({ params }: { params: Promise<{ id: strin
   }
 
   const handleAdd = () => {
+    if (!requireLogin()) return // giao hàng mà chưa đăng nhập → đã chuyển sang trang đăng nhập
     addToCart(food.id, qty)
     toast.success(`${info.name} × ${qty} · ${dict.addToCart}`, { icon: "🛒" })
   }

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
   Banknote,
@@ -11,6 +12,7 @@ import {
   Copy,
   Landmark,
   Loader2,
+  LogIn,
   MapPin,
   Phone,
   QrCode,
@@ -26,6 +28,7 @@ import { useApp } from "@/lib/store"
 import { getFood, formatPrice } from "@/lib/foods"
 import { useTable } from "@/lib/table"
 import { linkOrder } from "@/lib/order-links"
+import { loginHref } from "@/lib/require-login"
 import { cn } from "@/lib/utils"
  
 /* ====== SỬA THÔNG TIN NHẬN TIỀN CỦA BẠN Ở ĐÂY ====== */
@@ -164,6 +167,7 @@ export default function CheckoutPage() {
   const [done, setDone] = useState<{ id: string } | null>(null)
   const [memo, setMemo] = useState("")
   const [total, setTotal] = useState(0)
+  const router = useRouter()
  
   // Mã nội dung chuyển khoản (tạo ở client để tránh lệch SSR)
   useEffect(() => {
@@ -219,6 +223,11 @@ export default function CheckoutPage() {
   }
  
   const submit = async () => {
+    // Đặt giao hàng bắt buộc đăng nhập; ngồi tại bàn thì không cần
+    if (!table && !user) {
+      router.push(loginHref("/checkout"))
+      return
+    }
     if (!validate()) return
     setLoading(true)
     try {
@@ -343,6 +352,27 @@ export default function CheckoutPage() {
                   </p>
                   <p className="text-xs text-muted-foreground">{t.dineInDesc}</p>
                 </div>
+              </section>
+            )}
+
+            {/* Đặt giao hàng mà chưa đăng nhập */}
+            {hydrated && !table && !user && (
+              <section className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4">
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold">{lang === "vi" ? "Đặt giao hàng cần đăng nhập" : "Log in to order for delivery"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {lang === "vi"
+                      ? "Nếu đang ngồi tại quán, hãy quét mã QR trên bàn để gọi món không cần tài khoản."
+                      : "Dining in? Scan the QR code on your table to order without an account."}
+                  </p>
+                </div>
+                <Link
+                  href={loginHref("/checkout")}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-sm transition-transform active:scale-95"
+                >
+                  <LogIn className="size-4" />
+                  {lang === "vi" ? "Đăng nhập" : "Log in"}
+                </Link>
               </section>
             )}
 

@@ -1,8 +1,9 @@
 "use client"
 
 import { Suspense, useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { Search, SlidersHorizontal, UtensilsCrossed, X } from "lucide-react"
+import { LogIn, Search, SlidersHorizontal, UtensilsCrossed, X } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { FoodCard } from "@/components/food-card"
 import { useApp } from "@/lib/store"
@@ -13,7 +14,7 @@ import { cn } from "@/lib/utils"
 type Sort = "popular" | "priceLow" | "priceHigh"
 
 function MenuContent() {
-  const { dict, lang } = useApp()
+  const { dict, lang, user, hydrated } = useApp()
   const params = useSearchParams()
   const initialCat = (params.get("cat") as Category | null) ?? "all"
 
@@ -85,6 +86,27 @@ function MenuContent() {
               {lang === "vi" ? "Món sẽ được mang ra tận bàn" : "Your food will be served to your table"}
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Không ngồi tại bàn + chưa đăng nhập → báo trước: đặt giao hàng cần đăng nhập */}
+      {hydrated && !table && !user && (
+        <div className="animate-fade-up mt-3 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold">
+              {lang === "vi" ? "Đặt giao hàng cần đăng nhập" : "Log in to order for delivery"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {lang === "vi" ? "Ngồi tại quán? Quét mã QR trên bàn để gọi món luôn." : "Dining in? Scan the QR code on your table."}
+            </p>
+          </div>
+          <Link
+            href="/login?next=/menu"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-sm transition-transform active:scale-95"
+          >
+            <LogIn className="size-4" />
+            {dict.login}
+          </Link>
         </div>
       )}
 
