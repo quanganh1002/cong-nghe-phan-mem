@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
   Banknote,
@@ -11,6 +12,7 @@ import {
   Copy,
   Landmark,
   Loader2,
+  LogIn,
   MapPin,
   Phone,
   QrCode,
@@ -26,6 +28,7 @@ import { useApp } from "@/lib/store"
 import { getFood, formatPrice } from "@/lib/foods"
 import { useTable } from "@/lib/table"
 import { linkOrder } from "@/lib/order-links"
+import { loginHref } from "@/lib/require-login"
 import { cn } from "@/lib/utils"
  
 /* ====== SỬA THÔNG TIN NHẬN TIỀN CỦA BẠN Ở ĐÂY ====== */
@@ -84,7 +87,6 @@ const TEXT = {
     dineIn: "Gọi món tại bàn",
     tableNo: "Bàn",
     dineInDesc: "Món sẽ được mang ra tận bàn của bạn",
-    notDineIn: "Không ngồi tại quán?",
     guestInfo: "Thông tin người gọi món (không bắt buộc)",
     codTable: "Tiền mặt tại quầy",
     codTableDesc: "Thanh toán tại quầy hoặc cho nhân viên",
@@ -135,7 +137,6 @@ const TEXT = {
     dineIn: "Dine-in order",
     tableNo: "Table",
     dineInDesc: "Your food will be served to your table",
-    notDineIn: "Not dining in?",
     guestInfo: "Your details (optional)",
     codTable: "Cash at the counter",
     codTableDesc: "Pay at the counter or to our staff",
@@ -154,7 +155,7 @@ const METHODS: { key: Method; icon: LucideIcon; label: "cod" | "qr" | "bank" | "
 export default function CheckoutPage() {
   const { lang, cart, cartTotal, user, hydrated, placeOrder, clearCart } = useApp()
   const t = lang === "vi" ? TEXT.vi : TEXT.en
-  const [table, setTable] = useTable()
+  const [table] = useTable()
  
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
@@ -166,6 +167,7 @@ export default function CheckoutPage() {
   const [done, setDone] = useState<{ id: string } | null>(null)
   const [memo, setMemo] = useState("")
   const [total, setTotal] = useState(0)
+  const router = useRouter()
  
   // Mã nội dung chuyển khoản (tạo ở client để tránh lệch SSR)
   useEffect(() => {
@@ -221,6 +223,11 @@ export default function CheckoutPage() {
   }
  
   const submit = async () => {
+    // Đặt giao hàng bắt buộc đăng nhập; ngồi tại bàn thì không cần
+    if (!table && !user) {
+      router.push(loginHref("/checkout"))
+      return
+    }
     if (!validate()) return
     setLoading(true)
     try {
@@ -345,13 +352,27 @@ export default function CheckoutPage() {
                   </p>
                   <p className="text-xs text-muted-foreground">{t.dineInDesc}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setTable(null)}
-                  className="shrink-0 self-start rounded-full px-2.5 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:bg-background/60"
+              </section>
+            )}
+
+            {/* Đặt giao hàng mà chưa đăng nhập */}
+            {hydrated && !table && !user && (
+              <section className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4">
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold">{lang === "vi" ? "Đặt giao hàng cần đăng nhập" : "Log in to order for delivery"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {lang === "vi"
+                      ? "Nếu đang ngồi tại quán, hãy quét mã QR trên bàn để gọi món không cần tài khoản."
+                      : "Dining in? Scan the QR code on your table to order without an account."}
+                  </p>
+                </div>
+                <Link
+                  href={loginHref("/checkout")}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-sm transition-transform active:scale-95"
                 >
-                  {t.notDineIn}
-                </button>
+                  <LogIn className="size-4" />
+                  {lang === "vi" ? "Đăng nhập" : "Log in"}
+                </Link>
               </section>
             )}
 

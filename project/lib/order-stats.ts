@@ -32,6 +32,7 @@ export const STATUS_LABELS: Record<string, string> = {
   preparing: "Đang làm",
   delivering: "Đang mang ra",
   completed: "Hoàn thành",
+  cancelled: "Đã từ chối",
 }
 
 export const WEEKDAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
@@ -88,7 +89,8 @@ export function computeStats(orders: ShopOrder[], start: Date, end: Date, compar
 
   const inRange = orders.filter((o) => time(o) >= s && time(o) < e)
   const done = inRange.filter((o) => o.status === "completed")
-  const unfinished = inRange.filter((o) => o.status !== "completed")
+  const unfinished = inRange.filter((o) => o.status !== "completed" && o.status !== "cancelled")
+  const cancelled = inRange.filter((o) => o.status === "cancelled")
   const prev = compare ? orders.filter((o) => o.status === "completed" && time(o) >= s - len && time(o) < s) : []
 
   const sum = (list: ShopOrder[]) => list.reduce((t, o) => t + o.total, 0)
@@ -109,6 +111,8 @@ export function computeStats(orders: ShopOrder[], start: Date, end: Date, compar
     itemsDelta: pct(qty(done), qty(prev)),
     unfinished: unfinished.length,
     unfinishedValue: sum(unfinished),
+    cancelled: cancelled.length,
+    cancelledValue: sum(cancelled),
   }
 
   // Doanh thu theo ngày (khoảng dài hơn 62 ngày thì gộp theo tháng)

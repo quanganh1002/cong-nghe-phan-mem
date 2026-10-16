@@ -2,11 +2,11 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { CalendarDays, ChefHat, CircleCheck, ClipboardList, MapPin, PackageCheck, Truck, type LucideIcon } from "lucide-react"
+import { CalendarDays, ChefHat, CircleCheck, ClipboardList, MapPin, PackageCheck, Truck, XCircle, type LucideIcon } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { useApp, ORDER_STEPS, type Order, type OrderStatus } from "@/lib/store"
 import { getFood, formatPrice } from "@/lib/foods"
-import { useServerOrders } from "@/lib/order-links"
+import { useServerOrders, type ServerStatus } from "@/lib/order-links"
 import type { Dict } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 
@@ -82,13 +82,15 @@ function OrderCard({
 }: {
   order: Order
   index: number
-  live?: { serverId: string; status?: OrderStatus }
+  live?: { serverId: string; status?: ServerStatus; reason?: string }
 }) {
   const { dict, lang } = useApp()
   // Đơn đã gửi về quán: dùng trạng thái + mã đơn bên quán (trùng với trang bếp)
-  const status: OrderStatus = live?.status ?? order.status
+  const cancelled = live?.status === "cancelled"
+  const status: OrderStatus = cancelled ? order.status : ((live?.status as OrderStatus | undefined) ?? order.status)
   const code = live?.serverId ?? order.id
   const meta = STEP_META[status]
+  const vi = lang === "vi"
   const date = new Date(order.date).toLocaleString(lang, {
     year: "numeric",
     month: "2-digit",
@@ -100,7 +102,10 @@ function OrderCard({
   return (
     <li
       style={{ animationDelay: `${index * 60}ms` }}
-      className="animate-fade-up rounded-2xl border border-border bg-card p-4 shadow-sm"
+      className={cn(
+        "animate-fade-up rounded-2xl border bg-card p-4 shadow-sm",
+        cancelled ? "border-destructive/30" : "border-border",
+      )}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
@@ -113,13 +118,38 @@ function OrderCard({
             <span className="truncate">{date}</span>
           </p>
         </div>
-        <span className={cn("shrink-0 rounded-full px-3 py-1 text-xs font-bold", meta.badge)}>
-          {dict[meta.labelKey]}
-        </span>
+        {cancelled ? (
+          <span className="shrink-0 rounded-full bg-destructive/10 px-3 py-1 text-xs font-bold text-destructive">
+            {vi ? "Bị từ chối" : "Declined"}
+          </span>
+        ) : (
+          <span className={cn("shrink-0 rounded-full px-3 py-1 text-xs font-bold", meta.badge)}>
+            {dict[meta.labelKey]}
+          </span>
+        )}
       </div>
 
-      {/* Lộ trình đơn hàng */}
-      <Timeline status={status} />
+      {/* Lộ trình đơn hàng (hoặc thông báo bị từ chối) */}
+      {cancelled ? (
+        <div className="my-4 flex gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-3">
+          <XCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
+          <div className="min-w-0 text-sm">
+            <p className="font-bold text-destructive">{vi ? "Quán đã từ chối đơn này" : "The shop declined this order"}</p>
+            {live?.reason && (
+              <p className="mt-0.5">
+                {vi ? "Lý do" : "Reason"}: <b>{live.reason}</b>
+              </p>
+            )}
+            <p className="mt-1 text-xs text-muted-foreground">
+              {vi
+                ? "Nếu bạn đã chuyển khoản, vui lòng liên hệ quán để được hoàn tiền."
+                : "If you have already paid by transfer, please contact the shop for a refund."}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <Timeline status={status} />
+      )}
 
       {/* Món trong đơn */}
       <ul className="space-y-2 border-t border-border pt-3">

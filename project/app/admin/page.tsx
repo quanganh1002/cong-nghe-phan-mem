@@ -14,6 +14,8 @@ import {
   Phone,
   RefreshCw,
   UtensilsCrossed,
+  X,
+  XCircle,
   type LucideIcon,
 } from "lucide-react"
 import { getFood, formatPrice } from "@/lib/foods"
@@ -35,7 +37,13 @@ const STATUS: Record<ShopOrderStatus, { label: string; icon: LucideIcon; badge: 
   preparing: { label: "Đang làm", icon: ChefHat, badge: "bg-chart-2/20 text-accent-foreground", next: "delivering", action: "Mang ra / Giao" },
   delivering: { label: "Đang mang ra", icon: Bike, badge: "bg-primary/10 text-primary", next: "completed", action: "Hoàn thành" },
   completed: { label: "Xong", icon: CircleCheck, badge: "bg-chart-3/15 text-chart-3" },
+  cancelled: { label: "Đã từ chối", icon: XCircle, badge: "bg-destructive/10 text-destructive" },
 }
+
+/** Lý do chọn nhanh khi từ chối đơn */
+const QUICK_REASONS = ["Hết món", "Quán sắp đóng cửa", "Quán đang quá đông", "Ngoài khu vực giao hàng", "Thông tin đặt hàng không hợp lệ"]
+
+const isClosed = (s: ShopOrderStatus) => s === "completed" || s === "cancelled"
 
 const PAYMENT: Record<string, string> = {
   qr: "Chuyển khoản QR",
@@ -44,7 +52,7 @@ const PAYMENT: Record<string, string> = {
   cod: "Tiền mặt",
 }
 
-type Filter = "active" | "done" | "all"
+type Filter = "active" | "done" | "cancelled" | "all"
 
 function timeAgo(iso: string, now: number) {
   const m = Math.floor((now - new Date(iso).getTime()) / 60000)
@@ -140,22 +148,35 @@ export default function AdminPage() {
     }
   }
 
-  const advance = async (o: ShopOrder) => {
-    const next = STATUS[o.status].next
-    if (!next || !pin) return
+  /** Gửi đổi trạng thái lên server (đổi ngay trên màn hình cho nhanh, rồi tải lại để chắc chắn) */
+  const changeStatus = async (o: ShopOrder, status: ShopOrderStatus, reason = "") => {
+    if (!pin) return
     setBusy(o.id)
-    setOrders((list) => list.map((x) => (x.id === o.id ? { ...x, status: next } : x))) // đổi ngay trên màn hình
+    setOrders((list) =>
+      list.map((x) => (x.id === o.id ? { ...x, status, ...(status === "cancelled" ? { cancelReason: reason } : {}) } : x)),
+    )
     try {
-      await fetch(`/api/orders/${o.id}`, {
+      const res = await fetch(`/api/orders/${o.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", "x-admin-pin": pin },
-        body: JSON.stringify({ status: next }),
+        body: JSON.stringify({ status, reason }),
       })
+      if (res.status === 409) setError(`Đơn #${o.id} đã hoàn thành hoặc đã bị từ chối trước đó, không đổi được nữa.`)
+      else if (!res.ok) setError(`Không cập nhật được đơn #${o.id}, thử lại nhé.`)
+    } catch {
+      setError("Mất kết nối tới server — kiểm tra máy đang chạy web")
     } finally {
       setBusy(null)
       load()
     }
   }
+
+  const advance = (o: ShopOrder) => {
+    const next = STATUS[o.status].next
+    if (next) changeStatus(o, next)
+  }
+
+  const reject = (o: ShopOrder, reason: string) => changeStatus(o, "cancelled", reason)
 
   /* ---------- Nhập PIN ---------- */
   if (pin === null) return null
@@ -164,11 +185,19 @@ export default function AdminPage() {
   }
 
   const shown = orders.filter((o) =>
-    filter === "all" ? true : filter === "done" ? o.status === "completed" : o.status !== "completed",
+    filter === "all"
+      ? true
+      : filter === "done"
+        ? o.status === "completed"
+        : filter === "cancelled"
+          ? o.status === "cancelled"
+          : !isClosed(o.status),
   )
-  const activeCount = orders.filter((o) => o.status !== "completed").length
+  const activeCount = orders.filter((o) => !isClosed(o.status)).length
+  const cancelledCount = orders.filter((o) => o.status === "cancelled").length
+  // Doanh thu hôm nay: không tính đơn bị từ chối
   const todayRevenue = orders
-    .filter((o) => new Date(o.createdAt).toDateString() === new Date(now).toDateString())
+    .filter((o) => o.status !== "cancelled" && new Date(o.createdAt).toDateString() === new Date(now).toDateString())
     .reduce((s, o) => s + o.total, 0)
 
   return (
@@ -212,11 +241,12 @@ export default function AdminPage() {
       )}
 
       {/* Bộ lọc */}
-      <nav className="mt-4 flex gap-2">
+      <nav className="no-scrollbar -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1">
         {(
           [
             ["active", `Đang xử lý (${activeCount})`],
             ["done", "Đã xong"],
+            ["cancelled", `Đã từ chối (${cancelledCount})`],
             ["all", "Tất cả"],
           ] as const
         ).map(([key, label]) => (
@@ -224,7 +254,7 @@ export default function AdminPage() {
             key={key}
             onClick={() => setFilter(key)}
             className={cn(
-              "rounded-full border px-4 py-2 text-sm font-semibold transition-all active:scale-95",
+              "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-all active:scale-95",
               filter === key ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground",
             )}
           >
@@ -237,13 +267,22 @@ export default function AdminPage() {
       {shown.length === 0 ? (
         <div className="mt-20 flex flex-col items-center gap-3 text-center text-muted-foreground">
           <UtensilsCrossed className="size-12 opacity-40" />
-          <p className="font-semibold">{filter === "active" ? "Chưa có đơn nào cần làm" : "Chưa có đơn"}</p>
+          <p className="font-semibold">
+            {filter === "active" ? "Chưa có đơn nào cần làm" : filter === "cancelled" ? "Chưa có đơn nào bị từ chối" : "Chưa có đơn"}
+          </p>
           <p className="text-sm">Khách quét QR ở bàn và đặt món, đơn sẽ hiện ở đây.</p>
         </div>
       ) : (
         <ul className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {shown.map((o) => (
-            <OrderCard key={o.id} order={o} now={now} busy={busy === o.id} onAdvance={() => advance(o)} />
+            <OrderCard
+              key={o.id}
+              order={o}
+              now={now}
+              busy={busy === o.id}
+              onAdvance={() => advance(o)}
+              onReject={(reason) => reject(o, reason)}
+            />
           ))}
         </ul>
       )}
@@ -251,16 +290,31 @@ export default function AdminPage() {
   )
 }
 
-function OrderCard({ order: o, now, busy, onAdvance }: { order: ShopOrder; now: number; busy: boolean; onAdvance: () => void }) {
+function OrderCard({
+  order: o,
+  now,
+  busy,
+  onAdvance,
+  onReject,
+}: {
+  order: ShopOrder
+  now: number
+  busy: boolean
+  onAdvance: () => void
+  onReject: (reason: string) => void
+}) {
   const st = STATUS[o.status]
   const isNew = o.status === "ordered"
+  const closed = isClosed(o.status)
+  const [rejecting, setRejecting] = useState(false)
+  const [reason, setReason] = useState("")
 
   return (
     <li
       className={cn(
         "flex flex-col rounded-2xl border bg-card p-4 shadow-sm",
         isNew ? "border-primary ring-4 ring-primary/20" : "border-border",
-        o.status === "completed" && "opacity-70",
+        closed && "opacity-70",
       )}
     >
       {/* Bàn / giao hàng + trạng thái */}
@@ -304,6 +358,13 @@ function OrderCard({ order: o, now, busy, onAdvance }: { order: ShopOrder; now: 
         })}
       </ul>
 
+      {o.status === "cancelled" && (
+        <p className="mt-3 flex gap-2 rounded-xl bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">
+          <XCircle className="mt-0.5 size-4 shrink-0" />
+          <span>Đã từ chối{o.cancelReason ? `: ${o.cancelReason}` : ""}</span>
+        </p>
+      )}
+
       {o.note && (
         <p className="mt-3 flex gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-sm font-semibold text-amber-700 dark:text-amber-400">
           <MessageSquareText className="mt-0.5 size-4 shrink-0" />
@@ -338,14 +399,77 @@ function OrderCard({ order: o, now, busy, onAdvance }: { order: ShopOrder; now: 
         <p className="text-xl font-extrabold tabular-nums text-primary">{formatPrice(o.total)}</p>
       </div>
 
-      {st.next && (
-        <button
-          onClick={onAdvance}
-          disabled={busy}
-          className="mt-3 w-full rounded-full bg-primary px-4 py-3 font-bold text-primary-foreground shadow-md transition-all active:scale-[0.98] disabled:opacity-60"
-        >
-          {st.action}
-        </button>
+      {/* Ô từ chối đơn: chọn lý do nhanh hoặc tự gõ */}
+      {!closed && rejecting && (
+        <div className="animate-scale-in mt-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-bold text-destructive">Từ chối đơn #{o.id}</p>
+            <button
+              onClick={() => setRejecting(false)}
+              aria-label="Đóng"
+              className="grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">Lý do sẽ hiện cho khách xem.</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {QUICK_REASONS.map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setReason(r)}
+                className={cn(
+                  "rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors",
+                  reason === r ? "border-destructive bg-destructive text-white" : "border-border bg-card hover:border-destructive/40",
+                )}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+          <input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            maxLength={200}
+            placeholder="Hoặc nhập lý do khác…"
+            className="mt-2 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-destructive"
+          />
+          <button
+            onClick={() => {
+              onReject(reason.trim())
+              setRejecting(false)
+            }}
+            disabled={busy}
+            className="mt-2 w-full rounded-full bg-destructive px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-60"
+          >
+            Xác nhận từ chối
+          </button>
+        </div>
+      )}
+
+      {!closed && !rejecting && (
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={() => setRejecting(true)}
+            disabled={busy}
+            className={cn(
+              "rounded-full border border-destructive/40 font-bold text-destructive transition-all hover:bg-destructive/10 active:scale-[0.98] disabled:opacity-60",
+              isNew ? "flex-1 px-4 py-3" : "px-4 py-3 text-sm",
+            )}
+          >
+            {isNew ? "Từ chối" : "Hủy đơn"}
+          </button>
+          {st.next && (
+            <button
+              onClick={onAdvance}
+              disabled={busy}
+              className="flex-[2] rounded-full bg-primary px-4 py-3 font-bold text-primary-foreground shadow-md transition-all active:scale-[0.98] disabled:opacity-60"
+            >
+              {st.action}
+            </button>
+          )}
+        </div>
       )}
     </li>
   )

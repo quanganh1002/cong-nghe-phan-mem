@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Nunito } from "next/font/google"
 import { AppProvider } from "@/lib/store"
+import { OrderWatcher } from "@/components/order-watcher"
 import "./globals.css"
 
 const nunito = Nunito({
@@ -39,7 +40,11 @@ export default function RootLayout({
         />
       </head>
       <body className={`${nunito.className} antialiased`}>
-        <AppProvider>{children}</AppProvider>
+        <AppProvider>
+          {children}
+          {/* Báo cho khách khi quán từ chối đơn (chạy ngầm trên mọi trang) */}
+          <OrderWatcher />
+        </AppProvider>
       </body>
     </html>
   )

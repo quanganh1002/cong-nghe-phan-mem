@@ -7,13 +7,16 @@ import { toast } from "sonner"
 import type { Food } from "@/lib/foods"
 import { formatPrice } from "@/lib/foods"
 import { useApp } from "@/lib/store"
+import { useRequireLogin } from "@/lib/require-login"
 
 export function FoodCard({ food, index = 0 }: { food: Food; index?: number }) {
   const { lang, dict, addToCart } = useApp()
+  const requireLogin = useRequireLogin()
   const info = food.t[lang]
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault()
+    if (!requireLogin()) return // giao hàng mà chưa đăng nhập → đã chuyển sang trang đăng nhập
     addToCart(food.id, 1)
     toast.success(`${info.name} · ${dict.addToCart}`, {
       icon: "🛒",

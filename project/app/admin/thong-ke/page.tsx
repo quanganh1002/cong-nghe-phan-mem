@@ -19,6 +19,7 @@ import {
   Trophy,
   UtensilsCrossed,
   Wallet,
+  XCircle,
 } from "lucide-react"
 import { getFood, formatPrice } from "@/lib/foods"
 import { cn } from "@/lib/utils"
@@ -207,6 +208,12 @@ export default function StatsPage() {
         <p className="mt-2 flex items-center gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-sm font-semibold text-amber-700 dark:text-amber-400">
           <Hourglass className="size-4 shrink-0" />
           Còn {s.unfinished} đơn chưa hoàn thành ({formatPrice(s.unfinishedValue)}) — chưa tính vào doanh thu.
+        </p>
+      )}
+      {s.cancelled > 0 && (
+        <p className="mt-2 flex items-center gap-2 rounded-xl bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">
+          <XCircle className="size-4 shrink-0" />
+          {s.cancelled} đơn bị từ chối ({formatPrice(s.cancelledValue)}) — không tính vào doanh thu.
         </p>
       )}
 
@@ -541,6 +548,8 @@ function exportExcel(stats: Stats, start: Date, end: Date) {
     ["Số món đã bán", s.items],
     ["Đơn chưa hoàn thành", s.unfinished],
     ["Tiền đơn chưa hoàn thành", s.unfinishedValue],
+    ["Đơn bị từ chối", s.cancelled],
+    ["Tiền đơn bị từ chối", s.cancelledValue],
     [],
     ["Món", "Số lượng", "Doanh thu", "Tỉ trọng (%)"],
     ...stats.dishes.map((d) => [dishName(d.foodId), d.qty, d.revenue, Math.round(d.share * 1000) / 10]),
@@ -553,7 +562,7 @@ function exportExcel(stats: Stats, start: Date, end: Date) {
   ]
 
   const ordersSheet: Cell[][] = [
-    ["Mã đơn", "Ngày", "Giờ", "Trạng thái", "Hình thức", "Bàn", "Khách", "SĐT", "Địa chỉ", "Thanh toán", "Nội dung CK", "Số món", "Tổng tiền", "Ghi chú"],
+    ["Mã đơn", "Ngày", "Giờ", "Trạng thái", "Hình thức", "Bàn", "Khách", "SĐT", "Địa chỉ", "Thanh toán", "Nội dung CK", "Số món", "Tổng tiền", "Ghi chú", "Lý do từ chối"],
     ...[...stats.inRange]
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
       .map((o) => [
@@ -571,6 +580,7 @@ function exportExcel(stats: Stats, start: Date, end: Date) {
         o.items.reduce((q, i) => q + i.quantity, 0),
         o.total,
         o.note,
+        o.cancelReason ?? "",
       ]),
   ]
 
@@ -595,7 +605,7 @@ function exportExcel(stats: Stats, start: Date, end: Date) {
 
   downloadXlsx(`thong-ke_${toInputDate(start)}_den_${toInputDate(last)}.xlsx`, [
     { name: "Tổng hợp", rows: summary, colWidths: [30, 16, 16, 14] },
-    { name: "Đơn hàng", rows: ordersSheet, colWidths: [10, 12, 8, 14, 12, 7, 18, 13, 30, 16, 14, 8, 13, 30] },
+    { name: "Đơn hàng", rows: ordersSheet, colWidths: [10, 12, 8, 14, 12, 7, 18, 13, 30, 16, 14, 8, 13, 30, 28] },
     { name: "Chi tiết món", rows: itemsSheet, colWidths: [10, 12, 8, 11, 28, 10, 12, 13, 14] },
   ])
 }
