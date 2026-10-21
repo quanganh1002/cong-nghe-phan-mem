@@ -24,6 +24,7 @@ export function useShopInfo(id: string | undefined) {
   return {
     ...shop,
     name: info?.name || shop.name,
+    emoji: info?.avatar || shop.emoji,
     city: info?.province || shop.city,
     address: (info && fullAddress(info)) || shop.address,
     phone: info?.phone || shop.phone,

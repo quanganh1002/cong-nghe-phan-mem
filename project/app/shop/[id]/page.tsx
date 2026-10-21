@@ -11,6 +11,7 @@ import { useApp } from "@/lib/store"
 import { FOODS } from "@/lib/foods"
 import { cn } from "@/lib/utils"
 import { useShopInfo } from "@/hooks/use-shop-info"
+import { ShopAvatar } from "@/components/shop-avatar"
 
 export default function ShopPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -52,9 +53,7 @@ export default function ShopPage({ params }: { params: Promise<{ id: string }> }
 
         <div className="animate-fade-up mt-4 rounded-3xl border border-border bg-card p-5 shadow-sm">
           <div className="flex items-center gap-4">
-            <span className="grid size-20 shrink-0 place-items-center rounded-full bg-accent text-5xl" aria-hidden>
-              {shop.emoji}
-            </span>
+            <ShopAvatar value={shop.emoji} className="size-20 bg-accent text-5xl" />
             <div className="min-w-0">
               <h1 className="text-2xl font-extrabold leading-tight">{shop.name}</h1>
               <p className="mt-1 inline-flex items-center gap-1 text-sm font-bold">

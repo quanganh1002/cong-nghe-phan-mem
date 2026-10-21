@@ -14,6 +14,7 @@ import { useApp } from "@/lib/store"
 import { getFood, formatPrice, FOODS } from "@/lib/foods"
 import { getLanguage } from "@/lib/languages"
 import { useShopInfo } from "@/hooks/use-shop-info"
+import { ShopAvatar } from "@/components/shop-avatar"
 import { useSpeech } from "@/hooks/use-speech"
 import { useRequireLogin } from "@/lib/require-login"
 import { cn } from "@/lib/utils"
@@ -171,9 +172,7 @@ export default function FoodDetailPage({ params }: { params: Promise<{ id: strin
         <div className="px-4 pt-5">
           <div className="rounded-3xl border border-border bg-card p-4 shadow-sm">
           <Link href={`/shop/${shop.id}`} className="flex items-center gap-3">
-            <span className="grid size-14 shrink-0 place-items-center rounded-full bg-accent text-3xl" aria-hidden>
-              {shop.emoji}
-            </span>
+            <ShopAvatar value={shop.emoji} className="size-14 bg-accent text-3xl" />
             <div className="min-w-0 flex-1">
               <p className="truncate font-bold">{shop.name}</p>
               <p className="flex items-center gap-1 truncate text-sm text-muted-foreground">

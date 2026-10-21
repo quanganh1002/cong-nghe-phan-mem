@@ -1,12 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Check, LogOut, Mail, MapPin, MessageSquareReply, Pencil, Phone, Star, Store, X } from "lucide-react"
+import { ArrowLeft, Check, ImagePlus, LogOut, Mail, MapPin, MessageSquareReply, Pencil, Phone, Star, Store, X } from "lucide-react"
 import { readPin, readShop, writePin } from "@/lib/admin-pin"
+import { ShopAvatar, isImageAvatar } from "@/components/shop-avatar"
 import type { PublicReview as Review } from "@/lib/reviews-db"
-import { fullAddress, getShop, type ShopInfo } from "@/lib/shops"
+import { SHOP_AVATARS, fullAddress, getShop, type ShopInfo } from "@/lib/shops"
 
 /** Thông tin nhà hàng: lưu trên server (/api/shops/<mã quán>), trang quán phía khách đọc lại để hiển thị. */
 const OLD_KEY = "foodlingo:restaurant" // bản cũ lưu trong localStorage (OLD_KEY:<mã quán>), chỉ đọc để chuyển lên server
@@ -37,6 +38,7 @@ export default function RestaurantPage() {
   const [info, setInfo] = useState<Info>(DEFAULT)
   const [draft, setDraft] = useState<Info | null>(null) // null = đang xem, có giá trị = đang sửa
   const [units, setUnits] = useState<Unit[]>([])
+  const fileRef = useRef<HTMLInputElement>(null)
 
   // Chỉ tải danh sách tỉnh/phường (~65KB) khi bắt đầu sửa
   useEffect(() => {
@@ -50,7 +52,7 @@ export default function RestaurantPage() {
   useEffect(() => {
     if (!readPin()) return router.replace("/admin") // chưa đăng nhập → về trang nhập PIN
     const shop = readShop()
-    setInfo({ ...DEFAULT, name: getShop(shop)?.name ?? DEFAULT.name })
+    setInfo({ ...DEFAULT, name: getShop(shop)?.name ?? DEFAULT.name, avatar: getShop(shop)?.emoji })
     fetch(`/api/shops/${shop}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((data: Info | null) => {
@@ -65,6 +67,23 @@ export default function RestaurantPage() {
       .catch(() => {})
       .finally(() => setReady(true))
   }, [router])
+
+  // Crop to a centered square and shrink to 256px so the data URL stays small
+  const pickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file || !draft) return
+    try {
+      const bmp = await createImageBitmap(file)
+      const side = Math.min(bmp.width, bmp.height)
+      const canvas = document.createElement("canvas")
+      canvas.width = canvas.height = 256
+      canvas.getContext("2d")!.drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, 256, 256)
+      setDraft((d) => d && { ...d, avatar: canvas.toDataURL("image/jpeg", 0.85) })
+    } catch {
+      alert("Không đọc được ảnh này, hãy thử ảnh khác.")
+    }
+  }
 
   const save = async () => {
     if (!draft || saving) return
@@ -138,6 +157,39 @@ export default function RestaurantPage() {
         <AdminReviews onUnauthorized={logout} />
       ) : (
       <section className="mt-5 rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <div className="mb-5 flex flex-col items-center gap-3">
+          <ShopAvatar value={(draft ?? info).avatar} className="size-20 bg-secondary text-5xl" />
+          {draft && (
+            <div role="radiogroup" aria-label="Avatar nhà hàng" className="flex flex-wrap justify-center gap-2">
+              <input ref={fileRef} type="file" accept="image/*" hidden onChange={pickImage} />
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                aria-label="Tải ảnh lên"
+                className={`inline-flex h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-bold transition-all active:scale-95 ${
+                  isImageAvatar(draft.avatar) ? "border-primary bg-primary/10 ring-2 ring-primary" : "border-border bg-background"
+                }`}
+              >
+                <ImagePlus className="size-4" />
+                Tải ảnh
+              </button>
+              {SHOP_AVATARS.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  role="radio"
+                  aria-checked={draft.avatar === emoji}
+                  onClick={() => setDraft({ ...draft, avatar: emoji })}
+                  className={`grid size-11 place-items-center rounded-full border text-2xl transition-all active:scale-90 ${
+                    draft.avatar === emoji ? "border-primary bg-primary/10 ring-2 ring-primary" : "border-border bg-background"
+                  }`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <ul className="space-y-4">
           {FIELDS.map(({ key, label, icon: Icon, type }) => (
             <li key={key} className="flex items-start gap-3">

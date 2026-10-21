@@ -32,7 +32,17 @@ export type ShopId = (typeof SHOPS)[number]["id"]
 export const getShop = (id: string | null | undefined) => SHOPS.find((s) => s.id === id)
 
 /** Thông tin quán do admin nhập ở /admin/nha-hang. address = số nhà, tên đường; province/ward chọn từ danh sách đơn vị hành chính */
-export type ShopInfo = { name: string; address: string; province: string; ward: string; phone: string; email: string }
+export type ShopInfo = {
+  name: string
+  address: string
+  province: string
+  ward: string
+  phone: string
+  email: string
+  avatar?: string // emoji chọn từ SHOP_AVATARS; thiếu thì dùng emoji mặc định của quán
+}
+
+export const SHOP_AVATARS = ["🍜", "🍟", "🧁", "🍕", "🍔", "🍣", "🥗", "🍰", "☕", "🍹", "🥐", "🍲", "🍗", "🌮", "🍦", "🥟"]
 
 export const fullAddress = (i: Pick<ShopInfo, "address" | "ward" | "province">) =>
   [i.address, i.ward, i.province].filter(Boolean).join(", ")
