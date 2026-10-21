@@ -2,10 +2,11 @@
 
 import Link from "next/link"
 import { useEffect, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react"
-import { CalendarDays, ChevronRight, CircleCheck, ClipboardList, Globe, LogIn, LogOut, Mail, MapPin, Pencil, Phone, ShoppingBag, User as UserIcon, UserPlus } from "lucide-react"
+import { AtSign, CalendarDays, ChevronRight, CircleCheck, ClipboardList, Globe, LogIn, LogOut, Mail, MapPin, Pencil, Phone, ShoppingBag, User as UserIcon, UserPlus } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { useApp, type User } from "@/lib/store"
+import { updateAccount } from "@/lib/auth"
 import type { LangCode } from "@/lib/languages"
 import { cn } from "@/lib/utils"
 
@@ -169,6 +170,7 @@ function AccountView() {
         ) : (
           <dl className="divide-y divide-border">
             <InfoRow icon={<UserIcon className="size-4" />} label={dict.fullName} value={user.name} />
+            <InfoRow icon={<AtSign className="size-4" />} label={dict.username} value={user.username} />
             <InfoRow icon={<Mail className="size-4" />} label={dict.email} value={user.email} />
             <InfoRow icon={<Phone className="size-4" />} label={dict.phone} value={user.phone} />
             <InfoRow icon={<MapPin className="size-4" />} label={dict.address} value={user.address} />
@@ -255,8 +257,19 @@ function EditForm({ user, onCancel, onSaved }: { user: User; onCancel: () => voi
     setErrors(next)
     if (Object.keys(next).length > 0) return
 
-    // `login` chỉ ghi đè user hiện tại trong store và lưu vào localStorage → dùng để cập nhật hồ sơ
-    login({ ...user, name: v.name, email: v.email, phone: v.phone, address: v.address || undefined })
+    const updated = { ...user, name: v.name, email: v.email, phone: v.phone, address: v.address || undefined }
+    // Lưu vào danh sách tài khoản (để đăng xuất rồi đăng nhập lại vẫn còn), rồi cập nhật phiên hiện tại
+    const saved = updateAccount(updated)
+    if (saved === "email") {
+      setErrors({ email: dict.errEmailTaken })
+      return
+    }
+    if (saved === "missing") {
+      // Phiên đăng nhập này không có tài khoản tương ứng trong máy → đăng xuất, đăng nhập lại rồi sửa lại
+      setErrors({ name: lang === "vi" ? "Không tìm thấy tài khoản trên máy này, hãy đăng nhập lại rồi sửa lại" : "Account not found on this device, please log in again and retry" })
+      return
+    }
+    login(updated)
     onSaved()
   }
 

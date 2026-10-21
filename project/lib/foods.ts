@@ -1,4 +1,6 @@
 import type { LangCode } from "./languages"
+import type { ShopId } from "./shops"
+import { MORE_FOODS } from "./foods-more"
 
 export type Category = "main" | "drink" | "dessert" | "snack"
 
@@ -10,9 +12,10 @@ export interface FoodText {
 export interface Food {
   id: string
   category: Category
+  /** Quán bán món này */
+  shop: ShopId
   price: number
   image: string
-  rating: number
   popular?: boolean
   isNew?: boolean
   t: Record<LangCode, FoodText>
@@ -22,13 +25,13 @@ export interface Food {
  * The TTS narration reads the localized name followed by its description,
  * so translations only need a name + description per language.
  */
-export const FOODS: Food[] = [
+const BASE_FOODS: Food[] = [
   {
     id: "pho-bo",
     category: "main",
+    shop: "sang",
     price: 45000,
     image: "/foods/pho-bo.png",
-    rating: 4.9,
     popular: true,
     t: {
       vi: {
@@ -86,9 +89,9 @@ export const FOODS: Food[] = [
   {
     id: "com-tam",
     category: "main",
+    shop: "sang",
     price: 40000,
     image: "/foods/com-tam.png",
-    rating: 4.8,
     popular: true,
     t: {
       vi: {
@@ -146,9 +149,9 @@ export const FOODS: Food[] = [
   {
     id: "bun-cha",
     category: "main",
+    shop: "sang",
     price: 50000,
     image: "/foods/bun-cha.png",
-    rating: 4.9,
     popular: true,
     t: {
       vi: {
@@ -206,9 +209,9 @@ export const FOODS: Food[] = [
   {
     id: "nem-ran",
     category: "snack",
+    shop: "sang",
     price: 35000,
     image: "/foods/nem-ran.png",
-    rating: 4.7,
     isNew: true,
     t: {
       vi: {
@@ -266,9 +269,9 @@ export const FOODS: Food[] = [
   {
     id: "banh-mi",
     category: "snack",
+    shop: "sang",
     price: 25000,
     image: "/foods/banh-mi.png",
-    rating: 4.8,
     popular: true,
     t: {
       vi: {
@@ -326,9 +329,9 @@ export const FOODS: Food[] = [
   {
     id: "goi-cuon",
     category: "snack",
+    shop: "sang",
     price: 30000,
     image: "/foods/goi-cuon.png",
-    rating: 4.6,
     isNew: true,
     t: {
       vi: {
@@ -386,9 +389,9 @@ export const FOODS: Food[] = [
   {
     id: "ca-phe-sua-da",
     category: "drink",
+    shop: "sang",
     price: 20000,
     image: "/foods/ca-phe-sua-da.png",
-    rating: 4.9,
     popular: true,
     t: {
       vi: {
@@ -446,9 +449,9 @@ export const FOODS: Food[] = [
   {
     id: "tra-dao",
     category: "drink",
+    shop: "sang",
     price: 30000,
     image: "/foods/tra-dao.png",
-    rating: 4.7,
     t: {
       vi: {
         name: "Trà đào",
@@ -505,9 +508,9 @@ export const FOODS: Food[] = [
   {
     id: "nuoc-mia",
     category: "drink",
+    shop: "sang",
     price: 15000,
     image: "/foods/nuoc-mia.png",
-    rating: 4.5,
     t: {
       vi: {
         name: "Nước mía",
@@ -564,9 +567,9 @@ export const FOODS: Food[] = [
   {
     id: "che-ba-mau",
     category: "dessert",
+    shop: "sang",
     price: 25000,
     image: "/foods/che-ba-mau.png",
-    rating: 4.6,
     t: {
       vi: {
         name: "Chè ba màu",
@@ -623,9 +626,9 @@ export const FOODS: Food[] = [
   {
     id: "banh-flan",
     category: "dessert",
+    shop: "sang",
     price: 20000,
     image: "/foods/banh-flan.png",
-    rating: 4.8,
     t: {
       vi: {
         name: "Bánh flan",
@@ -682,9 +685,9 @@ export const FOODS: Food[] = [
   {
     id: "kem-chuoi",
     category: "dessert",
+    shop: "sang",
     price: 18000,
     image: "/foods/kem-chuoi.png",
-    rating: 4.5,
     isNew: true,
     t: {
       vi: {
@@ -740,6 +743,8 @@ export const FOODS: Food[] = [
     },
   },
 ]
+
+export const FOODS: Food[] = [...BASE_FOODS, ...MORE_FOODS]
 
 export const CATEGORIES: { key: Category; icon: string }[] = [
   { key: "main", icon: "🍜" },

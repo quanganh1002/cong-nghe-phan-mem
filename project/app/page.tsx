@@ -11,7 +11,7 @@ import { FOODS, CATEGORIES } from "@/lib/foods"
 export default function HomePage() {
   const { dict, lang } = useApp()
   const featured = FOODS.filter((f) => f.popular).slice(0, 4)
-  const newest = FOODS.filter((f) => f.isNew).slice(0, 4)
+  const newest = FOODS.filter((f) => f.isNew).slice(0, 9)
   const hero = FOODS.find((f) => f.id === "pho-bo")!
 
   return (

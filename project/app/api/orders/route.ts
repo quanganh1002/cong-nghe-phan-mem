@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server"
-import { ADMIN_PIN, addOrder, listOrders, type ShopOrderItem } from "@/lib/orders-db"
+import { getFood } from "@/lib/foods"
+import { addOrder, listOrders, shopForPin, shopOfOrder, type ShopOrderItem } from "@/lib/orders-db"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -26,6 +27,8 @@ export async function POST(req: NextRequest) {
     .filter((i) => i.foodId && i.quantity >= 1 && i.quantity <= 99)
 
   if (items.length === 0) return Response.json({ error: "empty order" }, { status: 400 })
+  // Mỗi đơn chỉ được có món của 1 quán (trang thanh toán đã tách đơn theo quán)
+  if (new Set(items.map((i) => getFood(i.foodId)?.shop)).size > 1) return Response.json({ error: "mixed shops" }, { status: 400 })
 
   const table = str(body.table, 10)
   const order = await addOrder({
@@ -43,13 +46,12 @@ export async function POST(req: NextRequest) {
   return Response.json({ id: order.id })
 }
 
-/** Trang bếp lấy danh sách đơn — cần mã PIN */
+/** Trang bếp lấy danh sách đơn của quán có mã PIN đó */
 export async function GET(req: NextRequest) {
-  if (req.headers.get("x-admin-pin") !== ADMIN_PIN) {
-    return Response.json({ error: "unauthorized" }, { status: 401 })
-  }
-  const orders = await listOrders()
+  const shop = shopForPin(req.headers.get("x-admin-pin"))
+  if (!shop) return Response.json({ error: "unauthorized" }, { status: 401 })
+  const orders = (await listOrders()).filter((o) => shopOfOrder(o) === shop)
   // ?all=1 → trả hết (trang thống kê); mặc định 300 đơn gần nhất (trang bếp). Mới nhất lên đầu.
   const all = req.nextUrl.searchParams.get("all") === "1"
-  return Response.json((all ? orders : orders.slice(-300)).reverse())
+  return Response.json((all ? orders : orders.slice(-300)).reverse(), { headers: { "x-shop": shop } })
 }

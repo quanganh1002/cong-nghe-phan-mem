@@ -1,0 +1,138 @@
+import type { Food, FoodText } from "./foods"
+import type { LangCode } from "./languages"
+
+/** Món của quán ăn vặt và tiệm bánh ngọt. Thứ tự: vi, en, ja, zh, es, fr, ar, pt, ru, hi */
+const LANGS: LangCode[] = ["vi", "en", "ja", "zh", "es", "fr", "ar", "pt", "ru", "hi"]
+
+const tr = (rows: [string, string][]): Record<LangCode, FoodText> =>
+  Object.fromEntries(LANGS.map((l, i) => [l, { name: rows[i][0], description: rows[i][1] }])) as Record<LangCode, FoodText>
+
+export const MORE_FOODS: Food[] = [
+  /* ---------- Quán ăn vặt ---------- */
+  {
+    id: "ca-vien-chien",
+    category: "snack",
+    shop: "vat",
+    price: 20000,
+    image: "/foods/ca-vien-chien.svg",
+    popular: true,
+    isNew: true,
+    t: tr([
+      ["Cá viên chiên", "Cá viên chiên vàng giòn bên ngoài, dai ngọt bên trong, ăn kèm tương ớt và tương cà chua, món ăn vặt quen thuộc của học sinh, sinh viên."],
+      ["Fried Fish Balls", "Golden fried fish balls, crispy outside and springy inside, served with chili and tomato sauce, a favorite street snack among students."],
+      ["揚げ魚団子", "外はカリッと、中はぷりぷりの揚げ魚団子。チリソースとトマトソースを添えた、学生に人気のストリートスナックです。"],
+      ["炸鱼丸", "外酥里嫩的金黄炸鱼丸，搭配辣椒酱和番茄酱，是学生们喜爱的街头小吃。"],
+      ["Bolitas de pescado fritas", "Bolitas de pescado doradas, crujientes por fuera y elásticas por dentro, con salsa de chile y tomate, un clásico snack callejero."],
+      ["Boulettes de poisson frites", "Boulettes de poisson dorées, croustillantes dehors et moelleuses dedans, servies avec sauce pimentée et tomate, un en-cas de rue très prisé."],
+      ["كرات السمك المقلية", "كرات سمك مقلية ذهبية، مقرمشة من الخارج وطرية من الداخل، تُقدَّم مع صلصة الفلفل والطماطم، وهي وجبة خفيفة شعبية في الشارع."],
+      ["Bolinhos de peixe fritos", "Bolinhos de peixe dourados, crocantes por fora e macios por dentro, servidos com molho de pimenta e tomate, um petisco de rua muito popular."],
+      ["Жареные рыбные шарики", "Золотистые рыбные шарики, хрустящие снаружи и упругие внутри, подаются с острым и томатным соусом — любимая уличная закуска студентов."],
+      ["तले हुए फिश बॉल्स", "बाहर से कुरकुरे और अंदर से नरम सुनहरे तले हुए फिश बॉल्स, मिर्च और टमाटर सॉस के साथ परोसे जाते हैं, छात्रों का पसंदीदा स्ट्रीट स्नैक।"],
+    ]),
+  },
+  {
+    id: "khoai-tay-chien",
+    category: "snack",
+    shop: "vat",
+    price: 25000,
+    image: "/foods/khoai-tay-chien.svg",
+    popular: true,
+    isNew: true,
+    t: tr([
+      ["Khoai tây chiên", "Khoai tây cắt sợi chiên vàng giòn, rắc muối và ăn kèm tương cà, nóng hổi và béo bùi."],
+      ["French Fries", "Golden crispy potato fries lightly salted and served hot with ketchup, rich and satisfying."],
+      ["フライドポテト", "黄金色でカリッと揚げたポテトに軽く塩をふり、ケチャップを添えてアツアツでお召し上がりいただけます。"],
+      ["炸薯条", "金黄酥脆的薯条，撒上少许盐，搭配番茄酱趁热享用，香浓可口。"],
+      ["Patatas fritas", "Patatas fritas doradas y crujientes con un toque de sal, servidas calientes con ketchup."],
+      ["Frites", "Frites dorées et croustillantes, légèrement salées et servies bien chaudes avec du ketchup."],
+      ["بطاطس مقلية", "أصابع بطاطس مقلية ذهبية ومقرمشة مع رشة ملح، تُقدَّم ساخنة مع الكاتشب."],
+      ["Batata frita", "Batatas fritas douradas e crocantes com um pouco de sal, servidas quentes com ketchup."],
+      ["Картофель фри", "Золотистый хрустящий картофель с щепоткой соли, подаётся горячим с кетчупом."],
+      ["फ्रेंच फ्राइज़", "सुनहरे और कुरकुरे आलू के फ्राइज़, हल्के नमक के साथ गरमागरम केचप के साथ परोसे जाते हैं।"],
+    ]),
+  },
+  {
+    id: "banh-trang-tron",
+    category: "snack",
+    shop: "vat",
+    price: 20000,
+    image: "/foods/banh-trang-tron.svg",
+    isNew: true,
+    t: tr([
+      ["Bánh tráng trộn", "Bánh tráng cắt sợi trộn cùng trứng cút, xoài xanh, khô bò, rau răm và sa tế cay thơm, món ăn vặt đường phố nổi tiếng của Sài Gòn."],
+      ["Mixed Rice Paper Salad", "Shredded rice paper tossed with quail eggs, green mango, beef jerky, herbs and spicy satay, a famous Saigon street snack."],
+      ["バインチャンチョン", "細切りのライスペーパーにうずらの卵、青マンゴー、ビーフジャーキー、ハーブ、辛いサテを和えた、サイゴンで有名なストリートスナックです。"],
+      ["越南拌米纸", "将切丝米纸与鹌鹑蛋、青芒果、牛肉干、香草和香辣沙茶酱拌匀，是西贡著名的街头小吃。"],
+      ["Ensalada de papel de arroz", "Papel de arroz en tiras con huevos de codorniz, mango verde, cecina de res, hierbas y satay picante, famoso snack callejero de Saigón."],
+      ["Salade de galette de riz", "Galette de riz en lanières mélangée à des œufs de caille, de la mangue verte, du bœuf séché, des herbes et du satay épicé, célèbre en-cas de Saïgon."],
+      ["سلطة ورق الأرز", "شرائح ورق الأرز مع بيض السمان والمانجو الأخضر ولحم البقر المجفف والأعشاب وصلصة الساتاي الحارة، وجبة شوارع شهيرة في سايغون."],
+      ["Salada de papel de arroz", "Papel de arroz em tiras com ovos de codorna, manga verde, carne seca, ervas e satay picante, famoso petisco de rua de Saigon."],
+      ["Салат из рисовой бумаги", "Нарезанная рисовая бумага с перепелиными яйцами, зелёным манго, вяленой говядиной, зеленью и острым сате — знаменитая уличная закуска Сайгона."],
+      ["मिक्स्ड राइस पेपर सलाद", "कटे हुए राइस पेपर में बटेर के अंडे, कच्चा आम, बीफ़ जर्की, जड़ी-बूटियाँ और तीखा साते मिलाकर बनाया गया, साइगॉन का मशहूर स्ट्रीट स्नैक।"],
+    ]),
+  },
+
+  /* ---------- Tiệm bánh ngọt ---------- */
+  {
+    id: "banh-su-kem",
+    category: "dessert",
+    shop: "ngot",
+    price: 25000,
+    image: "/foods/banh-su-kem.svg",
+    popular: true,
+    isNew: true,
+    t: tr([
+      ["Bánh su kem", "Bánh su vỏ mỏng giòn nhẹ, bên trong là lớp kem sữa béo mịn mát lạnh, ngọt dịu vừa phải."],
+      ["Cream Puff", "A light, crisp choux shell filled with smooth, chilled milk cream that is gently sweet."],
+      ["シュークリーム", "軽くサクッとしたシューの中に、なめらかで冷たいミルククリームがたっぷり。やさしい甘さです。"],
+      ["奶油泡芙", "轻盈酥脆的泡芙外皮，内馅是细腻冰凉的奶油，甜度适中。"],
+      ["Profiterol de crema", "Una masa choux ligera y crujiente rellena de crema de leche suave y fría, de dulzor delicado."],
+      ["Chou à la crème", "Un chou léger et croustillant garni d'une crème au lait lisse et fraîche, délicatement sucrée."],
+      ["حلوى الشو بالكريمة", "قشرة شو خفيفة ومقرمشة محشوة بكريمة حليب ناعمة وباردة بحلاوة لطيفة."],
+      ["Bomba de creme", "Massa choux leve e crocante recheada com creme de leite macio e gelado, de doçura suave."],
+      ["Заварное пирожное с кремом", "Лёгкая хрустящая заварная оболочка с нежным охлаждённым молочным кремом и мягкой сладостью."],
+      ["क्रीम पफ", "हल्के और कुरकुरे चौक्स खोल में भरी चिकनी, ठंडी दूध की क्रीम, हल्की मिठास के साथ।"],
+    ]),
+  },
+  {
+    id: "banh-tiramisu",
+    category: "dessert",
+    shop: "ngot",
+    price: 45000,
+    image: "/foods/banh-tiramisu.svg",
+    popular: true,
+    isNew: true,
+    t: tr([
+      ["Bánh tiramisu", "Tiramisu gồm bánh quy ngấm cà phê xen lớp kem phô mai mascarpone mềm mịn, phủ bột ca cao đắng nhẹ."],
+      ["Tiramisu", "Coffee-soaked sponge layered with silky mascarpone cream and dusted with slightly bitter cocoa powder."],
+      ["ティラミス", "コーヒーを染み込ませたスポンジとなめらかなマスカルポーネクリームを重ね、ほろ苦いココアパウダーをかけたデザートです。"],
+      ["提拉米苏", "浸透咖啡的手指饼干与细滑的马斯卡彭奶油层层叠加，再撒上微苦的可可粉。"],
+      ["Tiramisú", "Bizcocho empapado en café con capas de cremosa crema de mascarpone y cacao amargo espolvoreado por encima."],
+      ["Tiramisu", "Biscuit imbibé de café en couches avec une crème mascarpone soyeuse, saupoudré de cacao légèrement amer."],
+      ["تيراميسو", "طبقات من البسكويت المنقوع بالقهوة وكريمة الماسكاربوني الحريرية مع رشة كاكاو مرّ خفيف."],
+      ["Tiramisù", "Camadas de biscoito embebido em café e creme de mascarpone sedoso, polvilhadas com cacau levemente amargo."],
+      ["Тирамису", "Бисквит, пропитанный кофе, слои нежного крема маскарпоне и лёгкая горечь какао сверху."],
+      ["तिरामिसू", "कॉफ़ी में भीगे स्पंज की परतें, मखमली मस्कारपोन क्रीम और ऊपर हल्के कड़वे कोको पाउडर की परत।"],
+    ]),
+  },
+  {
+    id: "banh-cupcake",
+    category: "dessert",
+    shop: "ngot",
+    price: 30000,
+    image: "/foods/banh-cupcake.svg",
+    isNew: true,
+    t: tr([
+      ["Bánh cupcake dâu", "Bánh cupcake mềm xốp phủ kem bơ dâu hồng xinh xắn, thơm vị vani và dâu tươi."],
+      ["Strawberry Cupcake", "A soft, fluffy cupcake topped with pretty pink strawberry buttercream, scented with vanilla and fresh strawberry."],
+      ["いちごのカップケーキ", "ふわふわのカップケーキに、バニラと新鮮ないちごが香るピンクのバタークリームをのせました。"],
+      ["草莓纸杯蛋糕", "松软的纸杯蛋糕，顶部是粉嫩的草莓奶油霜，散发香草与新鲜草莓的香气。"],
+      ["Cupcake de fresa", "Cupcake suave y esponjoso cubierto con una bonita crema de mantequilla de fresa, con aroma a vainilla y fresa fresca."],
+      ["Cupcake à la fraise", "Cupcake moelleux nappé d'une jolie crème au beurre rose à la fraise, parfumé à la vanille et à la fraise fraîche."],
+      ["كب كيك الفراولة", "كب كيك طري وهش مغطى بكريمة زبدة الفراولة الوردية برائحة الفانيلا والفراولة الطازجة."],
+      ["Cupcake de morango", "Cupcake macio e fofo coberto com creme de manteiga de morango rosa, com aroma de baunilha e morango fresco."],
+      ["Капкейк с клубникой", "Мягкий воздушный капкейк с розовым клубничным масляным кремом, пахнущий ванилью и свежей клубникой."],
+      ["स्ट्रॉबेरी कपकेक", "नरम और फूला हुआ कपकेक, ऊपर वनीला और ताज़ी स्ट्रॉबेरी की खुशबू वाली गुलाबी बटरक्रीम।"],
+    ]),
+  },
+]

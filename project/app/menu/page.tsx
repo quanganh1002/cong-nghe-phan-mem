@@ -10,11 +10,13 @@ import { useApp } from "@/lib/store"
 import { FOODS, CATEGORIES, type Category } from "@/lib/foods"
 import { isValidTable, useTable } from "@/lib/table"
 import { cn } from "@/lib/utils"
+import { useFoodRatings } from "@/hooks/use-food-ratings"
 
 type Sort = "popular" | "priceLow" | "priceHigh"
 
 function MenuContent() {
   const { dict, lang, user, hydrated } = useApp()
+  const ratings = useFoodRatings()
   const params = useSearchParams()
   const initialCat = (params.get("cat") as Category | null) ?? "all"
 
@@ -49,9 +51,9 @@ function MenuContent() {
     list = [...list]
     if (sort === "priceLow") list.sort((a, b) => a.price - b.price)
     else if (sort === "priceHigh") list.sort((a, b) => b.price - a.price)
-    else list.sort((a, b) => Number(b.popular ?? false) - Number(a.popular ?? false) || b.rating - a.rating)
+    else list.sort((a, b) => Number(b.popular ?? false) - Number(a.popular ?? false) || (ratings[b.id]?.avg ?? 0) - (ratings[a.id]?.avg ?? 0))
     return list
-  }, [cat, query, sort, lang])
+  }, [cat, query, sort, lang, ratings])
 
   const catTabs: { key: Category | "all"; label: string; icon?: string }[] = [
     { key: "all", label: dict.catAll },

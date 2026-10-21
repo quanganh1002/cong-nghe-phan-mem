@@ -1,5 +1,7 @@
 import { promises as fs } from "fs"
 import path from "path"
+import { getFood } from "./foods"
+import type { ShopId } from "./shops"
 
 /**
  * Nơi lưu đơn hàng — tự chọn 1 trong 2:
@@ -13,7 +15,23 @@ import path from "path"
  * Không cần cài thêm thư viện: nói chuyện với Supabase qua REST API bằng fetch.
  */
 
-export const ADMIN_PIN = process.env.ADMIN_PIN || "1234" // đổi PIN: đặt biến môi trường ADMIN_PIN (trên Vercel) hoặc sửa số ở đây
+/** Mã PIN của từng quán — đổi bằng biến môi trường ADMIN_PIN (quán ăn sáng), ADMIN_PIN_VAT, ADMIN_PIN_NGOT */
+const SHOP_PINS: Record<ShopId, string> = {
+  sang: process.env.ADMIN_PIN || "1234",
+  vat: process.env.ADMIN_PIN_VAT || "2222",
+  ngot: process.env.ADMIN_PIN_NGOT || "3333",
+}
+
+/** PIN đúng của quán nào thì trả về quán đó, sai thì null */
+export function shopForPin(pin: string | null): ShopId | null {
+  if (!pin) return null
+  return (Object.keys(SHOP_PINS) as ShopId[]).find((id) => SHOP_PINS[id] === pin) ?? null
+}
+
+/** Đơn thuộc quán nào (theo món đầu tiên; mỗi đơn chỉ có món của 1 quán) */
+export function shopOfOrder(o: Pick<ShopOrder, "items">): ShopId {
+  return getFood(o.items[0]?.foodId ?? "")?.shop ?? "sang"
+}
 
 export const STATUSES = ["ordered", "confirmed", "preparing", "delivering", "completed", "cancelled"] as const
 export type ShopOrderStatus = (typeof STATUSES)[number]
@@ -96,7 +114,7 @@ const toOrder = (r: Row): ShopOrder => ({
   ...(r.cancel_reason ? { cancelReason: r.cancel_reason } : {}),
 })
 
-async function sb(query: string, init: { method?: string; body?: unknown; prefer?: string } = {}) {
+export async function sb(query: string, init: { method?: string; body?: unknown; prefer?: string } = {}) {
   const headers: Record<string, string> = { apikey: SUPABASE_KEY, "Content-Type": "application/json" }
   // Khóa kiểu cũ (service_role, dạng JWT) cần thêm Authorization; khóa mới "sb_secret_..." thì chỉ cần apikey
   if (!SUPABASE_KEY.startsWith("sb_")) headers.Authorization = `Bearer ${SUPABASE_KEY}`
@@ -111,7 +129,7 @@ async function sb(query: string, init: { method?: string; body?: unknown; prefer
   return res
 }
 
-async function sbFail(res: Response, what: string): Promise<never> {
+export async function sbFail(res: Response, what: string): Promise<never> {
   const detail = await res.text().catch(() => "")
   throw new Error(`Supabase ${what} lỗi ${res.status}: ${detail.slice(0, 300)}`)
 }

@@ -8,11 +8,13 @@ import type { Food } from "@/lib/foods"
 import { formatPrice } from "@/lib/foods"
 import { useApp } from "@/lib/store"
 import { useRequireLogin } from "@/lib/require-login"
+import { formatRating, useFoodRatings } from "@/hooks/use-food-ratings"
 
 export function FoodCard({ food, index = 0 }: { food: Food; index?: number }) {
   const { lang, dict, addToCart } = useApp()
   const requireLogin = useRequireLogin()
   const info = food.t[lang]
+  const ratings = useFoodRatings()
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -53,7 +55,7 @@ export function FoodCard({ food, index = 0 }: { food: Food; index?: number }) {
         </div>
         <span className="absolute end-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-bold text-white backdrop-blur">
           <Star className="size-3 fill-amber-400 text-amber-400" />
-          {food.rating}
+          {formatRating(ratings[food.id])}
         </span>
       </div>
 

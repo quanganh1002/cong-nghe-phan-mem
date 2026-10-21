@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import { ThemeToggle } from "@/components/theme-toggle"
 import {
   BarChart3,
   Bell,
@@ -10,9 +11,11 @@ import {
   ChefHat,
   CircleCheck,
   ClipboardList,
+  LogOut,
   MessageSquareText,
   Phone,
   RefreshCw,
+  Store,
   UtensilsCrossed,
   X,
   XCircle,
@@ -21,7 +24,8 @@ import {
 import { getFood, formatPrice } from "@/lib/foods"
 import { cn } from "@/lib/utils"
 import type { ShopOrder, ShopOrderStatus } from "@/lib/orders-db"
-import { readPin, writePin } from "@/lib/admin-pin"
+import { readPin, writePin, writeShop } from "@/lib/admin-pin"
+import { useShopInfo } from "@/hooks/use-shop-info"
 import { PinForm } from "@/components/admin-pin-form"
 
 /**
@@ -71,6 +75,8 @@ export default function AdminPage() {
   const [error, setError] = useState("")
   const [now, setNow] = useState(() => Date.now())
   const [busy, setBusy] = useState<string | null>(null)
+  const [shopId, setShopId] = useState("")
+  const shop = useShopInfo(shopId)
 
   const seen = useRef<Set<string> | null>(null)
   const audio = useRef<AudioContext | null>(null)
@@ -106,6 +112,9 @@ export default function AdminPage() {
       }
       if (!res.ok) throw new Error()
       const list = (await res.json()) as ShopOrder[]
+      const shop = res.headers.get("x-shop") ?? ""
+      setShopId(shop)
+      writeShop(shop)
       setAuthed(true)
       setError("")
       setOrders(list)
@@ -176,10 +185,20 @@ export default function AdminPage() {
     if (next) changeStatus(o, next)
   }
 
+  const logout = () => {
+    writePin("")
+    setAuthed(false)
+    setOrders([])
+    seen.current = null
+    setPin("") // pin rỗng → hiện lại form nhập PIN
+  }
+
   const reject = (o: ShopOrder, reason: string) => changeStatus(o, "cancelled", reason)
 
   /* ---------- Nhập PIN ---------- */
   if (pin === null) return null
+  // Có PIN nhưng server chưa trả lời: chưa hiện gì (tránh nháy trang quản lý khi PIN sai)
+  if (pin && !authed && !error) return null
   if (!pin || (!authed && error === "Sai mã PIN")) {
     return <PinForm title="Trang bếp" error={error} onSubmit={(p) => { writePin(p); setError(""); seen.current = null; setPin(p) }} />
   }
@@ -205,11 +224,18 @@ export default function AdminPage() {
       {/* Header */}
       <header className="flex flex-wrap items-center gap-3">
         <div className="me-auto">
-          <h1 className="text-2xl font-extrabold">Đơn hàng</h1>
+          <h1 className="text-2xl font-extrabold">{shop?.name ?? "Đơn hàng"}</h1>
           <p className="text-sm text-muted-foreground">
             Tự cập nhật mỗi 3 giây · Doanh thu hôm nay: <b className="text-foreground">{formatPrice(todayRevenue)}</b>
           </p>
         </div>
+        <Link
+          href="/admin/nha-hang"
+          className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-bold shadow-sm transition-all hover:border-primary/40 active:scale-95"
+        >
+          <Store className="size-4 text-primary" />
+          Nhà hàng
+        </Link>
         <Link
           href="/admin/thong-ke"
           className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-bold shadow-sm transition-all hover:border-primary/40 active:scale-95"
@@ -217,6 +243,7 @@ export default function AdminPage() {
           <BarChart3 className="size-4 text-primary" />
           Thống kê
         </Link>
+        <ThemeToggle />
         <button
           onClick={toggleSound}
           className={cn(
@@ -233,6 +260,13 @@ export default function AdminPage() {
           className="grid size-10 place-items-center rounded-full border border-border bg-card shadow-sm transition-transform active:scale-90"
         >
           <RefreshCw className="size-4" />
+        </button>
+        <button
+          onClick={logout}
+          className="inline-flex items-center gap-2 rounded-full border border-destructive/40 px-4 py-2.5 text-sm font-bold text-destructive transition-all hover:bg-destructive/10 active:scale-95"
+        >
+          <LogOut className="size-4" />
+          Đăng xuất
         </button>
       </header>
 

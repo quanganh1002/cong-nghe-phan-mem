@@ -242,16 +242,25 @@ export default function CheckoutPage() {
         payment: method,
       }
 
+      // Giỏ có món của nhiều quán thì tách thành mỗi quán 1 đơn (mỗi quán chỉ thấy đơn của mình)
+      const groups = new Map<string, typeof payload.items>()
+      for (const it of payload.items) {
+        const shop = getFood(it.foodId)?.shop ?? "sang"
+        groups.set(shop, [...(groups.get(shop) ?? []), it])
+      }
+
       // 1) Gửi đơn về máy của quán (trang bếp /admin sẽ thấy)
-      let serverId: string
+      const sent: { items: typeof payload.items; serverId: string }[] = []
       try {
-        const res = await fetch("/api/orders", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...payload, table, transferNote }),
-        })
-        if (!res.ok) throw new Error(String(res.status))
-        serverId = ((await res.json()) as { id: string }).id
+        for (const items of groups.values()) {
+          const res = await fetch("/api/orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...payload, items, table, transferNote }),
+          })
+          if (!res.ok) throw new Error(String(res.status))
+          sent.push({ items, serverId: ((await res.json()) as { id: string }).id })
+        }
       } catch {
         toast.error(t.sendFail) // giữ nguyên giỏ hàng để khách bấm lại
         return
@@ -259,10 +268,12 @@ export default function CheckoutPage() {
 
       // 2) Lưu thêm một bản trên máy khách để xem ở trang "Đơn hàng",
       //    và nhớ mã đơn bên quán để trang đó lấy được trạng thái bếp cập nhật
-      const local = placeOrder(payload)
-      linkOrder(local.id, serverId)
+      for (const { items, serverId } of sent) {
+        const local = placeOrder({ ...payload, items, total: items.reduce((s, i) => s + i.unitPrice * i.quantity, 0) })
+        linkOrder(local.id, serverId)
+      }
       setTotal(cartTotal)
-      setDone({ id: serverId })
+      setDone({ id: sent.map((s) => s.serverId).join(", #") })
       clearCart()
     } finally {
       setLoading(false)

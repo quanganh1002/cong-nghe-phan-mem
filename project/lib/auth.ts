@@ -158,11 +158,25 @@ export async function registerAccount(input: RegisterInput): Promise<RegisterRes
 }
 
 /** Trả về user nếu đúng email + mật khẩu, ngược lại null. */
-export async function authenticate(email: string, password: string): Promise<User | null> {
-  const found = readAccounts().find((a) => a.email.toLowerCase() === email.trim().toLowerCase())
+/** identifier = email hoặc tên đăng nhập (tên đăng nhập không chứa @ nên không trùng email) */
+export async function authenticate(identifier: string, password: string): Promise<User | null> {
+  const id = identifier.trim().toLowerCase()
+  const found = readAccounts().find((a) => a.email.toLowerCase() === id || a.username?.toLowerCase() === id)
   if (!found) return null
   const hash = await hashPassword(password, found.salt)
   return hash === found.passwordHash ? toUser(found) : null
+}
+
+/** Lưu thông tin hồ sơ đã sửa vào tài khoản (để đăng nhập lại vẫn còn). Email trùng tài khoản khác thì báo "email". */
+export function updateAccount(user: User): "ok" | "email" | "missing" {
+  const accounts = readAccounts()
+  const email = user.email.trim().toLowerCase()
+  // Khớp theo id; tài khoản cũ lệch id thì khớp theo tên đăng nhập
+  const mine = accounts.find((a) => a.id === user.id) ?? accounts.find((a) => user.username && a.username === user.username)
+  if (!mine) return "missing"
+  if (accounts.some((a) => a !== mine && a.email.toLowerCase() === email)) return "email"
+  writeAccounts(accounts.map((a) => (a === mine ? { ...a, ...user, id: a.id, email } : a)))
+  return "ok"
 }
 
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/

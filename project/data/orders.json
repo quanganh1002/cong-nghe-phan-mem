@@ -97,7 +97,8 @@
     "total": 45000,
     "id": "684585",
     "createdAt": "2026-10-15T15:11:36.845Z",
-    "status": "ordered"
+    "status": "cancelled",
+    "cancelReason": ""
   },
   {
     "table": "1",
@@ -117,7 +118,8 @@
     "total": 45000,
     "id": "494075",
     "createdAt": "2026-10-15T15:13:24.940Z",
-    "status": "ordered"
+    "status": "cancelled",
+    "cancelReason": ""
   },
   {
     "table": "1",
@@ -137,6 +139,76 @@
     "total": 45000,
     "id": "012396",
     "createdAt": "2026-10-15T15:16:20.123Z",
+    "status": "completed"
+  },
+  {
+    "table": null,
+    "name": "quang anh",
+    "phone": "0906100206",
+    "address": "htp",
+    "note": "",
+    "payment": "qr",
+    "transferNote": "FL872172",
+    "items": [
+      {
+        "foodId": "khoai-tay-chien",
+        "quantity": 1,
+        "unitPrice": 25000
+      },
+      {
+        "foodId": "banh-trang-tron",
+        "quantity": 1,
+        "unitPrice": 20000
+      }
+    ],
+    "total": 45000,
+    "id": "430457",
+    "createdAt": "2026-10-16T08:54:42.906Z",
+    "status": "ordered"
+  },
+  {
+    "table": null,
+    "name": "quang anh",
+    "phone": "0906100206",
+    "address": "htp",
+    "note": "",
+    "payment": "qr",
+    "transferNote": "FL929902",
+    "items": [
+      {
+        "foodId": "banh-su-kem",
+        "quantity": 1,
+        "unitPrice": 25000
+      },
+      {
+        "foodId": "banh-cupcake",
+        "quantity": 1,
+        "unitPrice": 30000
+      }
+    ],
+    "total": 55000,
+    "id": "517351",
+    "createdAt": "2026-10-16T09:28:58.477Z",
+    "status": "ordered"
+  },
+  {
+    "table": null,
+    "name": "quang anh",
+    "phone": "0906100206",
+    "address": "htp",
+    "note": "",
+    "payment": "qr",
+    "transferNote": "FL929902",
+    "items": [
+      {
+        "foodId": "tra-dao",
+        "quantity": 1,
+        "unitPrice": 30000
+      }
+    ],
+    "total": 30000,
+    "id": "176029",
+    "createdAt": "2026-10-16T09:28:58.494Z",
     "status": "completed"
   }
 ]

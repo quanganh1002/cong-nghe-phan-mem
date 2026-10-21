@@ -3,11 +3,11 @@
 import { useEffect, useState, type FormEvent } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Loader2, Lock, Mail } from "lucide-react"
+import { Loader2, Lock, User } from "lucide-react"
 import { toast } from "sonner"
 import { AuthField } from "@/components/auth-field"
 import { AuthLayout } from "@/components/auth-layout"
-import { authenticate, EMAIL_RE } from "@/lib/auth"
+import { authenticate } from "@/lib/auth"
 import { readNext } from "@/lib/require-login"
 import { useApp } from "@/lib/store"
 
@@ -32,7 +32,6 @@ export default function LoginPage() {
     e.preventDefault()
     const next: typeof errors = {}
     if (!email.trim()) next.email = dict.required
-    else if (!EMAIL_RE.test(email.trim())) next.email = dict.errEmail
     if (!password) next.password = dict.required
     setErrors(next)
     if (Object.keys(next).length) return
@@ -67,11 +66,10 @@ export default function LoginPage() {
     >
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
         <AuthField
-          label={dict.email}
-          icon={<Mail />}
-          type="email"
-          autoComplete="email"
-          placeholder="name@example.com"
+          label={dict.emailOrUsername}
+          icon={<User />}
+          type="text"
+          autoComplete="username"
           value={email}
           onChange={setEmail}
           error={errors.email}

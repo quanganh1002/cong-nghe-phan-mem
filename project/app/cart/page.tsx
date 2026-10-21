@@ -73,7 +73,6 @@ export default function CartPage() {
                     <QuantityStepper
                       value={item.quantity}
                       onChange={(q) => setQuantity(item.foodId, q)}
-                      min={0}
                     />
                     <span className="font-extrabold tabular-nums">{formatPrice(food.price * item.quantity)}</span>
                   </div>

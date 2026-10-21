@@ -30,3 +30,41 @@ create index if not exists orders_created_at_idx on public.orders (created_at);
 -- Bật RLS và KHÔNG tạo policy nào: người ngoài (khóa public/anon) không đọc được bảng.
 -- Chỉ server của web (dùng khóa secret) mới đọc/ghi được.
 alter table public.orders enable row level security;
+
+-- Thông tin quán (trang admin "Thông tin nhà hàng" sửa, trang quán phía khách đọc)
+create table if not exists public.shop_info (
+  id         text primary key,
+  info       jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+alter table public.shop_info enable row level security;
+
+-- Đánh giá quán (mỗi tài khoản 1 đánh giá / quán, viết lại thì thay bản cũ)
+create table if not exists public.reviews (
+  shop_id    text not null,
+  user_id    text not null,
+  name       text not null default '',
+  rating     integer not null check (rating between 1 and 5),
+  comment    text not null default '',
+  created_at timestamptz not null default now(),
+  primary key (shop_id, user_id)
+);
+alter table public.reviews enable row level security;
+
+-- Phản hồi của quán cho đánh giá
+alter table public.reviews add column if not exists reply text;
+alter table public.reviews add column if not exists replied_at timestamptz;
+
+-- Đánh giá món: food_id rỗng = đánh giá quán, có giá trị = đánh giá món đó
+alter table public.reviews add column if not exists food_id text not null default '';
+alter table public.reviews drop constraint if exists reviews_pkey;
+alter table public.reviews add primary key (shop_id, food_id, user_id);
+
+-- Mỗi đánh giá có id riêng: khách viết được nhiều đánh giá cho 1 món, chủ đánh giá sửa/xóa theo id
+alter table public.reviews add column if not exists id text;
+update public.reviews set id = md5(shop_id || '|' || food_id || '|' || user_id || '|' || created_at::text) where id is null;
+alter table public.reviews alter column id set not null;
+alter table public.reviews add column if not exists edited_at timestamptz;
+alter table public.reviews drop constraint if exists reviews_pkey;
+alter table public.reviews add primary key (id);
+create index if not exists reviews_target_idx on public.reviews (shop_id, food_id, created_at desc);

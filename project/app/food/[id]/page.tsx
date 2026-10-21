@@ -4,13 +4,16 @@ import { use, useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Minus, Pause, Play, Plus, RotateCcw, Star, Volume2 } from "lucide-react"
+import { ArrowLeft, MapPin, Minus, Pause, Play, Plus, RotateCcw, Star, Volume2 } from "lucide-react"
 import { toast } from "sonner"
 import { AppShell } from "@/components/app-shell"
 import { FoodCard } from "@/components/food-card"
+import { ReviewsPanel, useReviews } from "@/components/reviews"
+import { refreshFoodRatings } from "@/hooks/use-food-ratings"
 import { useApp } from "@/lib/store"
 import { getFood, formatPrice, FOODS } from "@/lib/foods"
 import { getLanguage } from "@/lib/languages"
+import { useShopInfo } from "@/hooks/use-shop-info"
 import { useSpeech } from "@/hooks/use-speech"
 import { useRequireLogin } from "@/lib/require-login"
 import { cn } from "@/lib/utils"
@@ -24,6 +27,9 @@ export default function FoodDetailPage({ params }: { params: Promise<{ id: strin
   const [qty, setQty] = useState(1)
 
   const food = getFood(id)
+  const shop = useShopInfo(food?.shop)
+  const reviewsEndpoint = `/api/foods/${id}/reviews`
+  const [reviews, loadReviews] = useReviews(reviewsEndpoint)
 
   useEffect(() => {
     return () => speech.stop()
@@ -102,7 +108,7 @@ export default function FoodDetailPage({ params }: { params: Promise<{ id: strin
             <h1 className="text-2xl font-extrabold leading-tight">{info.name}</h1>
             <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-sm font-bold text-accent-foreground">
               <Star className="size-4 fill-amber-500 text-amber-500" />
-              {food.rating}
+              {reviews.length ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : "–"}
             </span>
           </div>
           <p className="mt-1 text-2xl font-extrabold text-primary">{formatPrice(food.price)}</p>
@@ -159,6 +165,53 @@ export default function FoodDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
       </div>
+
+      {/* Shop profile */}
+      {shop && (
+        <div className="px-4 pt-5">
+          <div className="rounded-3xl border border-border bg-card p-4 shadow-sm">
+          <Link href={`/shop/${shop.id}`} className="flex items-center gap-3">
+            <span className="grid size-14 shrink-0 place-items-center rounded-full bg-accent text-3xl" aria-hidden>
+              {shop.emoji}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-bold">{shop.name}</p>
+              <p className="flex items-center gap-1 truncate text-sm text-muted-foreground">
+                <MapPin className="size-3.5 shrink-0" />
+                {shop.city}
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">
+              {dict.viewShop}
+            </span>
+          </Link>
+          {/* Google Maps nhúng theo địa chỉ, không cần API key */}
+          <iframe
+            title={shop.address}
+            src={`https://www.google.com/maps?q=${encodeURIComponent(shop.address)}&hl=${lang}&z=16&output=embed`}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            className="mt-4 aspect-[16/9] w-full rounded-2xl border-0 bg-muted"
+          />
+          </div>
+        </div>
+      )}
+
+      {/* Reviews */}
+      <section className="px-4 pt-7">
+        <h2 className="mb-3 text-lg font-bold">
+          {dict.reviews} ({reviews.length})
+        </h2>
+        <ReviewsPanel
+          endpoint={reviewsEndpoint}
+          editable
+          reviews={reviews}
+          onSaved={() => {
+            loadReviews()
+            refreshFoodRatings() // cập nhật số sao trên các thẻ món
+          }}
+        />
+      </section>
 
       {/* Related */}
       {related.length > 0 && (

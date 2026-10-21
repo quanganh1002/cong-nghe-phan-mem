@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { ADMIN_PIN, STATUSES, updateStatus, type ShopOrderStatus } from "@/lib/orders-db"
+import { STATUSES, listOrders, shopForPin, shopOfOrder, updateStatus, type ShopOrderStatus } from "@/lib/orders-db"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -9,10 +9,12 @@ export const runtime = "nodejs"
  * Body: { status: "confirmed" | ... | "cancelled", reason?: "Hết món" }  (reason chỉ dùng khi từ chối)
  */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (req.headers.get("x-admin-pin") !== ADMIN_PIN) {
-    return Response.json({ error: "unauthorized" }, { status: 401 })
-  }
+  const shop = shopForPin(req.headers.get("x-admin-pin"))
+  if (!shop) return Response.json({ error: "unauthorized" }, { status: 401 })
   const { id } = await params
+  // Quán này chỉ được đổi đơn của chính mình
+  const target = (await listOrders()).find((o) => o.id === id)
+  if (target && shopOfOrder(target) !== shop) return Response.json({ error: "forbidden" }, { status: 403 })
   const body = (await req.json().catch(() => ({}))) as { status?: string; reason?: unknown }
   if (!STATUSES.includes(body.status as ShopOrderStatus)) {
     return Response.json({ error: "bad status" }, { status: 400 })
