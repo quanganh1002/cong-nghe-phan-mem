@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 const PREFERRED = [/hoaimy/i, /namminh/i, /natural/i, /online/i, /google/i]
  
 /** Tốc độ đọc theo ngôn ngữ (1 = bình thường) */
-const RATE: Record<string, number> = { vi: 1.3 }
+const RATE: Record<string, number> = { vi: 1.1 }
  
 const norm = (s: string) => s.toLowerCase().replace("_", "-")
  
