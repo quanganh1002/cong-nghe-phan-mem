@@ -56,7 +56,9 @@ type Notice = { id: string; reason?: string }
 
 export function OrderWatcher() {
   const pathname = usePathname() ?? ""
-  const { lang } = useApp()
+  const { lang, orders } = useApp()
+  // chỉ theo dõi đơn của tài khoản đang đăng nhập
+  const myOrderIds = orders.map((o) => o.id).join(",")
   const t = lang === "vi" ? TEXT.vi : TEXT.en
   const [queue, setQueue] = useState<Notice[]>([])
 
@@ -70,7 +72,10 @@ export function OrderWatcher() {
     const check = async () => {
       if (document.visibilityState !== "visible") return
       const final = readJSON<Record<string, string>>(FINAL_KEY, {})
-      const ids = [...new Set(Object.values(readLinks()))].filter((id) => !final[id]).slice(-50)
+      const links = readLinks()
+      const ids = [...new Set(myOrderIds.split(",").map((id) => links[id]))]
+        .filter((id) => id && !final[id])
+        .slice(-50)
       if (ids.length === 0) return
 
       let data
@@ -119,7 +124,7 @@ export function OrderWatcher() {
       clearInterval(timer)
       document.removeEventListener("visibilitychange", onVisible)
     }
-  }, [shopPage])
+  }, [shopPage, myOrderIds])
 
   const current = queue[0]
   if (shopPage || !current) return null

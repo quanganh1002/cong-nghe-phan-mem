@@ -31,6 +31,8 @@ export interface Order {
   payment: "cod" | "bank" | "qr" | "wallet"
   status: OrderStatus
   date: string // ISO
+  /** tài khoản đã đặt đơn; không có = khách vãng lai (ăn tại bàn) */
+  userId?: string
 }
 
 export interface User {
@@ -55,7 +57,7 @@ interface AppState {
   cartCount: number
   cartTotal: number
   orders: Order[]
-  placeOrder: (o: Omit<Order, "id" | "status" | "date">) => Order
+  placeOrder: (o: Omit<Order, "id" | "status" | "date" | "userId">) => Order
   /** null = chưa đăng nhập */
   user: User | null
   /** false until localStorage has been read (avoids a flash of the guest state) */
@@ -72,6 +74,7 @@ const CART_KEY = "foodlingo:cart"
 const ORDERS_KEY = "foodlingo:orders:v2"
 const LEGACY_ORDERS_KEY = "foodlingo:orders"
 const USER_KEY = "foodlingo:user"
+const userCartKey = (userId: string) => `${CART_KEY}:${userId}`
 
 function price(foodId: string): number {
   return FOODS.find((f) => f.id === foodId)?.price ?? 0
@@ -151,19 +154,50 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const clearCart = useCallback(() => setCart([]), [])
 
-  const placeOrder = useCallback((o: Omit<Order, "id" | "status" | "date">): Order => {
-    const order: Order = {
-      ...o,
-      id: "DH" + String(Math.floor(1000 + Math.random() * 9000)),
-      status: "confirmed",
-      date: new Date().toISOString(),
-    }
-    setOrders((prev) => [order, ...prev])
-    return order
-  }, [])
+  const placeOrder = useCallback(
+    (o: Omit<Order, "id" | "status" | "date" | "userId">): Order => {
+      const order: Order = {
+        ...o,
+        id: "DH" + String(Math.floor(1000 + Math.random() * 9000)),
+        status: "confirmed",
+        date: new Date().toISOString(),
+        userId: user?.id,
+      }
+      setOrders((prev) => [order, ...prev])
+      return order
+    },
+    [user],
+  )
 
-  const login = useCallback((u: User) => setUser(u), [])
-  const logout = useCallback(() => setUser(null), [])
+  // Giỏ hàng của mỗi tài khoản được cất riêng khi đăng xuất, khôi phục khi đăng nhập lại
+  const login = useCallback(
+    (u: User) => {
+      if (user?.id !== u.id) {
+        if (user) localStorage.setItem(userCartKey(user.id), JSON.stringify(cart))
+        let saved: CartItem[] = []
+        try {
+          saved = JSON.parse(localStorage.getItem(userCartKey(u.id)) ?? "[]")
+        } catch {}
+        localStorage.removeItem(userCartKey(u.id))
+        // Giỏ của khách vãng lai (chưa đăng nhập) được gộp vào; giỏ của tài khoản khác thì không
+        let next = saved
+        for (const g of user ? [] : cart) {
+          const hit = next.find((i) => i.foodId === g.foodId)
+          next = hit
+            ? next.map((i) => (i === hit ? { ...i, quantity: i.quantity + g.quantity } : i))
+            : [...next, g]
+        }
+        setCart(next)
+      }
+      setUser(u)
+    },
+    [user, cart],
+  )
+  const logout = useCallback(() => {
+    if (user) localStorage.setItem(userCartKey(user.id), JSON.stringify(cart))
+    setCart([])
+    setUser(null)
+  }, [user, cart])
 
   const cartCount = cart.reduce((n, i) => n + i.quantity, 0)
   const cartTotal = cart.reduce((sum, i) => sum + price(i.foodId) * i.quantity, 0)
@@ -179,7 +213,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     clearCart,
     cartCount,
     cartTotal,
-    orders,
+    // mỗi tài khoản chỉ thấy đơn của mình; chưa đăng nhập thì chỉ thấy đơn vãng lai
+    orders: orders.filter((o) => o.userId === user?.id),
     placeOrder,
     user,
     hydrated,
