@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server"
 import { shopForPin } from "@/lib/orders-db"
 import { getShopInfo, saveShopInfo } from "@/lib/shop-info-db"
-import { SHOP_AVATARS, getShop, type ShopInfo } from "@/lib/shops"
+import { SHOP_AVATARS, TIME_RE, getShop, type ShopInfo } from "@/lib/shops"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -10,12 +10,12 @@ const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice
 
 const IMAGE_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/
 
+const image = (v: unknown, max: number) => (typeof v === "string" && v.length <= max && IMAGE_RE.test(v) ? v : undefined)
+
 /** Preset emoji or a small uploaded image (data URL, resized by the client) */
-const avatar = (v: unknown) => {
-  if (typeof v !== "string") return undefined
-  if (SHOP_AVATARS.includes(v)) return v
-  return v.length <= 150_000 && IMAGE_RE.test(v) ? v : undefined
-}
+const avatar = (v: unknown) => (typeof v === "string" && SHOP_AVATARS.includes(v) ? v : image(v, 150_000))
+
+const time = (v: unknown) => (typeof v === "string" && TIME_RE.test(v) ? v : "")
 
 /** Thông tin quán — ai cũng xem được (trang quán phía khách). Chưa nhập thì trả null */
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -39,6 +39,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     phone: str(body.phone, 20),
     email: str(body.email, 200),
     avatar: avatar(body.avatar),
+    cover: image(body.cover, 400_000),
+    description: str(body.description, 500),
+    openTime: time(body.openTime),
+    closeTime: time(body.closeTime),
+    days: Array.isArray(body.days) ? [...new Set(body.days.map(Number).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort() : [],
+    status: body.status === "closed" || body.status === "paused" ? body.status : "open",
   }
   await saveShopInfo(shop.id, info)
   return Response.json(info)

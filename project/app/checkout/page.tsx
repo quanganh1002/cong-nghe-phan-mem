@@ -26,6 +26,7 @@ import { toast } from "sonner"
 import { AppShell } from "@/components/app-shell"
 import { useApp } from "@/lib/store"
 import { getFood, formatPrice } from "@/lib/foods"
+import { getShop } from "@/lib/shops"
 import { useTable } from "@/lib/table"
 import { linkOrder } from "@/lib/order-links"
 import { loginHref } from "@/lib/require-login"
@@ -258,6 +259,11 @@ export default function CheckoutPage() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ...payload, items, table, transferNote }),
           })
+          if (res.status === 409) {
+            const shopName = getShop(getFood(items[0].foodId)?.shop)?.name ?? ""
+            toast.error(lang === "vi" ? `${shopName} hiện không nhận đơn (đã đóng cửa hoặc tạm ngừng nhận đơn).` : `${shopName} is not accepting orders right now.`)
+            return
+          }
           if (!res.ok) throw new Error(String(res.status))
           sent.push({ items, serverId: ((await res.json()) as { id: string }).id })
         }

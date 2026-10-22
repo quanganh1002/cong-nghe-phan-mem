@@ -3,19 +3,20 @@
 import { use, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Mail, MapPin, Phone, Star } from "lucide-react"
+import { ArrowLeft, Clock, Mail, MapPin, Phone, Star } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { FoodCard } from "@/components/food-card"
 import { ReviewsPanel, useReviews } from "@/components/reviews"
 import { useApp } from "@/lib/store"
 import { FOODS } from "@/lib/foods"
 import { cn } from "@/lib/utils"
+import { WEEKDAYS } from "@/lib/shops"
 import { useShopInfo } from "@/hooks/use-shop-info"
 import { ShopAvatar } from "@/components/shop-avatar"
 
 export default function ShopPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const { dict } = useApp()
+  const { dict, lang } = useApp()
   const router = useRouter()
   const shop = useShopInfo(id)
   const [tab, setTab] = useState<"menu" | "reviews">("menu")
@@ -36,6 +37,19 @@ export default function ShopPage({ params }: { params: Promise<{ id: string }> }
     )
   }
 
+  const vi = lang === "vi"
+  const state = {
+    open: { text: vi ? "Đang mở cửa" : "Open now", cls: "bg-chart-3/15 text-chart-3" },
+    closed: { text: vi ? "Tạm đóng cửa" : "Temporarily closed", cls: "bg-destructive/10 text-destructive" },
+    paused: { text: vi ? "Tạm ngừng nhận đơn" : "Not accepting orders", cls: "bg-amber-500/15 text-amber-600" },
+    "off-hours": { text: vi ? "Ngoài giờ hoạt động" : "Closed now", cls: "bg-secondary text-muted-foreground" },
+  }[shop.state]
+  const days =
+    shop.days.length && shop.days.length < 7
+      ? WEEKDAYS.filter(([d]) => shop.days.includes(d))
+          .map(([, l]) => l)
+          .join(", ")
+      : ""
   const foods = FOODS.filter((f) => f.shop === shop.id)
   // Trung bình số sao khách đánh giá; chưa có lượt nào thì hiện "–"
   const rating = reviews.length ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : "–"
@@ -51,7 +65,12 @@ export default function ShopPage({ params }: { params: Promise<{ id: string }> }
           <ArrowLeft className="size-5 rtl:rotate-180" />
         </button>
 
-        <div className="animate-fade-up mt-4 rounded-3xl border border-border bg-card p-5 shadow-sm">
+        <div className="animate-fade-up mt-4 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+          {shop.cover && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={shop.cover} alt="" className="aspect-[2/1] w-full object-cover" />
+          )}
+          <div className="p-5">
           <div className="flex items-center gap-4">
             <ShopAvatar value={shop.emoji} className="size-20 bg-accent text-5xl" />
             <div className="min-w-0">
@@ -60,8 +79,11 @@ export default function ShopPage({ params }: { params: Promise<{ id: string }> }
                 <Star className="size-4 fill-amber-500 text-amber-500" />
                 {rating}
               </p>
+              <p className={cn("mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-bold", state.cls)}>{state.text}</p>
             </div>
           </div>
+
+          {shop.description && <p className="mt-4 whitespace-pre-line text-sm">{shop.description}</p>}
 
           <h2 className="mt-5 mb-2 font-bold">{dict.shopInfo}</h2>
           <dl className="space-y-2.5 text-sm">
@@ -90,6 +112,16 @@ export default function ShopPage({ params }: { params: Promise<{ id: string }> }
                 </dd>
               </div>
             )}
+            {shop.openTime && shop.closeTime && (
+              <div className="flex items-start gap-2.5">
+                <Clock className="mt-0.5 size-4 shrink-0 text-primary" />
+                <dt className="sr-only">{vi ? "Giờ hoạt động" : "Opening hours"}</dt>
+                <dd>
+                  {shop.openTime} – {shop.closeTime}
+                  {days && ` · ${days}`}
+                </dd>
+              </div>
+            )}
             <div className="flex items-start gap-2.5">
               <Star className="mt-0.5 size-4 shrink-0 text-primary" />
               <dt className="sr-only">{dict.rating}</dt>
@@ -98,6 +130,7 @@ export default function ShopPage({ params }: { params: Promise<{ id: string }> }
               </dd>
             </div>
           </dl>
+          </div>
         </div>
       </div>
 

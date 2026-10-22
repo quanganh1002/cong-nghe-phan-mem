@@ -3,11 +3,27 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Check, ImagePlus, LogOut, Mail, MapPin, MessageSquareReply, Pencil, Phone, Star, Store, X } from "lucide-react"
+import { ArrowLeft, Check, Clock, FileText, ImagePlus, LogOut, Mail, MapPin, MessageSquareReply, Pencil, Phone, Star, Store, X } from "lucide-react"
 import { readPin, readShop, writePin } from "@/lib/admin-pin"
 import { ShopAvatar, isImageAvatar } from "@/components/shop-avatar"
 import type { PublicReview as Review } from "@/lib/reviews-db"
-import { SHOP_AVATARS, fullAddress, getShop, type ShopInfo } from "@/lib/shops"
+import { SHOP_AVATARS, WEEKDAYS, fullAddress, getShop, shopState, type ShopInfo, type ShopState, type ShopStatus } from "@/lib/shops"
+
+const STATE_LABEL: Record<ShopState, { text: string; cls: string }> = {
+  open: { text: "Đang mở cửa", cls: "bg-chart-3/15 text-chart-3" },
+  closed: { text: "Tạm đóng cửa", cls: "bg-destructive/10 text-destructive" },
+  paused: { text: "Tạm ngừng nhận đơn", cls: "bg-amber-500/15 text-amber-600" },
+  "off-hours": { text: "Ngoài giờ hoạt động", cls: "bg-secondary text-muted-foreground" },
+}
+
+const STATUS_OPTIONS: [ShopStatus, string][] = [
+  ["open", "Mở cửa"],
+  ["paused", "Tạm ngừng nhận đơn"],
+  ["closed", "Tạm đóng cửa"],
+]
+
+const fmtDays = (days: number[] | undefined) =>
+  !days?.length || days.length === 7 ? "Mọi ngày" : WEEKDAYS.filter(([d]) => days.includes(d)).map(([, l]) => l).join(", ")
 
 /** Thông tin nhà hàng: lưu trên server (/api/shops/<mã quán>), trang quán phía khách đọc lại để hiển thị. */
 const OLD_KEY = "foodlingo:restaurant" // bản cũ lưu trong localStorage (OLD_KEY:<mã quán>), chỉ đọc để chuyển lên server
@@ -39,6 +55,7 @@ export default function RestaurantPage() {
   const [draft, setDraft] = useState<Info | null>(null) // null = đang xem, có giá trị = đang sửa
   const [units, setUnits] = useState<Unit[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
+  const coverRef = useRef<HTMLInputElement>(null)
 
   // Chỉ tải danh sách tỉnh/phường (~65KB) khi bắt đầu sửa
   useEffect(() => {
@@ -85,18 +102,55 @@ export default function RestaurantPage() {
     }
   }
 
-  const save = async () => {
-    if (!draft || saving) return
+  // Crop to a centered 2:1 banner, 800x400
+  const pickCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file || !draft) return
+    try {
+      const bmp = await createImageBitmap(file)
+      const h = Math.min(bmp.height, bmp.width / 2)
+      const w = h * 2
+      const canvas = document.createElement("canvas")
+      canvas.width = 800
+      canvas.height = 400
+      canvas.getContext("2d")!.drawImage(bmp, (bmp.width - w) / 2, (bmp.height - h) / 2, w, h, 0, 0, 800, 400)
+      setDraft((d) => d && { ...d, cover: canvas.toDataURL("image/jpeg", 0.8) })
+    } catch {
+      alert("Không đọc được ảnh này, hãy thử ảnh khác.")
+    }
+  }
+
+  const put = async (body: Info) => {
+    const res = await fetch(`/api/shops/${readShop()}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-admin-pin": readPin() },
+      body: JSON.stringify({ ...body, name: body.name.trim() || info.name }),
+    })
+    if (res.status === 401) return logout() // PIN không còn đúng
+    if (!res.ok) throw new Error()
+    setInfo(await res.json())
+  }
+
+  // Nút bật/tắt nhận đơn: lưu ngay, không cần vào chế độ sửa
+  const toggleOrders = async () => {
+    if (saving) return
     setSaving(true)
     try {
-      const res = await fetch(`/api/shops/${readShop()}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", "x-admin-pin": readPin() },
-        body: JSON.stringify({ ...draft, name: draft.name.trim() || info.name }),
-      })
-      if (res.status === 401) return logout() // PIN không còn đúng
-      if (!res.ok) throw new Error()
-      setInfo(await res.json())
+      await put({ ...info, status: info.status === "paused" ? "open" : "paused" })
+    } catch {
+      alert("Không lưu được, kiểm tra kết nối rồi thử lại.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const save = async () => {
+    if (!draft || saving) return
+    if (!!draft.openTime !== !!draft.closeTime) return alert("Hãy nhập đủ cả giờ mở cửa và giờ đóng cửa.")
+    setSaving(true)
+    try {
+      await put(draft)
       setDraft(null)
     } catch {
       alert("Không lưu được, kiểm tra kết nối rồi thử lại.")
@@ -157,6 +211,87 @@ export default function RestaurantPage() {
         <AdminReviews onUnauthorized={logout} />
       ) : (
       <section className="mt-5 rounded-2xl border border-border bg-card p-5 shadow-sm">
+        {/* Ảnh bìa */}
+        <div className="-mx-5 -mt-5 mb-5 overflow-hidden rounded-t-2xl">
+          <div className="relative aspect-[2/1] w-full bg-secondary">
+            {(draft ?? info).cover ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={(draft ?? info).cover} alt="Ảnh bìa nhà hàng" className="size-full object-cover" />
+            ) : (
+              <div className="grid size-full place-items-center text-sm text-muted-foreground">Chưa có ảnh bìa</div>
+            )}
+            {draft && (
+              <div className="absolute inset-x-0 bottom-0 flex justify-end gap-2 p-2">
+                <input ref={coverRef} type="file" accept="image/*" hidden onChange={pickCover} />
+                <button
+                  type="button"
+                  onClick={() => coverRef.current?.click()}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-full bg-background/90 px-3 text-sm font-bold shadow active:scale-95"
+                >
+                  <ImagePlus className="size-4" />
+                  {draft.cover ? "Đổi ảnh bìa" : "Tải ảnh bìa"}
+                </button>
+                {draft.cover && (
+                  <button
+                    type="button"
+                    onClick={() => setDraft({ ...draft, cover: undefined })}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-full bg-background/90 px-3 text-sm font-bold text-destructive shadow active:scale-95"
+                  >
+                    <X className="size-4" />
+                    Xóa
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Trạng thái + nút bật/tắt nhận đơn */}
+        <div className="mb-5 rounded-xl border border-border p-3">
+          {(() => {
+            const st = STATE_LABEL[shopState(draft ?? info)]
+            return (
+              <div className="flex items-center gap-3">
+                <span className={`rounded-full px-3 py-1 text-sm font-bold ${st.cls}`}>{st.text}</span>
+                {!draft && info.status !== "closed" && (
+                  <button
+                    onClick={toggleOrders}
+                    disabled={saving}
+                    role="switch"
+                    aria-checked={info.status !== "paused"}
+                    className="ms-auto inline-flex items-center gap-2 text-sm font-bold disabled:opacity-60"
+                  >
+                    Nhận đơn
+                    <span className={`relative h-6 w-11 rounded-full transition-colors ${info.status !== "paused" ? "bg-primary" : "bg-muted-foreground/40"}`}>
+                      <span
+                        className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${info.status !== "paused" ? "start-[22px]" : "start-0.5"}`}
+                      />
+                    </span>
+                  </button>
+                )}
+              </div>
+            )
+          })()}
+          {draft && (
+            <div role="radiogroup" aria-label="Trạng thái nhà hàng" className="mt-3 flex flex-wrap gap-2">
+              {STATUS_OPTIONS.map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={(draft.status ?? "open") === value}
+                  onClick={() => setDraft({ ...draft, status: value })}
+                  className={`rounded-full border px-4 py-2 text-sm font-bold active:scale-95 ${
+                    (draft.status ?? "open") === value ? "border-primary bg-primary/10 ring-2 ring-primary" : "border-border bg-background"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="mb-5 flex flex-col items-center gap-3">
           <ShopAvatar value={(draft ?? info).avatar} className="size-20 bg-secondary text-5xl" />
           {draft && (
@@ -248,6 +383,88 @@ export default function RestaurantPage() {
               </div>
             </li>
           ))}
+          <li className="flex items-start gap-3">
+            <FileText className="mt-2.5 size-4 shrink-0 text-primary" />
+            <div className="min-w-0 flex-1">
+              <label htmlFor="description" className="text-xs font-semibold text-muted-foreground">
+                Mô tả nhà hàng
+              </label>
+              {draft ? (
+                <textarea
+                  id="description"
+                  value={draft.description ?? ""}
+                  onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                  maxLength={500}
+                  rows={3}
+                  placeholder="VD: Chuyên phục vụ bữa sáng, món ăn chế biến trong ngày"
+                  className="mt-1 w-full resize-none rounded-xl border border-border bg-background p-3 text-sm outline-none focus:border-primary"
+                />
+              ) : (
+                <p className="whitespace-pre-line break-words font-semibold">
+                  {info.description || <span className="text-muted-foreground font-normal">Chưa cập nhật</span>}
+                </p>
+              )}
+            </div>
+          </li>
+
+          <li className="flex items-start gap-3">
+            <Clock className="mt-2.5 size-4 shrink-0 text-primary" />
+            <div className="min-w-0 flex-1">
+              <span className="text-xs font-semibold text-muted-foreground">Giờ hoạt động</span>
+              {draft ? (
+                <>
+                  <div className="mt-1 flex items-center gap-2">
+                    <input
+                      type="time"
+                      aria-label="Giờ mở cửa"
+                      value={draft.openTime ?? ""}
+                      onChange={(e) => setDraft({ ...draft, openTime: e.target.value })}
+                      className="h-10 flex-1 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                    />
+                    <span>–</span>
+                    <input
+                      type="time"
+                      aria-label="Giờ đóng cửa"
+                      value={draft.closeTime ?? ""}
+                      onChange={(e) => setDraft({ ...draft, closeTime: e.target.value })}
+                      className="h-10 flex-1 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {WEEKDAYS.map(([d, label]) => {
+                      const on = !draft.days?.length || draft.days.includes(d)
+                      return (
+                        <button
+                          key={d}
+                          type="button"
+                          aria-pressed={on}
+                          onClick={() => {
+                            // Chưa chọn ngày nào = mọi ngày: bấm vào 1 ngày để bỏ ngày đó
+                            const cur = draft.days?.length ? draft.days : [0, 1, 2, 3, 4, 5, 6]
+                            setDraft({ ...draft, days: cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d] })
+                          }}
+                          className={`h-9 min-w-11 rounded-full border px-3 text-sm font-bold active:scale-95 ${
+                            on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-muted-foreground"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <p className="mt-1.5 text-xs text-muted-foreground">Để trống giờ = mở cả ngày. Ngoài giờ/ngày đã chọn, khách không đặt được món.</p>
+                </>
+              ) : info.openTime && info.closeTime ? (
+                <p className="font-semibold">
+                  {info.openTime} – {info.closeTime} · {fmtDays(info.days)}
+                </p>
+              ) : (
+                <p className="font-semibold">
+                  Cả ngày · {fmtDays(info.days)}
+                </p>
+              )}
+            </div>
+          </li>
         </ul>
 
         <div className="mt-5 flex gap-2">

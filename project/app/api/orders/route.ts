@@ -1,5 +1,7 @@
 import type { NextRequest } from "next/server"
 import { getFood } from "@/lib/foods"
+import { getShopInfo } from "@/lib/shop-info-db"
+import { shopState } from "@/lib/shops"
 import { addOrder, listOrders, shopForPin, shopOfOrder, type ShopOrderItem } from "@/lib/orders-db"
 
 export const dynamic = "force-dynamic"
@@ -29,6 +31,13 @@ export async function POST(req: NextRequest) {
   if (items.length === 0) return Response.json({ error: "empty order" }, { status: 400 })
   // Mỗi đơn chỉ được có món của 1 quán (trang thanh toán đã tách đơn theo quán)
   if (new Set(items.map((i) => getFood(i.foodId)?.shop)).size > 1) return Response.json({ error: "mixed shops" }, { status: 400 })
+
+  // Quán đang tạm đóng / tạm ngừng nhận đơn / ngoài giờ hoạt động thì không nhận đơn
+  const shopId = getFood(items[0].foodId)?.shop
+  if (shopId) {
+    const state = shopState(await getShopInfo(shopId))
+    if (state !== "open") return Response.json({ error: "shop not accepting", state }, { status: 409 })
+  }
 
   const table = str(body.table, 10)
   const order = await addOrder({
