@@ -37,8 +37,8 @@ export function useRequireLogin() {
       if (!hydrated) return false
       toast.info(
         lang === "vi"
-          ? "Đặt giao hàng cần đăng nhập hoặc đăng ký. Nếu đang ngồi tại quán, hãy quét mã QR trên bàn."
-          : "Please log in or sign up to order for delivery. If you're dining in, scan the QR code on your table.",
+          ? "Đặt giao hàng cần đăng nhập hoặc đăng ký."
+          : "Please log in or sign up to order for delivery.",
       )
       router.push(loginHref(next ?? pathname))
       return false

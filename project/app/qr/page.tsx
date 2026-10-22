@@ -3,22 +3,17 @@
 import { useEffect, useMemo, useState } from "react"
 import QRCode from "qrcode"
 import { Download, Printer, TriangleAlert } from "lucide-react"
+import { SHOPS } from "@/lib/shops"
 
 /**
- * Trang tạo mã QR để in dán lên bàn.
- *  - 1 mã chung (dán ngoài cửa, tờ rơi, Facebook) → /menu?table=none → đặt giao hàng, BẮT đăng nhập
- *  - mỗi bàn 1 mã → /menu?table=1, /menu?table=2, ... → gọi món tại bàn, KHÔNG cần đăng nhập
- * Mở /qr trên máy tính → nhập link web đã deploy + số bàn → bấm In.
+ * Trang tạo mã QR của từng quán (bán trên web, không có QR theo bàn).
+ * Mỗi quán 1 mã → /shop/<mã quán>. Mở /qr → nhập link web đã deploy → bấm In.
  */
 
 type Card = { key: string; title: string; subtitle: string; url: string }
 
-const MAX_TABLES = 100
-
 export default function QrPage() {
   const [base, setBase] = useState("")
-  const [count, setCount] = useState(10)
-  const [shopName, setShopName] = useState("FoodLingo")
   const [images, setImages] = useState<Record<string, string>>({})
 
   // Mặc định lấy đúng tên miền đang mở trang này
@@ -32,20 +27,13 @@ export default function QrPage() {
 
   const cards = useMemo<Card[]>(() => {
     if (!validBase) return []
-    const list: Card[] = [
-      // table=none: xóa số bàn khách từng quét trước đó → bắt buộc đăng nhập khi đặt giao hàng
-      { key: "menu", title: "Đặt giao hàng", subtitle: "Quét để đặt món giao tận nơi (cần đăng nhập)", url: `${cleanBase}/menu?table=none` },
-    ]
-    for (let i = 1; i <= count; i++) {
-      list.push({
-        key: `ban-${i}`,
-        title: `Bàn ${i}`,
-        subtitle: "Quét để gọi món tại bàn",
-        url: `${cleanBase}/menu?table=${i}`,
-      })
-    }
-    return list
-  }, [cleanBase, validBase, count])
+    return SHOPS.map((s) => ({
+      key: s.id,
+      title: s.name,
+      subtitle: "Quét để xem quán và đặt món",
+      url: `${cleanBase}/shop/${s.id}`,
+    }))
+  }, [cleanBase, validBase])
 
   // Vẽ QR ngay trên trình duyệt (không phụ thuộc web ngoài)
   useEffect(() => {
@@ -74,37 +62,18 @@ export default function QrPage() {
     <main className="mx-auto max-w-6xl px-4 py-6 print:max-w-none print:p-0">
       {/* Bảng điều khiển — ẩn khi in */}
       <section className="rounded-3xl border border-border bg-card p-5 shadow-sm print:hidden">
-        <h1 className="text-2xl font-extrabold">Tạo mã QR gọi món</h1>
+        <h1 className="text-2xl font-extrabold">Tạo mã QR của quán</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Mã từng bàn: dán lên bàn, khách quét là gọi món luôn, không cần tài khoản. Mã "Đặt giao hàng": dán ngoài cửa hoặc đăng Facebook, khách phải đăng nhập/đăng ký mới đặt được.
+          Mỗi quán có 1 mã QR dẫn tới trang quán trên web. Dán ngoài cửa hoặc đăng Facebook, khách quét để xem quán và đặt món.
         </p>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_160px_200px]">
+        <div className="mt-4">
           <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-muted-foreground">Link web của quán</span>
+            <span className="mb-1 block text-xs font-semibold text-muted-foreground">Link web</span>
             <input
               value={base}
               onChange={(e) => setBase(e.target.value)}
               placeholder="https://ten-quan.vercel.app"
-              className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-muted-foreground">Số bàn</span>
-            <input
-              type="number"
-              min={0}
-              max={MAX_TABLES}
-              value={count}
-              onChange={(e) => setCount(Math.max(0, Math.min(MAX_TABLES, Number(e.target.value) || 0)))}
-              className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-muted-foreground">Tên quán (in trên thẻ)</span>
-            <input
-              value={shopName}
-              onChange={(e) => setShopName(e.target.value)}
               className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
             />
           </label>
@@ -131,14 +100,14 @@ export default function QrPage() {
         </button>
       </section>
 
-      {/* Lưới thẻ QR — mỗi thẻ cắt ra dán lên 1 bàn */}
+      {/* Lưới thẻ QR — mỗi thẻ là 1 quán */}
       <section className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 print:mt-0 print:grid-cols-3 print:gap-3">
         {cards.map((c) => (
           <article
             key={c.key}
             className="flex break-inside-avoid flex-col items-center rounded-3xl border-2 border-dashed border-border bg-white p-4 text-center text-[#2b1a12] print:rounded-xl print:p-3"
           >
-            <p className="text-xs font-bold uppercase tracking-widest text-[#e2562f]">{shopName}</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-[#e2562f]">FoodLingo</p>
             <p className="mt-1 text-2xl font-extrabold">{c.title}</p>
             <div className="mt-2 aspect-square w-full max-w-48">
               {images[c.key] ? (

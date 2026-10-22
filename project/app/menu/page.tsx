@@ -99,7 +99,7 @@ function MenuContent() {
               {lang === "vi" ? "Đặt giao hàng cần đăng nhập" : "Log in to order for delivery"}
             </p>
             <p className="text-xs text-muted-foreground">
-              {lang === "vi" ? "Ngồi tại quán? Quét mã QR trên bàn để gọi món luôn." : "Dining in? Scan the QR code on your table."}
+              {lang === "vi" ? "Đăng nhập hoặc đăng ký để đặt món và theo dõi đơn hàng." : "Log in or sign up to order and track your orders."}
             </p>
           </div>
           <Link

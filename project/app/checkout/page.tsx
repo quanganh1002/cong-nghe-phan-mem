@@ -373,8 +373,8 @@ export default function CheckoutPage() {
                   <p className="font-bold">{lang === "vi" ? "Đặt giao hàng cần đăng nhập" : "Log in to order for delivery"}</p>
                   <p className="text-xs text-muted-foreground">
                     {lang === "vi"
-                      ? "Nếu đang ngồi tại quán, hãy quét mã QR trên bàn để gọi món không cần tài khoản."
-                      : "Dining in? Scan the QR code on your table to order without an account."}
+                      ? "Đăng nhập hoặc đăng ký để đặt món và theo dõi đơn hàng."
+                      : "Log in or sign up to order and track your orders."}
                   </p>
                 </div>
                 <Link
