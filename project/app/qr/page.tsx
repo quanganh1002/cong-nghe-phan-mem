@@ -27,12 +27,15 @@ export default function QrPage() {
 
   const cards = useMemo<Card[]>(() => {
     if (!validBase) return []
-    return SHOPS.map((s) => ({
-      key: s.id,
-      title: s.name,
-      subtitle: "Quét để xem quán và đặt món",
-      url: `${cleanBase}/shop/${s.id}`,
-    }))
+    return [
+      { key: "home", title: "Trang chủ", subtitle: "Quét để vào web FoodLingo", url: cleanBase },
+      ...SHOPS.map((s) => ({
+        key: s.id,
+        title: s.name,
+        subtitle: "Quét để xem quán và đặt món",
+        url: `${cleanBase}/shop/${s.id}`,
+      })),
+    ]
   }, [cleanBase, validBase])
 
   // Vẽ QR ngay trên trình duyệt (không phụ thuộc web ngoài)

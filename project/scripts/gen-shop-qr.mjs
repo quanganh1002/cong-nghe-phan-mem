@@ -11,9 +11,12 @@ const out = path.join(process.cwd(), "qr-codes")
 const src = await readFile(path.join(process.cwd(), "lib", "shops.ts"), "utf8")
 const shops = [...src.matchAll(/id:\s*"(\w+)",\s*name:\s*"([^"]+)"/g)].map((m) => ({ id: m[1], name: m[2] }))
 
+// "home" = the main page of the site, not tied to any shop
+const targets = [{ id: "home", name: "Trang chủ", path: "" }, ...shops.map((s) => ({ ...s, path: `/shop/${s.id}` }))]
+
 await mkdir(out, { recursive: true })
-for (const s of shops) {
-  const url = `${base}/shop/${s.id}`
+for (const s of targets) {
+  const url = `${base}${s.path}`
   const file = path.join(out, `qr-${s.id}.png`)
   await QRCode.toFile(file, url, { width: 800, margin: 2, errorCorrectionLevel: "M", color: { dark: "#2b1a12", light: "#ffffff" } })
   console.log(`${s.name}: ${url} -> ${file}`)
