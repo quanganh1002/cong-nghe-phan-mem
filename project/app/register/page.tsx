@@ -7,6 +7,7 @@ import { AtSign, Loader2, Lock, Mail, MapPin, Phone, User as UserIcon } from "lu
 import { toast } from "sonner"
 import { AuthField } from "@/components/auth-field"
 import { AuthLayout } from "@/components/auth-layout"
+import { AvatarPicker } from "@/components/user-avatar"
 import { EMAIL_RE, isValidPhone, registerAccount, USERNAME_RE } from "@/lib/auth"
 import { readNext } from "@/lib/require-login"
 import { useApp } from "@/lib/store"
@@ -20,6 +21,7 @@ export default function RegisterPage() {
   const { dict, hydrated, user, login } = useApp()
 
   const [form, setForm] = useState<Form>(EMPTY)
+  const [avatar, setAvatar] = useState<string>()
   const [errors, setErrors] = useState<Errors>({})
   const [loading, setLoading] = useState(false)
   const [next, setNext] = useState("/")
@@ -70,6 +72,7 @@ export default function RegisterPage() {
         password: form.password,
         phone: form.phone,
         address: form.address,
+        avatar,
       })
       if (!res.ok) {
         setErrors(res.error === "email" ? { email: dict.errEmailTaken } : { username: dict.errUsernameTaken })
@@ -97,6 +100,7 @@ export default function RegisterPage() {
       }
     >
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+        <AvatarPicker name={form.name} value={avatar} onChange={setAvatar} />
         <AuthField
           label={dict.fullName}
           icon={<UserIcon />}

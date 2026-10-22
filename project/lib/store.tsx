@@ -42,6 +42,8 @@ export interface User {
   email: string
   phone?: string
   address?: string
+  /** data URL ảnh đại diện; không có = hiện chữ viết tắt của tên */
+  avatar?: string
   createdAt: string // ISO
 }
 

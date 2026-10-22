@@ -19,6 +19,7 @@ export interface RegisterInput {
   password: string
   phone: string
   address?: string
+  avatar?: string
 }
 
 export type RegisterResult = { ok: true; user: User } | { ok: false; error: "email" | "username" }
@@ -149,6 +150,7 @@ export async function registerAccount(input: RegisterInput): Promise<RegisterRes
     email,
     phone: input.phone.trim(),
     address: input.address?.trim() || undefined,
+    avatar: input.avatar,
     createdAt: new Date().toISOString(),
     salt,
     passwordHash: await hashPassword(input.password, salt),

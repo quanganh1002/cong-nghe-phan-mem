@@ -107,6 +107,8 @@ export interface Dict {
   notifications: string
   myOrders: string
   logout: string
+  avatar: string
+  removeAvatar: string
   language: string
   // language settings
   languageTitle: string
@@ -244,6 +246,8 @@ export const translations: Record<LangCode, Dict> = {
     notifications: "Thông báo",
     myOrders: "Đơn hàng của tôi",
     logout: "Đăng xuất",
+    avatar: "Ảnh đại diện",
+    removeAvatar: "Xóa ảnh",
     language: "Ngôn ngữ",
     languageTitle: "Ngôn ngữ / Language",
     languageNote: "Thay đổi ngôn ngữ sẽ cập nhật toàn bộ tên món, mô tả và giọng thuyết minh.",
@@ -377,6 +381,8 @@ export const translations: Record<LangCode, Dict> = {
     notifications: "Notifications",
     myOrders: "My orders",
     logout: "Log out",
+    avatar: "Profile photo",
+    removeAvatar: "Remove photo",
     language: "Language",
     languageTitle: "Language",
     languageNote: "Changing the language updates all dish names, descriptions and narration voice.",
@@ -510,6 +516,8 @@ export const translations: Record<LangCode, Dict> = {
     notifications: "通知",
     myOrders: "マイ注文",
     logout: "ログアウト",
+    avatar: "プロフィール写真",
+    removeAvatar: "写真を削除",
     language: "言語",
     languageTitle: "言語 / Language",
     languageNote: "言語を変更すると、料理名・説明・音声ガイドがすべて更新されます。",
@@ -643,6 +651,8 @@ export const translations: Record<LangCode, Dict> = {
     notifications: "通知",
     myOrders: "我的订单",
     logout: "退出登录",
+    avatar: "头像",
+    removeAvatar: "删除头像",
     language: "语言",
     languageTitle: "语言 / Language",
     languageNote: "切换语言将更新所有菜名、描述和语音介绍。",
@@ -776,6 +786,8 @@ export const translations: Record<LangCode, Dict> = {
     notifications: "Notificaciones",
     myOrders: "Mis pedidos",
     logout: "Cerrar sesión",
+    avatar: "Foto de perfil",
+    removeAvatar: "Quitar foto",
     language: "Idioma",
     languageTitle: "Idioma / Language",
     languageNote: "Cambiar el idioma actualiza todos los nombres, descripciones y la voz de narración.",
@@ -909,6 +921,8 @@ export const translations: Record<LangCode, Dict> = {
     notifications: "Notifications",
     myOrders: "Mes commandes",
     logout: "Se déconnecter",
+    avatar: "Photo de profil",
+    removeAvatar: "Supprimer la photo",
     language: "Langue",
     languageTitle: "Langue / Language",
     languageNote: "Changer la langue met à jour tous les noms, descriptions et la voix de narration.",
@@ -1042,6 +1056,8 @@ export const translations: Record<LangCode, Dict> = {
     notifications: "الإشعارات",
     myOrders: "طلباتي",
     logout: "تسجيل الخروج",
+    avatar: "الصورة الشخصية",
+    removeAvatar: "إزالة الصورة",
     language: "اللغة",
     languageTitle: "اللغة / Language",
     languageNote: "تغيير اللغة يحدّث جميع أسماء الأطباق والأوصاف وصوت الوصف.",
@@ -1175,6 +1191,8 @@ export const translations: Record<LangCode, Dict> = {
     notifications: "Notificações",
     myOrders: "Meus pedidos",
     logout: "Sair",
+    avatar: "Foto de perfil",
+    removeAvatar: "Remover foto",
     language: "Idioma",
     languageTitle: "Idioma / Language",
     languageNote: "Mudar o idioma atualiza todos os nomes, descrições e a voz da narração.",
@@ -1308,6 +1326,8 @@ export const translations: Record<LangCode, Dict> = {
     notifications: "Уведомления",
     myOrders: "Мои заказы",
     logout: "Выйти",
+    avatar: "Фото профиля",
+    removeAvatar: "Удалить фото",
     language: "Язык",
     languageTitle: "Язык / Language",
     languageNote: "Смена языка обновит все названия блюд, описания и голос озвучки.",
@@ -1441,6 +1461,8 @@ export const translations: Record<LangCode, Dict> = {
     notifications: "सूचनाएँ",
     myOrders: "मेरे ऑर्डर",
     logout: "लॉग आउट",
+    avatar: "प्रोफ़ाइल फ़ोटो",
+    removeAvatar: "फ़ोटो हटाएँ",
     language: "भाषा",
     languageTitle: "भाषा / Language",
     languageNote: "भाषा बदलने से सभी व्यंजन नाम, विवरण और विवरण आवाज़ अपडेट हो जाएँगे।",

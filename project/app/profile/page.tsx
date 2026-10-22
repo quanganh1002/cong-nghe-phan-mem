@@ -5,6 +5,7 @@ import { useEffect, useState, type ChangeEvent, type FormEvent, type ReactNode }
 import { AtSign, CalendarDays, ChevronRight, CircleCheck, ClipboardList, Globe, LogIn, LogOut, Mail, MapPin, Pencil, Phone, ShoppingBag, User as UserIcon, UserPlus } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { LanguageSwitcher } from "@/components/language-switcher"
+import { AvatarPicker, UserAvatar } from "@/components/user-avatar"
 import { useApp, type User } from "@/lib/store"
 import { updateAccount } from "@/lib/auth"
 import type { LangCode } from "@/lib/languages"
@@ -99,14 +100,6 @@ function AccountView() {
 
   if (!user) return null
 
-  const initials = user.name
-    .trim()
-    .split(/\s+/)
-    .slice(-2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-
   const memberSince = new Date(user.createdAt).toLocaleDateString(lang, {
     year: "numeric",
     month: "long",
@@ -120,9 +113,11 @@ function AccountView() {
         <div className="absolute -end-10 -top-10 size-40 rounded-full bg-white/10 blur-2xl" />
         <div className="absolute -bottom-12 -start-8 size-44 rounded-full bg-white/10 blur-2xl" />
         <div className="relative flex items-center gap-4">
-          <div className="grid size-16 shrink-0 place-items-center rounded-full border-4 border-white/30 bg-white/20 text-xl font-extrabold backdrop-blur">
-            {initials || <UserIcon className="size-7" />}
-          </div>
+          <UserAvatar
+            name={user.name}
+            avatar={user.avatar}
+            className="size-16 border-4 border-white/30 bg-white/20 text-xl backdrop-blur"
+          />
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-xl font-extrabold leading-tight">{user.name}</h2>
             <p className="truncate text-sm text-white/85">{user.email}</p>
@@ -232,6 +227,7 @@ function EditForm({ user, onCancel, onSaved }: { user: User; onCancel: () => voi
     address: user.address ?? "",
   })
   const [errors, setErrors] = useState<Partial<Record<EditableKey, string>>>({})
+  const [avatar, setAvatar] = useState(user.avatar)
 
   const onChange = (key: EditableKey) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((f) => ({ ...f, [key]: e.target.value }))
@@ -257,7 +253,7 @@ function EditForm({ user, onCancel, onSaved }: { user: User; onCancel: () => voi
     setErrors(next)
     if (Object.keys(next).length > 0) return
 
-    const updated = { ...user, name: v.name, email: v.email, phone: v.phone, address: v.address || undefined }
+    const updated = { ...user, name: v.name, email: v.email, phone: v.phone, address: v.address || undefined, avatar }
     // Lưu vào danh sách tài khoản (để đăng xuất rồi đăng nhập lại vẫn còn), rồi cập nhật phiên hiện tại
     const saved = updateAccount(updated)
     if (saved === "email") {
@@ -275,6 +271,7 @@ function EditForm({ user, onCancel, onSaved }: { user: User; onCancel: () => voi
 
   return (
     <form onSubmit={submit} noValidate className="space-y-4">
+      <AvatarPicker name={form.name} value={avatar} onChange={setAvatar} />
       <Field label={dict.fullName} error={errors.name}>
         <input
           value={form.name}

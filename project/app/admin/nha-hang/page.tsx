@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { ArrowLeft, Check, Clock, FileText, ImagePlus, LogOut, Mail, MapPin, MessageSquareReply, Pencil, Phone, Star, Store, X } from "lucide-react"
 import { readPin, readShop, writePin } from "@/lib/admin-pin"
 import { ShopAvatar, isImageAvatar } from "@/components/shop-avatar"
+import { squareImage } from "@/lib/image"
 import type { PublicReview as Review } from "@/lib/reviews-db"
 import { SHOP_AVATARS, WEEKDAYS, fullAddress, getShop, shopState, type ShopInfo, type ShopState, type ShopStatus } from "@/lib/shops"
 
@@ -85,18 +86,13 @@ export default function RestaurantPage() {
       .finally(() => setReady(true))
   }, [router])
 
-  // Crop to a centered square and shrink to 256px so the data URL stays small
   const pickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ""
     if (!file || !draft) return
     try {
-      const bmp = await createImageBitmap(file)
-      const side = Math.min(bmp.width, bmp.height)
-      const canvas = document.createElement("canvas")
-      canvas.width = canvas.height = 256
-      canvas.getContext("2d")!.drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, 256, 256)
-      setDraft((d) => d && { ...d, avatar: canvas.toDataURL("image/jpeg", 0.85) })
+      const avatar = await squareImage(file)
+      setDraft((d) => d && { ...d, avatar })
     } catch {
       alert("Không đọc được ảnh này, hãy thử ảnh khác.")
     }
