@@ -17,7 +17,7 @@ import { useShopInfo } from "@/hooks/use-shop-info"
 import { ShopAvatar } from "@/components/shop-avatar"
 import { useSpeech } from "@/hooks/use-speech"
 import { useRequireLogin } from "@/lib/require-login"
-import { cn } from "@/lib/utils"
+import { cn, goBack } from "@/lib/utils"
 
 export default function FoodDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -95,7 +95,7 @@ export default function FoodDetailPage({ params }: { params: Promise<{ id: strin
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
         </div>
         <button
-          onClick={() => router.back()}
+          onClick={() => goBack(router)}
           aria-label="back"
           className="absolute start-4 top-4 grid size-10 place-items-center rounded-full bg-background/80 shadow-md backdrop-blur transition-transform active:scale-90"
         >

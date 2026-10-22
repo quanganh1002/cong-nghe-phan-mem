@@ -58,7 +58,7 @@ export default function ShopPage({ params }: { params: Promise<{ id: string }> }
     <AppShell>
       <div className="px-4 pt-4">
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push("/")}
           aria-label="back"
           className="grid size-10 place-items-center rounded-full bg-card shadow-md transition-transform active:scale-90"
         >
