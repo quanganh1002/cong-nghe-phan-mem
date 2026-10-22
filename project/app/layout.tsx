@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next"
 import { Nunito } from "next/font/google"
 import { AppProvider } from "@/lib/store"
 import { OrderWatcher } from "@/components/order-watcher"
+import { PresenceBeacon } from "@/components/presence-beacon"
 import "./globals.css"
 
 const nunito = Nunito({
@@ -44,6 +45,7 @@ export default function RootLayout({
           {children}
           {/* Báo cho khách khi quán từ chối đơn (chạy ngầm trên mọi trang) */}
           <OrderWatcher />
+          <PresenceBeacon />
         </AppProvider>
       </body>
     </html>

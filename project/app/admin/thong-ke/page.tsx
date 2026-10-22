@@ -102,6 +102,21 @@ export default function StatsPage() {
     return () => clearInterval(id)
   }, [load])
 
+  // Devices online right now: poll the server every 5s (server counts heartbeats, see lib/presence-db.ts)
+  const [online, setOnline] = useState<number | null>(null)
+  useEffect(() => {
+    if (!pin || !authed) return
+    const poll = async () => {
+      try {
+        const res = await fetch("/api/presence", { headers: { "x-admin-pin": pin }, cache: "no-store" })
+        if (res.ok) setOnline(((await res.json()) as { online: number }).online)
+      } catch {}
+    }
+    poll()
+    const id = setInterval(poll, 5_000)
+    return () => clearInterval(id)
+  }, [pin, authed])
+
   const [start, end] = useMemo(
     () => (now ? rangeBounds(range, now, orders, from, to) : [new Date(0), new Date(0)]),
     [range, now, orders, from, to],
@@ -150,6 +165,15 @@ export default function StatsPage() {
           <p className="text-sm text-muted-foreground">
             {periodText} · chỉ tính đơn đã hoàn thành
           </p>
+        </div>
+        {/* THE displayed online number: change `online` here to alter what the dashboard shows */}
+        <div className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-bold shadow-sm">
+          <span className="relative flex size-2.5">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-chart-3 opacity-60" />
+            <span className="relative inline-flex size-2.5 rounded-full bg-chart-3" />
+          </span>
+          <span className="tabular-nums">{online ?? "–"}</span>
+          <span className="font-semibold text-muted-foreground">thiết bị đang online</span>
         </div>
         <button
           onClick={() => exportExcel(stats, start, end)}
