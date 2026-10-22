@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
+import Form from "next/form"
 import { ArrowRight, Search, Sparkles, Volume2 } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { FoodCard } from "@/components/food-card"
@@ -52,15 +53,25 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Search shortcut */}
+      {/* Search: gõ tại đây, bấm Enter/kính lúp mới sang /menu?q=... */}
       <section className="px-4 pt-5">
-        <Link
-          href="/menu"
-          className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-muted-foreground shadow-sm transition-colors hover:border-primary/40"
-        >
-          <Search className="size-5" />
-          <span className="text-sm">{dict.searchPlaceholder}</span>
-        </Link>
+        <Form action="/menu" role="search" className="relative">
+          <input
+            name="q"
+            type="search"
+            enterKeyHint="search"
+            placeholder={dict.searchPlaceholder}
+            aria-label={dict.searchPlaceholder}
+            className="w-full rounded-2xl border border-border bg-card py-3 ps-4 pe-12 text-sm shadow-sm outline-none transition-colors focus:border-primary"
+          />
+          <button
+            type="submit"
+            aria-label={dict.searchPlaceholder}
+            className="absolute end-2 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:text-primary"
+          >
+            <Search className="size-5" />
+          </button>
+        </Form>
       </section>
 
       {/* Categories */}

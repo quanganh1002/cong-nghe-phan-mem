@@ -32,7 +32,7 @@ function MenuContent() {
   const [cat, setCat] = useState<Category | "all">(
     CATEGORIES.some((c) => c.key === initialCat) ? (initialCat as Category) : "all",
   )
-  const [query, setQuery] = useState("")
+  const [query, setQuery] = useState(params.get("q") ?? "")
   const [sort, setSort] = useState<Sort>("popular")
 
   const results = useMemo(() => {
