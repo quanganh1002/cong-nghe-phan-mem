@@ -21,6 +21,7 @@ export function AdminShell({ title, children }: { title: string; children: (pin:
   const [pin, setPin] = useState<string | null>(null)
   const [authed, setAuthed] = useState(false)
   const [error, setError] = useState("")
+  const [serverError, setServerError] = useState("")
 
   useEffect(() => setPin(readPin()), [])
 
@@ -29,7 +30,7 @@ export function AdminShell({ title, children }: { title: string; children: (pin:
     if (!pin) return
     let alive = true
     fetch("/api/presence", { headers: { "x-admin-pin": pin }, cache: "no-store" })
-      .then((res) => {
+      .then(async (res) => {
         if (!alive) return
         if (res.status === 401) {
           writePin("")
@@ -39,6 +40,11 @@ export function AdminShell({ title, children }: { title: string; children: (pin:
         } else if (res.ok) {
           setAuthed(true)
           setError("")
+        } else {
+          // PIN đúng nhưng server lỗi (thường là Supabase chưa tạo bảng): vẫn cho vào và báo lỗi, không treo ở "Đang tải"
+          const { detail } = (await res.json().catch(() => ({}))) as { detail?: string }
+          setAuthed(true)
+          setServerError(detail ?? `Máy chủ lỗi (${res.status})`)
         }
       })
       .catch(() => alive && setError("Không kết nối được máy chủ"))
@@ -91,6 +97,12 @@ export function AdminShell({ title, children }: { title: string; children: (pin:
           </Link>
         ))}
       </nav>
+      {serverError && (
+        <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">
+          Máy chủ không đọc được dữ liệu: {serverError}. Nếu đang dùng Supabase, hãy chạy supabase/schema.sql trong SQL Editor
+          và kiểm tra SUPABASE_URL / SUPABASE_SECRET_KEY.
+        </p>
+      )}
       <div className="mt-4">{children(pin)}</div>
     </main>
   )

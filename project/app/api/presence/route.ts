@@ -41,7 +41,8 @@ export async function GET(req: NextRequest) {
   try {
     const devices = await listOnline()
     return Response.json({ online: devices.length, devices }, { headers: { "Cache-Control": "no-store" } })
-  } catch {
-    return Response.json({ error: "server" }, { status: 500 })
+  } catch (e) {
+    // chỉ admin (đã đúng PIN) mới thấy chi tiết lỗi để biết Supabase đang thiếu gì
+    return Response.json({ error: "server", detail: e instanceof Error ? e.message : String(e) }, { status: 500 })
   }
 }
