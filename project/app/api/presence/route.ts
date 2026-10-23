@@ -1,39 +1,35 @@
 import type { NextRequest } from "next/server"
-import { shopForPin } from "@/lib/orders-db"
-import { listOnline, removeDevice, touchDevice, type PresenceUser } from "@/lib/presence-db"
+import { isAdminPin } from "@/lib/admin-auth"
+import { getDish } from "@/lib/dishes"
+import { listOnline, removeDevice, touchDevice, type Source } from "@/lib/presence-db"
+import { recordDishView, recordVisit } from "@/lib/visits-db"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
 /**
- * POST /api/presence  { id, leave?, path?, user? }  — public: a device reports "I'm here" (or "I left").
- * GET  /api/presence                  — admin only (x-admin-pin): { online, devices } = devices online right now.
+ * POST /api/presence  { id, leave?, path?, src?, start?, hit? } — công khai: thiết bị báo "tôi đang ở đây" (hoặc "tôi đã rời").
+ *   start = tab mới vào web (đếm 1 lượt truy cập), hit = vừa mở một trang (đếm lượt xem món ăn).
+ * GET  /api/presence — chỉ admin (x-admin-pin): { online, devices } = thiết bị đang online ngay lúc này.
  */
 const clip = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "")
 
-/** Self-declared profile: keep only known short text fields */
-function sanitizeUser(raw: unknown): PresenceUser | null {
-  if (!raw || typeof raw !== "object") return null
-  const u = raw as Record<string, unknown>
-  const name = clip(u.name, 80)
-  if (!name) return null
-  return {
-    name,
-    username: clip(u.username, 40) || undefined,
-    email: clip(u.email, 120) || undefined,
-    phone: clip(u.phone, 20) || undefined,
-    address: clip(u.address, 200) || undefined,
-  }
-}
-
 export async function POST(req: NextRequest) {
-  const body = (await req.json().catch(() => null)) as { id?: unknown; leave?: unknown; path?: unknown; user?: unknown } | null
+  const body = (await req.json().catch(() => null)) as Record<string, unknown> | null
   const id = typeof body?.id === "string" ? body.id : ""
   if (!/^[a-zA-Z0-9-]{8,64}$/.test(id)) return Response.json({ error: "bad_id" }, { status: 400 })
 
   try {
-    if (body?.leave) await removeDevice(id)
-    else await touchDevice(id, clip(body?.path, 200), sanitizeUser(body?.user))
+    if (body?.leave) {
+      await removeDevice(id)
+    } else {
+      const path = clip(body?.path, 200)
+      const source: Source = body?.src === "qr" ? "qr" : "link"
+      const counted = await touchDevice(id, path, source, body?.hit === true)
+      if (body?.start === true) await recordVisit(source)
+      const dishId = /^\/dishes\/([a-z0-9-]+)$/.exec(path)?.[1]
+      if (counted && dishId && getDish(dishId)) await recordDishView(dishId)
+    }
   } catch {
     return Response.json({ error: "server" }, { status: 500 })
   }
@@ -41,7 +37,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  if (!shopForPin(req.headers.get("x-admin-pin"))) return Response.json({ error: "unauthorized" }, { status: 401 })
+  if (!isAdminPin(req.headers.get("x-admin-pin"))) return Response.json({ error: "unauthorized" }, { status: 401 })
   try {
     const devices = await listOnline()
     return Response.json({ online: devices.length, devices }, { headers: { "Cache-Control": "no-store" } })

@@ -1,60 +1,63 @@
-import { STORAGE, sb, sbFail } from "./orders-db"
+import { USE_SUPABASE, sb, sbFail } from "./supabase"
 
 /**
- * Online-device tracking. Every open tab sends a heartbeat every few seconds ("I'm still here").
- * A device counts as ONLINE if its last heartbeat is newer than ONLINE_WINDOW_MS.
- * Closing a tab sends a "leave" request, so the number drops right away; if that is lost
- * (phone locked, network gone) the device simply expires after the window.
+ * Theo dõi thiết bị đang online. Mỗi tab đang mở gửi "heartbeat" vài giây một lần ("tôi vẫn đang xem").
+ * Thiết bị được tính là ONLINE nếu heartbeat cuối nằm trong ONLINE_WINDOW_MS.
+ * Đóng tab sẽ gửi "leave" nên thiết bị biến mất ngay; nếu mất tín hiệu (khóa máy, mất mạng) thì tự hết hạn.
  *
- * Storage follows orders-db: Supabase table `presence` when configured, otherwise server memory.
- * Supabase table (run once in the SQL editor):
- *   create table presence (device_id text primary key, last_seen timestamptz not null);
- *   alter table presence add column user_info jsonb, add column path text;
+ * Lưu: bảng `presence` trên Supabase nếu đã cấu hình (cần khi chạy trên Vercel), không thì trong bộ nhớ server.
  */
 
 export const ONLINE_WINDOW_MS = 15_000
 
-/** Profile a device reports about its logged-in user (self-declared, informational only) */
-export interface PresenceUser {
-  name: string
-  username?: string
-  email?: string
-  phone?: string
-  address?: string
-}
+/** Khách vào web bằng cách nào: quét mã QR (link có ?src=qr) hay mở link thường */
+export type Source = "qr" | "link"
 
 export interface OnlineDevice {
   id: string
   lastSeen: string // ISO
   path: string
-  user: PresenceUser | null // null = guest
+  source: Source
 }
 
-interface MemoryEntry {
+interface Entry {
   seen: number
   path: string
-  user: PresenceUser | null
+  source: Source
+  hitPath: string
+  hitAt: number
 }
 
-const memory = ((globalThis as { __presence?: Map<string, MemoryEntry> }).__presence ??= new Map<string, MemoryEntry>())
+const memory = ((globalThis as { __presence?: Map<string, Entry> }).__presence ??= new Map<string, Entry>())
 
-/** Heartbeat: mark this device as seen right now */
-export async function touchDevice(id: string, path = "", user: PresenceUser | null = null): Promise<void> {
-  if (STORAGE === "supabase") {
+/** Heartbeat: đánh dấu thiết bị vừa xuất hiện. Trả về true nếu `hit` (vừa mở trang) là lượt xem mới chưa tính trùng */
+export async function touchDevice(id: string, path: string, source: Source, hit: boolean): Promise<boolean> {
+  if (USE_SUPABASE) {
     const res = await sb("presence?on_conflict=device_id", {
       method: "POST",
-      body: { device_id: id, last_seen: new Date().toISOString(), path, user_info: user },
+      body: { device_id: id, last_seen: new Date().toISOString(), path, source },
       prefer: "resolution=merge-duplicates",
     })
     if (!res.ok) await sbFail(res, "ghi heartbeat")
-    return
+    return hit
   }
-  memory.set(id, { seen: Date.now(), path, user })
+  const prev = memory.get(id)
+  const now = Date.now()
+  let counted = false
+  const e: Entry = { seen: now, path, source, hitPath: prev?.hitPath ?? "", hitAt: prev?.hitAt ?? 0 }
+  // React Strict Mode (dev) gửi hit 2 lần liền nhau: bỏ qua lần trùng trong 3 giây
+  if (hit && !(e.hitPath === path && now - e.hitAt < 3000)) {
+    e.hitPath = path
+    e.hitAt = now
+    counted = true
+  }
+  memory.set(id, e)
+  return counted
 }
 
-/** Device left (tab closed): remove it immediately */
+/** Thiết bị rời đi (đóng tab): xóa ngay */
 export async function removeDevice(id: string): Promise<void> {
-  if (STORAGE === "supabase") {
+  if (USE_SUPABASE) {
     const res = await sb(`presence?device_id=eq.${encodeURIComponent(id)}`, { method: "DELETE" })
     if (!res.ok) await sbFail(res, "xóa thiết bị")
     return
@@ -62,24 +65,23 @@ export async function removeDevice(id: string): Promise<void> {
   memory.delete(id)
 }
 
-/** Devices with a heartbeat inside the window, newest first */
+/** Các thiết bị có heartbeat trong khoảng cho phép, mới nhất trước */
 export async function listOnline(): Promise<OnlineDevice[]> {
   const since = Date.now() - ONLINE_WINDOW_MS
-  if (STORAGE === "supabase") {
+  if (USE_SUPABASE) {
     const res = await sb(
-      `presence?select=device_id,last_seen,path,user_info&last_seen=gte.${encodeURIComponent(new Date(since).toISOString())}&order=last_seen.desc`,
+      `presence?select=device_id,last_seen,path,source&last_seen=gte.${encodeURIComponent(new Date(since).toISOString())}&order=last_seen.desc`,
     )
     if (!res.ok) await sbFail(res, "đếm thiết bị")
-    const rows = (await res.json()) as { device_id: string; last_seen: string; path: string | null; user_info: PresenceUser | null }[]
-    return rows.map((r) => ({ id: r.device_id, lastSeen: r.last_seen, path: r.path ?? "", user: r.user_info ?? null }))
+    // thỉnh thoảng dọn các dòng đã cũ hơn 1 giờ để bảng không phình ra
+    if (Math.random() < 0.03) {
+      sb(`presence?last_seen=lt.${encodeURIComponent(new Date(Date.now() - 3600_000).toISOString())}`, { method: "DELETE" }).catch(() => {})
+    }
+    const rows = (await res.json()) as { device_id: string; last_seen: string; path: string; source: string }[]
+    return rows.map((r) => ({ id: r.device_id, lastSeen: r.last_seen, path: r.path, source: r.source === "qr" ? "qr" : "link" }))
   }
-  for (const [id, e] of memory) if (e.seen < since) memory.delete(id) // drop expired devices
+  for (const [id, e] of memory) if (e.seen < since) memory.delete(id)
   return [...memory]
     .sort((a, b) => b[1].seen - a[1].seen)
-    .map(([id, e]) => ({ id, lastSeen: new Date(e.seen).toISOString(), path: e.path, user: e.user }))
-}
-
-/** THE online number shown on the dashboard */
-export async function countOnline(): Promise<number> {
-  return (await listOnline()).length
+    .map(([id, e]) => ({ id, lastSeen: new Date(e.seen).toISOString(), path: e.path, source: e.source }))
 }

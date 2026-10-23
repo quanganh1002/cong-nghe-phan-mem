@@ -5,17 +5,25 @@ import Image from "next/image"
 import Form from "next/form"
 import { ArrowRight, Search, Sparkles, Volume2 } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
-import { FoodCard } from "@/components/food-card"
+import { DishCard } from "@/components/dish-card"
 import { useApp } from "@/lib/store"
-import { CATEGORIES } from "@/lib/foods"
-import { useFoods } from "@/lib/foods-client"
+import { DISHES, REGIONS } from "@/lib/dishes"
+import { useDishText } from "@/lib/use-dish-text"
+
+const REGION_DICT = {
+  north: { name: "regionNorth", desc: "regionNorthDesc", icon: "🏯" },
+  central: { name: "regionCentral", desc: "regionCentralDesc", icon: "🏖️" },
+  south: { name: "regionSouth", desc: "regionSouthDesc", icon: "🛶" },
+} as const
+
+const featured = DISHES.filter((d) => d.popular).slice(0, 4)
+const festival = DISHES.filter((d) => d.category === "festival")
+const listed = [...featured, ...festival]
+const hero = DISHES.find((d) => d.id === "pho-bo") ?? DISHES[0]
 
 export default function HomePage() {
-  const { dict, lang } = useApp()
-  const { foods } = useFoods()
-  const featured = foods.filter((f) => f.popular).slice(0, 4)
-  const newest = foods.filter((f) => f.isNew).slice(0, 9)
-  const hero = foods.find((f) => f.id === "pho-bo") ?? foods[0]
+  const { dict } = useApp()
+  const text = useDishText(listed, ["name", "summary"])
 
   return (
     <AppShell>
@@ -28,16 +36,16 @@ export default function HomePage() {
             <div className="min-w-0 flex-1">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur">
                 <Sparkles className="size-3.5" />
-                {dict.appTagline}
+                {dict.heroBadge}
               </span>
               <h1 className="mt-3 text-balance text-2xl font-extrabold leading-tight sm:text-4xl">{dict.heroTitle}</h1>
               <p className="mt-2 text-pretty text-sm text-white/85 sm:text-base">{dict.heroSubtitle}</p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link
-                  href="/menu"
+                  href="/dishes"
                   className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-primary shadow-md transition-all active:scale-95 hover:gap-3"
                 >
-                  {dict.viewAll}
+                  {dict.startExplore}
                   <ArrowRight className="size-4 rtl:rotate-180" />
                 </Link>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-4 py-2.5 text-sm font-semibold backdrop-blur">
@@ -46,20 +54,18 @@ export default function HomePage() {
                 </span>
               </div>
             </div>
-            {hero && (
-              <div className="relative hidden aspect-square w-40 shrink-0 sm:block lg:w-52">
-                <div className="animate-float absolute inset-0 overflow-hidden rounded-full border-4 border-white/30 shadow-2xl">
-                  <Image src={hero.image || "/placeholder.svg"} alt={hero.t[lang].name} fill className="object-cover" />
-                </div>
+            <div className="relative hidden aspect-square w-40 shrink-0 sm:block lg:w-52">
+              <div className="animate-float absolute inset-0 overflow-hidden rounded-full border-4 border-white/30 shadow-2xl">
+                {hero.image && <Image src={hero.image} alt={text(hero).name} fill className="object-cover" />}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Search: gõ tại đây, bấm Enter/kính lúp mới sang /menu?q=... */}
+      {/* Search: bấm Enter/kính lúp mới sang /dishes?q=... */}
       <section className="px-4 pt-5">
-        <Form action="/menu" role="search" className="relative">
+        <Form action="/dishes" role="search" className="relative">
           <input
             name="q"
             type="search"
@@ -78,45 +84,43 @@ export default function HomePage() {
         </Form>
       </section>
 
-      {/* Categories */}
+      {/* Regions */}
       <section className="px-4 pt-6">
-        <h2 className="mb-3 text-lg font-bold">{dict.categories}</h2>
-        <div className="grid grid-cols-4 gap-3">
-          {CATEGORIES.map((c, i) => (
-            <Link
-              key={c.key}
-              href={`/menu?cat=${c.key}`}
-              style={{ animationDelay: `${i * 60}ms` }}
-              className="animate-fade-up flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-3 text-center shadow-sm transition-all active:scale-95 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
-            >
-              <span className="grid size-12 place-items-center rounded-2xl bg-accent text-2xl">{c.icon}</span>
-              <span className="text-xs font-semibold leading-tight">
-                {dict[`cat${c.key[0].toUpperCase()}${c.key.slice(1)}` as keyof typeof dict]}
-              </span>
-            </Link>
-          ))}
+        <h2 className="mb-3 text-lg font-bold">{dict.byRegion}</h2>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {REGIONS.map((r, i) => {
+            const k = REGION_DICT[r]
+            return (
+              <Link
+                key={r}
+                href={`/dishes?region=${r}`}
+                style={{ animationDelay: `${i * 60}ms` }}
+                className="animate-fade-up flex items-start gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm transition-all active:scale-95 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
+              >
+                <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-accent text-2xl">{k.icon}</span>
+                <span className="min-w-0">
+                  <span className="block font-bold">{dict[k.name]}</span>
+                  <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">{dict[k.desc]}</span>
+                </span>
+              </Link>
+            )
+          })}
         </div>
       </section>
 
-      {/* Featured */}
-      <Section title={dict.featured} href="/menu">
-        {featured.map((f, i) => (
-          <FoodCard key={f.id} food={f} index={i} />
+      <Section title={dict.featured} href="/dishes">
+        {featured.map((d, i) => (
+          <DishCard key={d.id} dish={d} name={text(d).name} summary={text(d).summary} index={i} />
         ))}
       </Section>
 
-      {/* New dishes */}
-      {newest.length > 0 && (
-        <Section title={dict.newDishes} href="/menu">
-          {newest.map((f, i) => (
-            <FoodCard key={f.id} food={f} index={i} />
-          ))}
-        </Section>
-      )}
+      <Section title={dict.festivalTitle} href="/dishes?cat=festival">
+        {festival.map((d, i) => (
+          <DishCard key={d.id} dish={d} name={text(d).name} summary={text(d).summary} index={i} />
+        ))}
+      </Section>
 
-      <footer className="px-4 py-8 text-center text-xs text-muted-foreground">
-        FoodLingo · {dict.appTagline}
-      </footer>
+      <footer className="px-4 py-8 text-center text-xs text-muted-foreground">{dict.footer}</footer>
     </AppShell>
   )
 }

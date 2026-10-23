@@ -1,109 +1,33 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react"
-import { DEFAULT_LANG, getLanguage, type LangCode } from "./languages"
-import { translations, type Dict } from "./i18n"
-import { getFoodNow, useFoods } from "./foods-client"
-
-export type OrderStatus = "ordered" | "confirmed" | "preparing" | "delivering" | "completed"
-
-export const ORDER_STEPS: OrderStatus[] = ["ordered", "confirmed", "preparing", "delivering", "completed"]
-
-export interface CartItem {
-  foodId: string
-  quantity: number
-}
-
-export interface OrderItem {
-  foodId: string
-  quantity: number
-  unitPrice: number
-}
-
-export interface Order {
-  id: string
-  items: OrderItem[]
-  total: number
-  name: string
-  phone: string
-  address: string
-  note: string
-  payment: "cod" | "bank" | "qr" | "wallet"
-  status: OrderStatus
-  date: string // ISO
-  /** tài khoản đã đặt đơn; không có = khách vãng lai (ăn tại bàn) */
-  userId?: string
-}
-
-export interface User {
-  id: string
-  name: string
-  username?: string
-  email: string
-  phone?: string
-  address?: string
-  /** data URL ảnh đại diện; không có = hiện chữ viết tắt của tên */
-  avatar?: string
-  createdAt: string // ISO
-}
+import { DEFAULT_LANG, LANGUAGES, getLanguage, type LangCode } from "./languages"
+import { DICT_EN, DICT_KEYS, DICT_VI, type Dict } from "./i18n"
+import { useL10n } from "./translate-client"
 
 interface AppState {
   lang: LangCode
   setLang: (l: LangCode) => void
   dict: Dict
-  cart: CartItem[]
-  addToCart: (foodId: string, quantity?: number) => void
-  removeFromCart: (foodId: string) => void
-  setQuantity: (foodId: string, quantity: number) => void
-  clearCart: () => void
-  cartCount: number
-  cartTotal: number
-  orders: Order[]
-  placeOrder: (o: Omit<Order, "id" | "status" | "date" | "userId">) => Order
-  /** null = chưa đăng nhập */
-  user: User | null
-  /** false until localStorage has been read (avoids a flash of the guest state) */
-  hydrated: boolean
-  login: (u: User) => void
-  logout: () => void
 }
 
 const AppContext = createContext<AppState | null>(null)
 
 const LANG_KEY = "foodlingo:lang"
-const CART_KEY = "foodlingo:cart"
-// v2: bỏ các đơn mẫu cũ đã lưu trong trình duyệt
-const ORDERS_KEY = "foodlingo:orders:v2"
-const LEGACY_ORDERS_KEY = "foodlingo:orders"
-const USER_KEY = "foodlingo:user"
-const userCartKey = (userId: string) => `${CART_KEY}:${userId}`
 
-function price(foodId: string): number {
-  return getFoodNow(foodId)?.price ?? 0
-}
+const VI_VALUES = DICT_KEYS.map((k) => DICT_VI[k])
+const EN_VALUES = DICT_KEYS.map((k) => DICT_EN[k])
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  useFoods() // tải menu thật từ server và render lại (cartTotal) khi admin đổi giá
   const [lang, setLangState] = useState<LangCode>(DEFAULT_LANG)
-  const [cart, setCart] = useState<CartItem[]>([])
-  const [orders, setOrders] = useState<Order[]>([])
-  const [user, setUser] = useState<User | null>(null)
   const [hydrated, setHydrated] = useState(false)
 
-  // Load persisted state once on mount
   useEffect(() => {
     try {
       const l = localStorage.getItem(LANG_KEY) as LangCode | null
-      if (l) setLangState(l)
-      const c = localStorage.getItem(CART_KEY)
-      if (c) setCart(JSON.parse(c))
-      const u = localStorage.getItem(USER_KEY)
-      if (u) setUser(JSON.parse(u))
-      const o = localStorage.getItem(ORDERS_KEY)
-      setOrders(o ? JSON.parse(o) : [])
-      localStorage.removeItem(LEGACY_ORDERS_KEY)
+      if (l && LANGUAGES.some((x) => x.code === l)) setLangState(l)
     } catch {
-      // dữ liệu lưu trữ bị lỗi → bắt đầu lại với danh sách trống
+      // không đọc được localStorage: dùng ngôn ngữ mặc định
     }
     setHydrated(true)
   }, [])
@@ -111,121 +35,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Persist + reflect language on <html>
   useEffect(() => {
     if (!hydrated) return
-    localStorage.setItem(LANG_KEY, lang)
-    const meta = getLanguage(lang)
+    try {
+      localStorage.setItem(LANG_KEY, lang)
+    } catch {}
     document.documentElement.lang = lang
-    document.documentElement.dir = meta.dir
+    document.documentElement.dir = getLanguage(lang).dir
   }, [lang, hydrated])
-
-  useEffect(() => {
-    if (hydrated) localStorage.setItem(CART_KEY, JSON.stringify(cart))
-  }, [cart, hydrated])
-
-  useEffect(() => {
-    if (hydrated) localStorage.setItem(ORDERS_KEY, JSON.stringify(orders))
-  }, [orders, hydrated])
-
-  useEffect(() => {
-    if (!hydrated) return
-    if (user) localStorage.setItem(USER_KEY, JSON.stringify(user))
-    else localStorage.removeItem(USER_KEY)
-  }, [user, hydrated])
 
   const setLang = useCallback((l: LangCode) => setLangState(l), [])
 
-  const addToCart = useCallback((foodId: string, quantity = 1) => {
-    setCart((prev) => {
-      const existing = prev.find((i) => i.foodId === foodId)
-      if (existing) {
-        return prev.map((i) => (i.foodId === foodId ? { ...i, quantity: i.quantity + quantity } : i))
-      }
-      return [...prev, { foodId, quantity }]
-    })
-  }, [])
+  const values = useL10n(VI_VALUES, EN_VALUES, lang)
+  const dict = Object.fromEntries(DICT_KEYS.map((k, i) => [k, values[i]])) as Dict
 
-  const removeFromCart = useCallback((foodId: string) => {
-    setCart((prev) => prev.filter((i) => i.foodId !== foodId))
-  }, [])
-
-  const setQuantity = useCallback((foodId: string, quantity: number) => {
-    setCart((prev) =>
-      quantity <= 0
-        ? prev.filter((i) => i.foodId !== foodId)
-        : prev.map((i) => (i.foodId === foodId ? { ...i, quantity } : i)),
-    )
-  }, [])
-
-  const clearCart = useCallback(() => setCart([]), [])
-
-  const placeOrder = useCallback(
-    (o: Omit<Order, "id" | "status" | "date" | "userId">): Order => {
-      const order: Order = {
-        ...o,
-        id: "DH" + String(Math.floor(1000 + Math.random() * 9000)),
-        status: "confirmed",
-        date: new Date().toISOString(),
-        userId: user?.id,
-      }
-      setOrders((prev) => [order, ...prev])
-      return order
-    },
-    [user],
-  )
-
-  // Giỏ hàng của mỗi tài khoản được cất riêng khi đăng xuất, khôi phục khi đăng nhập lại
-  const login = useCallback(
-    (u: User) => {
-      if (user?.id !== u.id) {
-        if (user) localStorage.setItem(userCartKey(user.id), JSON.stringify(cart))
-        let saved: CartItem[] = []
-        try {
-          saved = JSON.parse(localStorage.getItem(userCartKey(u.id)) ?? "[]")
-        } catch {}
-        localStorage.removeItem(userCartKey(u.id))
-        // Giỏ của khách vãng lai (chưa đăng nhập) được gộp vào; giỏ của tài khoản khác thì không
-        let next = saved
-        for (const g of user ? [] : cart) {
-          const hit = next.find((i) => i.foodId === g.foodId)
-          next = hit
-            ? next.map((i) => (i === hit ? { ...i, quantity: i.quantity + g.quantity } : i))
-            : [...next, g]
-        }
-        setCart(next)
-      }
-      setUser(u)
-    },
-    [user, cart],
-  )
-  const logout = useCallback(() => {
-    if (user) localStorage.setItem(userCartKey(user.id), JSON.stringify(cart))
-    setCart([])
-    setUser(null)
-  }, [user, cart])
-
-  const cartCount = cart.reduce((n, i) => n + i.quantity, 0)
-  const cartTotal = cart.reduce((sum, i) => sum + price(i.foodId) * i.quantity, 0)
-
-  const value: AppState = {
-    lang,
-    setLang,
-    dict: translations[lang],
-    cart,
-    addToCart,
-    removeFromCart,
-    setQuantity,
-    clearCart,
-    cartCount,
-    cartTotal,
-    // mỗi tài khoản chỉ thấy đơn của mình; chưa đăng nhập thì chỉ thấy đơn vãng lai
-    orders: orders.filter((o) => o.userId === user?.id),
-    placeOrder,
-    user,
-    hydrated,
-    login,
-    logout,
-  }
-
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>
+  return <AppContext.Provider value={{ lang, setLang, dict }}>{children}</AppContext.Provider>
 }
 
 export function useApp(): AppState {

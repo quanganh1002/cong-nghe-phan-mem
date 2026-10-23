@@ -4,7 +4,6 @@ import { useState } from "react"
 import { Check, Globe } from "lucide-react"
 import { LANGUAGES } from "@/lib/languages"
 import { useApp } from "@/lib/store"
-import { t } from "@/lib/i18n"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
@@ -66,7 +65,7 @@ export function LanguageSwitcher({ variant = "chip" }: { variant?: "chip" | "ico
             })}
           </div>
           <p className="border-t border-border p-3 text-center text-xs text-muted-foreground">
-            {t(lang, "appTagline")}
+            {dict.appTagline}
           </p>
         </DialogContent>
       </Dialog>

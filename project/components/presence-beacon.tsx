@@ -2,13 +2,13 @@
 
 import { useEffect, useRef } from "react"
 import { usePathname } from "next/navigation"
-import { useApp } from "@/lib/store"
-import type { PresenceUser } from "@/lib/presence-db"
 
 const HEARTBEAT_MS = 8_000
 const ID_KEY = "foodlingo:device-id"
+const SRC_KEY = "foodlingo:src"
+const VISITED_KEY = "foodlingo:visited"
 
-/** One id per open tab (sessionStorage), so each tab/device is counted once */
+/** Mỗi tab một id (sessionStorage) để mỗi thiết bị chỉ đếm một lần */
 function deviceId() {
   try {
     let id = sessionStorage.getItem(ID_KEY)
@@ -22,44 +22,68 @@ function deviceId() {
   }
 }
 
-/** Runs silently on customer pages: tells the server this device is online, and when it leaves. */
+/** Nguồn vào web: link có ?src=qr (mã QR) thì là "qr", còn lại là "link". Nhớ suốt phiên để chuyển trang vẫn giữ nguồn */
+function source(): "qr" | "link" {
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get("src")
+    if (fromUrl === "qr") sessionStorage.setItem(SRC_KEY, "qr")
+    return sessionStorage.getItem(SRC_KEY) === "qr" ? "qr" : "link"
+  } catch {
+    return "link"
+  }
+}
+
+/** Chạy ngầm trên các trang công khai: báo cho server biết thiết bị đang online, đang xem trang nào và khi nào rời đi */
 export function PresenceBeacon() {
   const pathname = usePathname()
-  const { user } = useApp()
-  const isAdmin = pathname.startsWith("/admin") // the shop's own screens are not "customers"
-
-  // Latest page + profile, read by the heartbeat without restarting its timer
-  const info = useRef({ path: pathname, user: null as PresenceUser | null })
-  const sendNow = useRef<() => void>(() => {})
-  info.current = {
-    path: pathname,
-    user: user ? { name: user.name, username: user.username, email: user.email, phone: user.phone, address: user.address } : null,
-  }
-
-  // Report right away when the visitor navigates or logs in/out
-  useEffect(() => sendNow.current(), [pathname, user?.id])
+  const isAdmin = pathname.startsWith("/admin") // màn hình quản trị không tính là khách
+  const pathRef = useRef(pathname)
+  pathRef.current = pathname
+  const hitRef = useRef<() => void>(() => {})
 
   useEffect(() => {
     if (isAdmin) return
     const id = deviceId()
-    const send = (leave = false) => {
-      const data = JSON.stringify(leave ? { id, leave } : { id, ...info.current })
-      if (leave && navigator.sendBeacon) navigator.sendBeacon("/api/presence", data)
-      else fetch("/api/presence", { method: "POST", body: data, keepalive: true }).catch(() => {})
+    const src = source()
+    const send = (extra: Record<string, unknown> = {}) => {
+      const data = JSON.stringify({ id, path: pathRef.current, src, ...extra })
+      fetch("/api/presence", { method: "POST", body: data, keepalive: true }).catch(() => {})
     }
-    sendNow.current = () => send()
 
-    send()
+    // Tab mới vào web = 1 lượt truy cập
+    let start = false
+    try {
+      if (!sessionStorage.getItem(VISITED_KEY)) {
+        sessionStorage.setItem(VISITED_KEY, "1")
+        start = true
+      }
+    } catch {}
+    hitRef.current = () => send({ hit: true })
+    send({ hit: true, start })
+
     const timer = setInterval(() => send(), HEARTBEAT_MS)
-    const onHide = () => send(true)
+    const onHide = () => {
+      const data = JSON.stringify({ id, leave: true })
+      if (navigator.sendBeacon) navigator.sendBeacon("/api/presence", data)
+    }
     window.addEventListener("pagehide", onHide)
     return () => {
-      sendNow.current = () => {}
+      hitRef.current = () => {}
       clearInterval(timer)
       window.removeEventListener("pagehide", onHide)
-      send(true) // navigating into /admin or unmounting
+      send({ leave: true }) // chuyển vào /admin hoặc tắt component
     }
   }, [isAdmin])
+
+  // Khi khách chuyển trang: báo ngay trang mới (lần đầu đã gửi ở trên nên bỏ qua)
+  const first = useRef(true)
+  useEffect(() => {
+    if (first.current) {
+      first.current = false
+      return
+    }
+    hitRef.current()
+  }, [pathname])
 
   return null
 }

@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { UtensilsCrossed } from "lucide-react"
+import { Soup } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function Logo({ size = "md" }: { size?: "md" | "lg" }) {
@@ -12,10 +12,10 @@ export function Logo({ size = "md" }: { size?: "md" | "lg" }) {
           lg ? "size-14 rounded-2xl" : "size-9 rounded-xl",
         )}
       >
-        <UtensilsCrossed className={lg ? "size-7" : "size-5"} />
+        <Soup className={lg ? "size-7" : "size-5"} />
       </span>
       <span className={cn("tracking-tight", lg ? "text-3xl" : "text-lg")}>
-        Food<span className="text-primary">Lingo</span>
+        Vị<span className="text-primary">Việt</span>
       </span>
     </Link>
   )

@@ -2,7 +2,6 @@ import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Nunito } from "next/font/google"
 import { AppProvider } from "@/lib/store"
-import { OrderWatcher } from "@/components/order-watcher"
 import { PresenceBeacon } from "@/components/presence-beacon"
 import "./globals.css"
 
@@ -13,10 +12,9 @@ const nunito = Nunito({
 })
 
 export const metadata: Metadata = {
-  title: "FoodLingo — Đặt món ăn đa ngôn ngữ",
+  title: "Vị Việt — Văn hóa ẩm thực truyền thống Việt Nam",
   description:
-    "Hệ thống đặt món ăn đa ngôn ngữ với thuyết minh bằng giọng nói. Order delicious Vietnamese food in 10 languages.",
-  generator: "v0.app",
+    "Thuyết minh bằng giọng nói về các món ăn truyền thống và văn hóa ẩm thực Việt Nam trong 10 ngôn ngữ. Discover the stories behind traditional Vietnamese dishes.",
 }
 
 export const viewport: Viewport = {
@@ -43,8 +41,6 @@ export default function RootLayout({
       <body className={`${nunito.className} antialiased`}>
         <AppProvider>
           {children}
-          {/* Báo cho khách khi quán từ chối đơn (chạy ngầm trên mọi trang) */}
-          <OrderWatcher />
           <PresenceBeacon />
         </AppProvider>
       </body>

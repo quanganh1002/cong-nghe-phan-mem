@@ -19,7 +19,7 @@ export function PinForm({ title = "Trang quản lý", error, onSubmit }: { title
           <Lock className="size-6" />
         </div>
         <h1 className="mt-3 text-xl font-extrabold">{title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Nhập mã PIN của quán</p>
+        <p className="mt-1 text-sm text-muted-foreground">Nhập mã PIN quản trị</p>
         <input
           type="password"
           inputMode="numeric"

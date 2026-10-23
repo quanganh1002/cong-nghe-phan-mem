@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-"FoodLingo" — a multilingual (vi/en/…) restaurant ordering web app for a Vietnamese food shop (software engineering course project). The root `README.md` is a stub; all code lives in `project/` (Next.js 16 App Router, React 19, Tailwind v4, shadcn/ui + `@base-ui/react`, TypeScript). UI text and code comments are mostly in Vietnamese.
+"Vị Việt" — a multilingual website that narrates traditional Vietnamese dishes and food culture (software engineering course project). It used to be a restaurant ordering app; ordering, cart, login, admin/kitchen pages and the server-side order/menu storage have been removed. All code lives in `project/` (Next.js 16 App Router, React 19, Tailwind v4, shadcn/ui + `@base-ui/react`, TypeScript). UI text and code comments are mostly in Vietnamese.
 
 ## Commands
 
@@ -17,22 +17,16 @@ pnpm build    # next build
 pnpm start    # next start
 ```
 
-There is no lint script and no test suite configured.
-
-Environment: copy `project/.env.example` to `project/.env.local`. `ADMIN_PIN` (default `1234`) guards the kitchen pages. `SUPABASE_URL` + `SUPABASE_SECRET_KEY` are optional (see storage below).
+There is no lint script and no test suite configured, and no environment variables are needed.
 
 ## Architecture
 
-**Two-sided order model.** Customers and the kitchen see orders in different stores:
-- *Customer side* is entirely client-side state in `lib/store.tsx` (`AppProvider`/`useApp`): language, cart, user (fake auth), and local orders, all persisted in `localStorage` under `foodlingo:*` keys. Local order IDs look like `DH4004`.
-- *Shop side* orders are persisted server-side via `lib/orders-db.ts` and have 6-digit IDs. `lib/order-links.ts` maps local ID → server ID in localStorage and polls `/api/orders/status` every 5s (`useServerOrders`) so the customer sees status updates and cancel reasons set by the kitchen.
+**Content (`lib/dishes.ts`).** Static list of dishes (`DISHES`). Each has `region` (north/central/south), `category` (main/snack/drink/dessert/festival), optional `image` in `public/foods/` (no image → emoji on a gradient, see `DishVisual`), and Vietnamese + English text with fields `name, summary, origin, culture, ingredients, tip`. To add a dish, add one entry here; every page picks it up.
 
-**Storage backend switch (`lib/orders-db.ts`).** Chooses at import time: Supabase REST (via plain `fetch`, no SDK; table `orders`, snake_case columns mapped in `toOrder`) when both env vars are set, otherwise a JSON file `data/orders.json` (writes serialized through a promise queue, atomic tmp+rename). Both stores implement the same `list/add/update/statuses` interface; always go through the exported `listOrders/addOrder/updateStatus/getStatuses`. Statuses: `ordered → confirmed → preparing → delivering → completed`, plus `cancelled`; `completed`/`cancelled` are final and `updateStatus` returns `{error: "locked"}` for them. The file store won't work on read-only/serverless hosts (hence Supabase for Vercel).
+**i18n.** 10 languages in `lib/languages.ts`. Only Vietnamese and English are hand-written (UI strings in `lib/i18n.ts`, dish text in `lib/dishes.ts`). The other 8 are machine-translated from the English text at runtime: `lib/translate-client.ts` (`useL10n`) calls `POST /api/translate` (Google Translate gtx, no key, server memory cache) and caches results in localStorage (`foodlingo:tr:v1:<lang>`). `useApp()` in `lib/store.tsx` gives `lang`, `setLang`, `dict`; dish text goes through `useDishText` in `lib/use-dish-text.ts`. New UI strings must be added to both `vi` and `en` in `lib/i18n.ts`.
 
-**API (`app/api/orders/**`).** `POST /api/orders` is public (server recomputes `total` from items and sanitizes input). `GET`, and the status-update routes, require header `x-admin-pin` matching `ADMIN_PIN`. The admin pages (`app/admin`, `app/admin/thong-ke`) keep the PIN in localStorage via `lib/admin-pin.ts` and send it on each request.
+**Narration.** `hooks/use-speech.ts` reads text with the browser's speech synthesis (preferring a voice of the exact language); if the device has no voice for that language it falls back to `GET /api/tts` (proxy to Google TTS).
 
-**Dine-in vs delivery rule.** Scanning a table QR (`/menu?table=5`, see `app/qr`) stores the table in localStorage for 4h (`lib/table.ts`; `table=none` means online/delivery QR). `lib/require-login.ts` (`useRequireLogin`) lets table diners order without login but forces login/register for delivery. `?next=` redirects must go through `safeNext`.
+**Admin & visitor tracking.** `/admin` (+ `/thong-ke`, `/mon-an`, `/qr`) is guarded by `ADMIN_PIN` (default `1234`, header `x-admin-pin`, checked by `lib/admin-auth.ts`; the PIN lives in sessionStorage via `lib/admin-pin.ts`). `components/presence-beacon.tsx` (mounted in the root layout) sends heartbeats to `POST /api/presence`; the server keeps online devices (`lib/presence-db.ts`, 15s window) and counts visits/dish views (`lib/visits-db.ts`). Storage switches at import time (`lib/supabase.ts`): with `SUPABASE_URL` + `SUPABASE_SECRET_KEY` it uses the tables/RPCs in `supabase/schema.sql` (required on Vercel); otherwise server memory + `data/visits.json`. The admin overview polls `/api/presence` every 2s and diffs the device list (`useLiveEvents`) to show who just joined/left. Source is `qr` when the URL had `?src=qr` (all generated QR codes add it), otherwise `link`. Admin reads `GET /api/presence` and `GET /api/stats`. QR images: `node scripts/gen-shop-qr.mjs [baseUrl]` writes `qr-codes/`; `/admin/qr` prints them in the browser. Dish content is edited in `lib/dishes.ts`, not through the admin UI.
 
-**Menu is editable by shop admins.** `lib/foods.ts` (+ `foods-more.ts`) is only the seed menu. Admin edits/additions are stored by `lib/foods-db.ts` (Supabase table `foods` or `data/foods.json`; a saved row overrides the seed by id; "delete" = `hidden: true`) and exposed via `app/api/foods` (`GET` public; `POST`/`PUT /[id]`/`upload` need the shop's `x-admin-pin`, and a shop can only touch its own foods). Name/description are entered in Vietnamese and auto-translated to the other 9 languages by `lib/translate.ts` (Google Translate gtx, no key). Server code must use `listAllFoods/findFood` (not the static `getFood`); client code uses `useFoods()` from `lib/foods-client.ts`. `POST /api/orders` takes prices from the DB menu, not the client. Images: Supabase Storage bucket `foods` (created by `supabase/schema.sql`) or `public/foods/` in file mode. Admin UI: `/admin/mon-an`.
-
-**Content & i18n.** Static seed menu images are in `public/foods/`; translations in `lib/i18n.ts` with language list in `lib/languages.ts`; `hooks/use-speech.ts` provides speech features. Statistics/export helpers: `lib/order-stats.ts`, `lib/xlsx-lite.ts`.
+**Pages.** `/` home, `/dishes` (search + region/category filters, `?region=`, `?cat=`, `?q=`), `/dishes/[id]` (narration player, origin, culture, ingredients, tips), `/about`. Language and theme are kept in localStorage under `foodlingo:*` keys.

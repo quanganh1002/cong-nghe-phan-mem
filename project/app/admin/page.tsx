@@ -1,519 +1,133 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
-import Link from "next/link"
-import { ThemeToggle } from "@/components/theme-toggle"
-import {
-  BarChart3,
-  Bell,
-  BellOff,
-  Bike,
-  ChefHat,
-  CircleCheck,
-  ClipboardList,
-  LogOut,
-  MessageSquareText,
-  Phone,
-  RefreshCw,
-  Store,
-  UtensilsCrossed,
-  X,
-  XCircle,
-  type LucideIcon,
-} from "lucide-react"
-import { formatPrice } from "@/lib/foods"
-import { useFoods } from "@/lib/foods-client"
+import { Activity, Eye, Link2, LogIn, LogOut, QrCode, Users } from "lucide-react"
+import { AdminShell } from "@/components/admin-shell"
+import { StatCard } from "@/components/admin-ui"
+import { useLiveEvents, usePresence, useStats } from "@/hooks/use-admin-data"
+import { getDish } from "@/lib/dishes"
 import { cn } from "@/lib/utils"
-import type { ShopOrder, ShopOrderStatus } from "@/lib/orders-db"
-import { readPin, writePin, writeShop } from "@/lib/admin-pin"
-import { useShopInfo } from "@/hooks/use-shop-info"
-import { PinForm } from "@/components/admin-pin-form"
 
-/**
- * Màn hình bếp / thu ngân: mở http://localhost:3000/admin trên máy của quán.
- * Tự cập nhật mỗi 3 giây, có tiếng "ting" khi có đơn mới.
- */
-
-const POLL_MS = 3000
-
-const STATUS: Record<ShopOrderStatus, { label: string; icon: LucideIcon; badge: string; next?: ShopOrderStatus; action?: string }> = {
-  ordered: { label: "Đơn mới", icon: ClipboardList, badge: "bg-primary text-primary-foreground", next: "confirmed", action: "Nhận đơn" },
-  confirmed: { label: "Đã nhận", icon: CircleCheck, badge: "bg-chart-4/15 text-chart-4", next: "preparing", action: "Bắt đầu làm" },
-  preparing: { label: "Đang làm", icon: ChefHat, badge: "bg-chart-2/20 text-accent-foreground", next: "delivering", action: "Mang ra / Giao" },
-  delivering: { label: "Đang mang ra", icon: Bike, badge: "bg-primary/10 text-primary", next: "completed", action: "Hoàn thành" },
-  completed: { label: "Xong", icon: CircleCheck, badge: "bg-chart-3/15 text-chart-3" },
-  cancelled: { label: "Đã từ chối", icon: XCircle, badge: "bg-destructive/10 text-destructive" },
+/** Nhãn dễ đọc cho đường dẫn đang xem */
+function pageLabel(path: string) {
+  if (path === "/" || path === "") return "Trang chủ"
+  if (path === "/dishes") return "Danh sách món ăn"
+  if (path === "/about") return "Giới thiệu"
+  const id = /^\/dishes\/([^/]+)$/.exec(path)?.[1]
+  const dish = id ? getDish(id) : undefined
+  return dish ? `Món: ${dish.vi.name}` : path
 }
 
-/** Lý do chọn nhanh khi từ chối đơn */
-const QUICK_REASONS = ["Hết món", "Quán sắp đóng cửa", "Quán đang quá đông", "Ngoài khu vực giao hàng", "Thông tin đặt hàng không hợp lệ"]
+function Overview({ pin }: { pin: string }) {
+  const presence = usePresence(pin)
+  const stats = useStats(pin)
+  const devices = presence?.devices ?? []
+  const events = useLiveEvents(presence?.devices)
+  const byQr = devices.filter((d) => d.source === "qr").length
+  const today = stats?.days[stats.days.length - 1]
 
-const isClosed = (s: ShopOrderStatus) => s === "completed" || s === "cancelled"
+  return (
+    <>
+      {/* Số người đang online: đổi `presence.online` để thay đổi số hiển thị */}
+      <section className="rounded-3xl border border-border bg-gradient-to-br from-primary to-chart-2 p-6 text-primary-foreground shadow-lg">
+        <p className="flex items-center gap-2 text-sm font-semibold text-white/85">
+          <span className="relative flex size-2.5">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-white opacity-60" />
+            <span className="relative inline-flex size-2.5 rounded-full bg-white" />
+          </span>
+          Đang truy cập web ngay lúc này
+        </p>
+        <p className="mt-2 text-6xl font-extrabold tabular-nums">{presence?.online ?? "–"}</p>
+        <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5">
+            <QrCode className="size-4" />
+            Quét QR: {presence ? byQr : "–"}
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5">
+            <Link2 className="size-4" />
+            Mở link: {presence ? devices.length - byQr : "–"}
+          </span>
+        </div>
+      </section>
 
-const PAYMENT: Record<string, string> = {
-  qr: "Chuyển khoản QR",
-  bank: "Chuyển khoản",
-  wallet: "MoMo / ZaloPay",
-  cod: "Tiền mặt",
-}
+      <section className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard icon={Users} label="Lượt vào hôm nay" value={today?.visits} />
+        <StatCard icon={Eye} label="Lượt xem món hôm nay" value={today?.views} />
+        <StatCard icon={QrCode} label="Vào bằng QR hôm nay" value={today?.qr} />
+        <StatCard icon={Link2} label="Vào bằng link hôm nay" value={today?.link} />
+      </section>
 
-type Filter = "active" | "done" | "cancelled" | "all"
+      {/* Ai vừa vào / vừa rời đi: cập nhật mỗi 2 giây khi trang này đang mở */}
+      <section className="mt-4 rounded-2xl border border-border bg-card shadow-sm">
+        <h2 className="flex items-center gap-2 border-b border-border px-4 py-3 font-bold">
+          <Activity className="size-4 text-primary" />
+          Hoạt động trực tiếp
+        </h2>
+        {events.length === 0 ? (
+          <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+            Đang chờ… khi có người quét QR, mở link hoặc rời khỏi web, thông báo sẽ hiện ở đây.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {events.map((e) => (
+              <li key={e.key} className="animate-fade-up flex items-center gap-3 px-4 py-2.5 text-sm">
+                <span
+                  className={cn(
+                    "grid size-8 shrink-0 place-items-center rounded-full",
+                    e.kind === "join" ? "bg-chart-3/15 text-chart-3" : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {e.kind === "join" ? <LogIn className="size-4" /> : <LogOut className="size-4" />}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-semibold">
+                    {e.kind === "join"
+                      ? `Vừa vào bằng ${e.device.source === "qr" ? "mã QR" : "link"}`
+                      : "Vừa rời khỏi web"}
+                  </span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {pageLabel(e.device.path)} · thiết bị {e.device.id.slice(0, 6)}
+                  </span>
+                </span>
+                <time className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                  {new Date(e.at).toLocaleTimeString("vi-VN")}
+                </time>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
-function timeAgo(iso: string, now: number) {
-  const m = Math.floor((now - new Date(iso).getTime()) / 60000)
-  if (m < 1) return "vừa xong"
-  if (m < 60) return `${m} phút trước`
-  const h = Math.floor(m / 60)
-  return h < 24 ? `${h} giờ trước` : new Date(iso).toLocaleString("vi")
+      <section className="mt-4 rounded-2xl border border-border bg-card shadow-sm">
+        <h2 className="border-b border-border px-4 py-3 font-bold">Thiết bị đang online ({devices.length})</h2>
+        {devices.length === 0 ? (
+          <p className="px-4 py-8 text-center text-sm text-muted-foreground">Chưa có ai đang xem web</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {devices.map((d) => (
+              <li key={d.id} className="flex items-center gap-3 px-4 py-3 text-sm">
+                <span
+                  className={cn(
+                    "grid size-9 shrink-0 place-items-center rounded-full",
+                    d.source === "qr" ? "bg-primary/10 text-primary" : "bg-secondary text-secondary-foreground",
+                  )}
+                >
+                  {d.source === "qr" ? <QrCode className="size-4" /> : <Link2 className="size-4" />}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-semibold">{pageLabel(d.path)}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {d.source === "qr" ? "Vào bằng mã QR" : "Vào bằng link"} · thiết bị {d.id.slice(0, 6)}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </>
+  )
 }
 
 export default function AdminPage() {
-  const [pin, setPin] = useState<string | null>(null) // null = đang đọc localStorage
-  const [authed, setAuthed] = useState(false)
-  const [orders, setOrders] = useState<ShopOrder[]>([])
-  const [filter, setFilter] = useState<Filter>("active")
-  const [sound, setSound] = useState(false)
-  const [error, setError] = useState("")
-  const [now, setNow] = useState(() => Date.now())
-  const [busy, setBusy] = useState<string | null>(null)
-  const [shopId, setShopId] = useState("")
-  const shop = useShopInfo(shopId)
-
-  const seen = useRef<Set<string> | null>(null)
-  const audio = useRef<AudioContext | null>(null)
-
-  useEffect(() => setPin(readPin()), [])
-
-  const beep = useCallback(() => {
-    const ctx = audio.current
-    if (!ctx) return
-    // 2 tiếng "ting ting"
-    ;[0, 0.25].forEach((delay) => {
-      const o = ctx.createOscillator()
-      const g = ctx.createGain()
-      o.frequency.value = 880
-      g.gain.setValueAtTime(0.0001, ctx.currentTime + delay)
-      g.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime + delay + 0.02)
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + delay + 0.2)
-      o.connect(g).connect(ctx.destination)
-      o.start(ctx.currentTime + delay)
-      o.stop(ctx.currentTime + delay + 0.22)
-    })
-  }, [])
-
-  const load = useCallback(async () => {
-    if (!pin) return
-    try {
-      const res = await fetch("/api/orders", { headers: { "x-admin-pin": pin }, cache: "no-store" })
-      if (res.status === 401) {
-        setAuthed(false)
-        setError("Sai mã PIN")
-        writePin("")
-        return
-      }
-      if (!res.ok) throw new Error()
-      const list = (await res.json()) as ShopOrder[]
-      const shop = res.headers.get("x-shop") ?? ""
-      setShopId(shop)
-      writeShop(shop)
-      setAuthed(true)
-      setError("")
-      setOrders(list)
-
-      // Phát hiện đơn mới (bỏ qua lần tải đầu tiên)
-      const ids = new Set(list.map((o) => o.id))
-      if (seen.current && list.some((o) => !seen.current!.has(o.id))) beep()
-      seen.current = ids
-    } catch {
-      setError("Mất kết nối tới server — kiểm tra máy đang chạy npm run dev")
-    }
-  }, [pin, beep])
-
-  // Tự tải lại mỗi 3 giây
-  useEffect(() => {
-    if (!pin) return
-    load()
-    const id = setInterval(() => {
-      load()
-      setNow(Date.now())
-    }, POLL_MS)
-    return () => clearInterval(id)
-  }, [pin, load])
-
-  // Hiện số đơn mới trên tab trình duyệt
-  const newCount = orders.filter((o) => o.status === "ordered").length
-  useEffect(() => {
-    document.title = newCount ? `(${newCount}) Đơn mới · Bếp` : "Bếp · FoodLingo"
-  }, [newCount])
-
-  const toggleSound = () => {
-    if (!sound) {
-      audio.current ??= new AudioContext()
-      void audio.current.resume()
-      setSound(true)
-      beep() // phát thử
-    } else {
-      setSound(false)
-      void audio.current?.suspend()
-    }
-  }
-
-  /** Gửi đổi trạng thái lên server (đổi ngay trên màn hình cho nhanh, rồi tải lại để chắc chắn) */
-  const changeStatus = async (o: ShopOrder, status: ShopOrderStatus, reason = "") => {
-    if (!pin) return
-    setBusy(o.id)
-    setOrders((list) =>
-      list.map((x) => (x.id === o.id ? { ...x, status, ...(status === "cancelled" ? { cancelReason: reason } : {}) } : x)),
-    )
-    try {
-      const res = await fetch(`/api/orders/${o.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", "x-admin-pin": pin },
-        body: JSON.stringify({ status, reason }),
-      })
-      if (res.status === 409) setError(`Đơn #${o.id} đã hoàn thành hoặc đã bị từ chối trước đó, không đổi được nữa.`)
-      else if (!res.ok) setError(`Không cập nhật được đơn #${o.id}, thử lại nhé.`)
-    } catch {
-      setError("Mất kết nối tới server — kiểm tra máy đang chạy web")
-    } finally {
-      setBusy(null)
-      load()
-    }
-  }
-
-  const advance = (o: ShopOrder) => {
-    const next = STATUS[o.status].next
-    if (next) changeStatus(o, next)
-  }
-
-  const logout = () => {
-    writePin("")
-    setAuthed(false)
-    setOrders([])
-    seen.current = null
-    setPin("") // pin rỗng → hiện lại form nhập PIN
-  }
-
-  const reject = (o: ShopOrder, reason: string) => changeStatus(o, "cancelled", reason)
-
-  /* ---------- Nhập PIN ---------- */
-  if (pin === null) return null
-  // Có PIN nhưng server chưa trả lời: chưa hiện gì (tránh nháy trang quản lý khi PIN sai)
-  if (pin && !authed && !error) return null
-  if (!pin || (!authed && error === "Sai mã PIN")) {
-    return <PinForm title="Trang bếp" error={error} onSubmit={(p) => { writePin(p); setError(""); seen.current = null; setPin(p) }} />
-  }
-
-  const shown = orders.filter((o) =>
-    filter === "all"
-      ? true
-      : filter === "done"
-        ? o.status === "completed"
-        : filter === "cancelled"
-          ? o.status === "cancelled"
-          : !isClosed(o.status),
-  )
-  const activeCount = orders.filter((o) => !isClosed(o.status)).length
-  const cancelledCount = orders.filter((o) => o.status === "cancelled").length
-  // Doanh thu hôm nay: không tính đơn bị từ chối
-  const todayRevenue = orders
-    .filter((o) => o.status !== "cancelled" && new Date(o.createdAt).toDateString() === new Date(now).toDateString())
-    .reduce((s, o) => s + o.total, 0)
-
-  return (
-    <main className="mx-auto min-h-dvh max-w-7xl px-4 py-5">
-      {/* Header */}
-      <header className="flex flex-wrap items-center gap-3">
-        <div className="me-auto">
-          <h1 className="text-2xl font-extrabold">{shop?.name ?? "Đơn hàng"}</h1>
-          <p className="text-sm text-muted-foreground">
-            Tự cập nhật mỗi 3 giây · Doanh thu hôm nay: <b className="text-foreground">{formatPrice(todayRevenue)}</b>
-          </p>
-        </div>
-        <Link
-          href="/admin/nha-hang"
-          className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-bold shadow-sm transition-all hover:border-primary/40 active:scale-95"
-        >
-          <Store className="size-4 text-primary" />
-          Nhà hàng
-        </Link>
-        <Link
-          href="/admin/mon-an"
-          className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-bold shadow-sm transition-all hover:border-primary/40 active:scale-95"
-        >
-          <UtensilsCrossed className="size-4 text-primary" />
-          Món ăn
-        </Link>
-        <Link
-          href="/admin/thong-ke"
-          className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-bold shadow-sm transition-all hover:border-primary/40 active:scale-95"
-        >
-          <BarChart3 className="size-4 text-primary" />
-          Thống kê
-        </Link>
-        <ThemeToggle />
-        <button
-          onClick={toggleSound}
-          className={cn(
-            "inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold shadow-sm transition-all active:scale-95",
-            sound ? "bg-chart-3/15 text-chart-3" : "animate-pulse bg-primary text-primary-foreground",
-          )}
-        >
-          {sound ? <Bell className="size-4" /> : <BellOff className="size-4" />}
-          {sound ? "Âm báo: Bật" : "Bấm để bật âm báo"}
-        </button>
-        <button
-          onClick={load}
-          aria-label="Tải lại"
-          className="grid size-10 place-items-center rounded-full border border-border bg-card shadow-sm transition-transform active:scale-90"
-        >
-          <RefreshCw className="size-4" />
-        </button>
-        <button
-          onClick={logout}
-          className="inline-flex items-center gap-2 rounded-full border border-destructive/40 px-4 py-2.5 text-sm font-bold text-destructive transition-all hover:bg-destructive/10 active:scale-95"
-        >
-          <LogOut className="size-4" />
-          Đăng xuất
-        </button>
-      </header>
-
-      {error && (
-        <p className="mt-3 rounded-xl bg-destructive/10 px-4 py-2.5 text-sm font-semibold text-destructive">{error}</p>
-      )}
-
-      {/* Bộ lọc */}
-      <nav className="no-scrollbar -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1">
-        {(
-          [
-            ["active", `Đang xử lý (${activeCount})`],
-            ["done", "Đã xong"],
-            ["cancelled", `Đã từ chối (${cancelledCount})`],
-            ["all", "Tất cả"],
-          ] as const
-        ).map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setFilter(key)}
-            className={cn(
-              "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-all active:scale-95",
-              filter === key ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground",
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
-
-      {/* Danh sách đơn */}
-      {shown.length === 0 ? (
-        <div className="mt-20 flex flex-col items-center gap-3 text-center text-muted-foreground">
-          <UtensilsCrossed className="size-12 opacity-40" />
-          <p className="font-semibold">
-            {filter === "active" ? "Chưa có đơn nào cần làm" : filter === "cancelled" ? "Chưa có đơn nào bị từ chối" : "Chưa có đơn"}
-          </p>
-          <p className="text-sm">Khách quét QR ở bàn và đặt món, đơn sẽ hiện ở đây.</p>
-        </div>
-      ) : (
-        <ul className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {shown.map((o) => (
-            <OrderCard
-              key={o.id}
-              order={o}
-              now={now}
-              busy={busy === o.id}
-              onAdvance={() => advance(o)}
-              onReject={(reason) => reject(o, reason)}
-            />
-          ))}
-        </ul>
-      )}
-    </main>
-  )
-}
-
-function OrderCard({
-  order: o,
-  now,
-  busy,
-  onAdvance,
-  onReject,
-}: {
-  order: ShopOrder
-  now: number
-  busy: boolean
-  onAdvance: () => void
-  onReject: (reason: string) => void
-}) {
-  const st = STATUS[o.status]
-  const isNew = o.status === "ordered"
-  const closed = isClosed(o.status)
-  const { getFood } = useFoods()
-  const [rejecting, setRejecting] = useState(false)
-  const [reason, setReason] = useState("")
-
-  return (
-    <li
-      className={cn(
-        "flex flex-col rounded-2xl border bg-card p-4 shadow-sm",
-        isNew ? "border-primary ring-4 ring-primary/20" : "border-border",
-        closed && "opacity-70",
-      )}
-    >
-      {/* Bàn / giao hàng + trạng thái */}
-      <div className="flex items-start gap-3">
-        {o.table ? (
-          <div className="grid size-16 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground">
-            <div className="text-center leading-none">
-              <div className="text-[10px] font-bold uppercase">Bàn</div>
-              <div className="text-2xl font-extrabold">{o.table}</div>
-            </div>
-          </div>
-        ) : (
-          <div className="grid size-16 shrink-0 place-items-center rounded-2xl bg-secondary text-secondary-foreground">
-            <div className="flex flex-col items-center gap-0.5 text-[10px] font-bold uppercase">
-              <Bike className="size-6" />
-              Giao
-            </div>
-          </div>
-        )}
-        <div className="min-w-0 flex-1">
-          <p className="font-extrabold">#{o.id}</p>
-          <p className="text-xs text-muted-foreground">{timeAgo(o.createdAt, now)}</p>
-          {o.name && !o.name.startsWith("Bàn ") && <p className="truncate text-sm font-semibold">{o.name}</p>}
-        </div>
-        <span className={cn("shrink-0 rounded-full px-3 py-1 text-xs font-bold", st.badge)}>{st.label}</span>
-      </div>
-
-      {/* Món */}
-      <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
-        {o.items.map((it) => {
-          const food = getFood(it.foodId)
-          return (
-            <li key={it.foodId} className="flex items-baseline gap-2">
-              <span className="grid min-w-7 place-items-center rounded-md bg-accent px-1.5 text-sm font-extrabold text-accent-foreground">
-                {it.quantity}
-              </span>
-              <span className="flex-1 font-semibold">{food?.t.vi.name ?? it.foodId}</span>
-              <span className="text-sm tabular-nums text-muted-foreground">{formatPrice(it.unitPrice * it.quantity)}</span>
-            </li>
-          )
-        })}
-      </ul>
-
-      {o.status === "cancelled" && (
-        <p className="mt-3 flex gap-2 rounded-xl bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">
-          <XCircle className="mt-0.5 size-4 shrink-0" />
-          <span>Đã từ chối{o.cancelReason ? `: ${o.cancelReason}` : ""}</span>
-        </p>
-      )}
-
-      {o.note && (
-        <p className="mt-3 flex gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-sm font-semibold text-amber-700 dark:text-amber-400">
-          <MessageSquareText className="mt-0.5 size-4 shrink-0" />
-          {o.note}
-        </p>
-      )}
-
-      {/* Giao hàng: SĐT + địa chỉ */}
-      {!o.table && (o.phone || o.address) && (
-        <div className="mt-3 space-y-1 text-sm text-muted-foreground">
-          {o.phone && (
-            <a href={`tel:${o.phone}`} className="flex items-center gap-1.5 font-semibold text-foreground hover:text-primary">
-              <Phone className="size-3.5" />
-              {o.phone}
-            </a>
-          )}
-          {o.address && <p>{o.address}</p>}
-        </div>
-      )}
-
-      {/* Thanh toán + tổng (đẩy xuống đáy thẻ để các thẻ thẳng hàng) */}
-      <div className="min-h-3 flex-1" />
-      <div className="flex items-end justify-between gap-3 border-t border-border pt-3">
-        <div className="text-xs text-muted-foreground">
-          <p className="font-semibold text-foreground">{PAYMENT[o.payment] ?? o.payment}</p>
-          {o.payment !== "cod" && o.transferNote && (
-            <p>
-              Nội dung CK: <b className="text-foreground">{o.transferNote}</b>
-            </p>
-          )}
-        </div>
-        <p className="text-xl font-extrabold tabular-nums text-primary">{formatPrice(o.total)}</p>
-      </div>
-
-      {/* Ô từ chối đơn: chọn lý do nhanh hoặc tự gõ */}
-      {!closed && rejecting && (
-        <div className="animate-scale-in mt-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-3">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-bold text-destructive">Từ chối đơn #{o.id}</p>
-            <button
-              onClick={() => setRejecting(false)}
-              aria-label="Đóng"
-              className="grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-muted"
-            >
-              <X className="size-4" />
-            </button>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">Lý do sẽ hiện cho khách xem.</p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {QUICK_REASONS.map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setReason(r)}
-                className={cn(
-                  "rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors",
-                  reason === r ? "border-destructive bg-destructive text-white" : "border-border bg-card hover:border-destructive/40",
-                )}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
-          <input
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            maxLength={200}
-            placeholder="Hoặc nhập lý do khác…"
-            className="mt-2 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-destructive"
-          />
-          <button
-            onClick={() => {
-              onReject(reason.trim())
-              setRejecting(false)
-            }}
-            disabled={busy}
-            className="mt-2 w-full rounded-full bg-destructive px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-60"
-          >
-            Xác nhận từ chối
-          </button>
-        </div>
-      )}
-
-      {!closed && !rejecting && (
-        <div className="mt-3 flex gap-2">
-          <button
-            onClick={() => setRejecting(true)}
-            disabled={busy}
-            className={cn(
-              "rounded-full border border-destructive/40 font-bold text-destructive transition-all hover:bg-destructive/10 active:scale-[0.98] disabled:opacity-60",
-              isNew ? "flex-1 px-4 py-3" : "px-4 py-3 text-sm",
-            )}
-          >
-            {isNew ? "Từ chối" : "Hủy đơn"}
-          </button>
-          {st.next && (
-            <button
-              onClick={onAdvance}
-              disabled={busy}
-              className="flex-[2] rounded-full bg-primary px-4 py-3 font-bold text-primary-foreground shadow-md transition-all active:scale-[0.98] disabled:opacity-60"
-            >
-              {st.action}
-            </button>
-          )}
-        </div>
-      )}
-    </li>
-  )
+  return <AdminShell title="Quản trị Vị Việt">{(pin) => <Overview pin={pin} />}</AdminShell>
 }
