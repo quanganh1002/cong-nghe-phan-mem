@@ -7,11 +7,13 @@ import { Trash2, ShoppingBag, ArrowRight } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { QuantityStepper } from "@/components/quantity-stepper"
 import { useApp } from "@/lib/store"
-import { getFood, formatPrice } from "@/lib/foods"
+import { formatPrice } from "@/lib/foods"
+import { useFoods } from "@/lib/foods-client"
 import { useRequireLogin } from "@/lib/require-login"
 
 export default function CartPage() {
   const { dict, lang, cart, cartTotal, setQuantity, removeFromCart } = useApp()
+  const { getFood } = useFoods()
   const router = useRouter()
   const requireLogin = useRequireLogin()
 

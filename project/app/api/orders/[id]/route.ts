@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server"
+import { listAllFoods } from "@/lib/foods-db"
 import { STATUSES, listOrders, shopForPin, shopOfOrder, updateStatus, type ShopOrderStatus } from "@/lib/orders-db"
 
 export const dynamic = "force-dynamic"
@@ -14,7 +15,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params
   // Quán này chỉ được đổi đơn của chính mình
   const target = (await listOrders()).find((o) => o.id === id)
-  if (target && shopOfOrder(target) !== shop) return Response.json({ error: "forbidden" }, { status: 403 })
+  if (target && shopOfOrder(target, await listAllFoods()) !== shop) return Response.json({ error: "forbidden" }, { status: 403 })
   const body = (await req.json().catch(() => ({}))) as { status?: string; reason?: unknown }
   if (!STATUSES.includes(body.status as ShopOrderStatus)) {
     return Response.json({ error: "bad status" }, { status: 400 })

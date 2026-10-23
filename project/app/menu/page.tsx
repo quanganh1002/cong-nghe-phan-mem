@@ -7,7 +7,8 @@ import { LogIn, Search, SlidersHorizontal, UtensilsCrossed, X } from "lucide-rea
 import { AppShell } from "@/components/app-shell"
 import { FoodCard } from "@/components/food-card"
 import { useApp } from "@/lib/store"
-import { FOODS, CATEGORIES, type Category } from "@/lib/foods"
+import { CATEGORIES, type Category } from "@/lib/foods"
+import { useFoods } from "@/lib/foods-client"
 import { isValidTable, useTable } from "@/lib/table"
 import { cn } from "@/lib/utils"
 import { useFoodRatings } from "@/hooks/use-food-ratings"
@@ -17,6 +18,7 @@ type Sort = "popular" | "priceLow" | "priceHigh"
 function MenuContent() {
   const { dict, lang, user, hydrated } = useApp()
   const ratings = useFoodRatings()
+  const { foods } = useFoods()
   const params = useSearchParams()
   const initialCat = (params.get("cat") as Category | null) ?? "all"
 
@@ -36,7 +38,7 @@ function MenuContent() {
   const [sort, setSort] = useState<Sort>("popular")
 
   const results = useMemo(() => {
-    let list = FOODS.filter((f) => cat === "all" || f.category === cat)
+    let list = foods.filter((f) => cat === "all" || f.category === cat)
     const q = query.trim().toLowerCase()
     if (q) {
       list = list.filter((f) => {
@@ -53,7 +55,7 @@ function MenuContent() {
     else if (sort === "priceHigh") list.sort((a, b) => b.price - a.price)
     else list.sort((a, b) => Number(b.popular ?? false) - Number(a.popular ?? false) || (ratings[b.id]?.avg ?? 0) - (ratings[a.id]?.avg ?? 0))
     return list
-  }, [cat, query, sort, lang, ratings])
+  }, [foods, cat, query, sort, lang, ratings])
 
   const catTabs: { key: Category | "all"; label: string; icon?: string }[] = [
     { key: "all", label: dict.catAll },

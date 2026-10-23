@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { getFood } from "@/lib/foods"
+import { listAllFoods } from "@/lib/foods-db"
 import { getShopInfo } from "@/lib/shop-info-db"
 import { shopState } from "@/lib/shops"
 import { addOrder, listOrders, shopForPin, shopOfOrder, type ShopOrderItem } from "@/lib/orders-db"
@@ -30,10 +30,15 @@ export async function POST(req: NextRequest) {
 
   if (items.length === 0) return Response.json({ error: "empty order" }, { status: 400 })
   // Mỗi đơn chỉ được có món của 1 quán (trang thanh toán đã tách đơn theo quán)
-  if (new Set(items.map((i) => getFood(i.foodId)?.shop)).size > 1) return Response.json({ error: "mixed shops" }, { status: 400 })
+  const foods = await listAllFoods()
+  const foodOf = (id: string) => foods.find((f) => f.id === id)
+  // Món đã bị quán ẩn (ngừng bán) thì không nhận; giá luôn lấy theo menu hiện tại ở server, không tin giá trình duyệt gửi
+  if (items.some((i) => foodOf(i.foodId)?.hidden)) return Response.json({ error: "food unavailable" }, { status: 409 })
+  for (const i of items) i.unitPrice = foodOf(i.foodId)?.price ?? i.unitPrice
+  if (new Set(items.map((i) => foodOf(i.foodId)?.shop)).size > 1) return Response.json({ error: "mixed shops" }, { status: 400 })
 
   // Quán đang tạm đóng / tạm ngừng nhận đơn / ngoài giờ hoạt động thì không nhận đơn
-  const shopId = getFood(items[0].foodId)?.shop
+  const shopId = foodOf(items[0].foodId)?.shop
   if (shopId) {
     const state = shopState(await getShopInfo(shopId))
     if (state !== "open") return Response.json({ error: "shop not accepting", state }, { status: 409 })
@@ -59,7 +64,8 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const shop = shopForPin(req.headers.get("x-admin-pin"))
   if (!shop) return Response.json({ error: "unauthorized" }, { status: 401 })
-  const orders = (await listOrders()).filter((o) => shopOfOrder(o) === shop)
+  const foods = await listAllFoods()
+  const orders = (await listOrders()).filter((o) => shopOfOrder(o, foods) === shop)
   // ?all=1 → trả hết (trang thống kê); mặc định 300 đơn gần nhất (trang bếp). Mới nhất lên đầu.
   const all = req.nextUrl.searchParams.get("all") === "1"
   return Response.json((all ? orders : orders.slice(-300)).reverse(), { headers: { "x-shop": shop } })

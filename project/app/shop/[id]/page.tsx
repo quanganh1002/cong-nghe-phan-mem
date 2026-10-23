@@ -8,7 +8,7 @@ import { AppShell } from "@/components/app-shell"
 import { FoodCard } from "@/components/food-card"
 import { ReviewsPanel, useReviews } from "@/components/reviews"
 import { useApp } from "@/lib/store"
-import { FOODS } from "@/lib/foods"
+import { useFoods } from "@/lib/foods-client"
 import { cn } from "@/lib/utils"
 import { WEEKDAYS } from "@/lib/shops"
 import { useShopInfo } from "@/hooks/use-shop-info"
@@ -19,6 +19,7 @@ export default function ShopPage({ params }: { params: Promise<{ id: string }> }
   const { dict, lang } = useApp()
   const router = useRouter()
   const shop = useShopInfo(id)
+  const { foods: allFoods } = useFoods()
   const [tab, setTab] = useState<"menu" | "reviews">("menu")
   const endpoint = `/api/shops/${id}/reviews`
   const [reviews, loadReviews] = useReviews(endpoint)
@@ -50,7 +51,7 @@ export default function ShopPage({ params }: { params: Promise<{ id: string }> }
           .map(([, l]) => l)
           .join(", ")
       : ""
-  const foods = FOODS.filter((f) => f.shop === shop.id)
+  const foods = allFoods.filter((f) => f.shop === shop.id)
   // Trung bình số sao khách đánh giá; chưa có lượt nào thì hiện "–"
   const rating = reviews.length ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : "–"
 

@@ -7,13 +7,15 @@ import { ArrowRight, Search, Sparkles, Volume2 } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { FoodCard } from "@/components/food-card"
 import { useApp } from "@/lib/store"
-import { FOODS, CATEGORIES } from "@/lib/foods"
+import { CATEGORIES } from "@/lib/foods"
+import { useFoods } from "@/lib/foods-client"
 
 export default function HomePage() {
   const { dict, lang } = useApp()
-  const featured = FOODS.filter((f) => f.popular).slice(0, 4)
-  const newest = FOODS.filter((f) => f.isNew).slice(0, 9)
-  const hero = FOODS.find((f) => f.id === "pho-bo")!
+  const { foods } = useFoods()
+  const featured = foods.filter((f) => f.popular).slice(0, 4)
+  const newest = foods.filter((f) => f.isNew).slice(0, 9)
+  const hero = foods.find((f) => f.id === "pho-bo") ?? foods[0]
 
   return (
     <AppShell>
@@ -44,11 +46,13 @@ export default function HomePage() {
                 </span>
               </div>
             </div>
-            <div className="relative hidden aspect-square w-40 shrink-0 sm:block lg:w-52">
-              <div className="animate-float absolute inset-0 overflow-hidden rounded-full border-4 border-white/30 shadow-2xl">
-                <Image src={hero.image || "/placeholder.svg"} alt={hero.t[lang].name} fill className="object-cover" />
+            {hero && (
+              <div className="relative hidden aspect-square w-40 shrink-0 sm:block lg:w-52">
+                <div className="animate-float absolute inset-0 overflow-hidden rounded-full border-4 border-white/30 shadow-2xl">
+                  <Image src={hero.image || "/placeholder.svg"} alt={hero.t[lang].name} fill className="object-cover" />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </section>

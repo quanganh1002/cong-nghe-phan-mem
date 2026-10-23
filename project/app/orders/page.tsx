@@ -5,7 +5,8 @@ import Link from "next/link"
 import { CalendarDays, ChefHat, CircleCheck, ClipboardList, MapPin, PackageCheck, Truck, XCircle, type LucideIcon } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { useApp, ORDER_STEPS, type Order, type OrderStatus } from "@/lib/store"
-import { getFood, formatPrice } from "@/lib/foods"
+import { formatPrice } from "@/lib/foods"
+import { useFoods } from "@/lib/foods-client"
 import { useServerOrders, type ServerStatus } from "@/lib/order-links"
 import type { Dict } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
@@ -85,6 +86,7 @@ function OrderCard({
   live?: { serverId: string; status?: ServerStatus; reason?: string }
 }) {
   const { dict, lang } = useApp()
+  const { getFood } = useFoods()
   // Đơn đã gửi về quán: dùng trạng thái + mã đơn bên quán (trùng với trang bếp)
   const cancelled = live?.status === "cancelled"
   const status: OrderStatus = cancelled ? order.status : ((live?.status as OrderStatus | undefined) ?? order.status)

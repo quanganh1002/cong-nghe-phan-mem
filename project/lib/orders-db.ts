@@ -1,6 +1,6 @@
 import { promises as fs } from "fs"
 import path from "path"
-import { getFood } from "./foods"
+import type { Food } from "./foods"
 import type { ShopId } from "./shops"
 
 /**
@@ -28,9 +28,10 @@ export function shopForPin(pin: string | null): ShopId | null {
   return (Object.keys(SHOP_PINS) as ShopId[]).find((id) => SHOP_PINS[id] === pin) ?? null
 }
 
-/** Đơn thuộc quán nào (theo món đầu tiên; mỗi đơn chỉ có món của 1 quán) */
-export function shopOfOrder(o: Pick<ShopOrder, "items">): ShopId {
-  return getFood(o.items[0]?.foodId ?? "")?.shop ?? "sang"
+/** Đơn thuộc quán nào (theo món đầu tiên; mỗi đơn chỉ có món của 1 quán). `foods` = toàn bộ món, lấy từ listAllFoods() */
+export function shopOfOrder(o: Pick<ShopOrder, "items">, foods: Pick<Food, "id" | "shop">[]): ShopId {
+  const id = o.items[0]?.foodId ?? ""
+  return foods.find((f) => f.id === id)?.shop ?? "sang"
 }
 
 export const STATUSES = ["ordered", "confirmed", "preparing", "delivering", "completed", "cancelled"] as const

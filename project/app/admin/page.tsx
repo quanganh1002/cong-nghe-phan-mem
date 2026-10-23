@@ -21,7 +21,8 @@ import {
   XCircle,
   type LucideIcon,
 } from "lucide-react"
-import { getFood, formatPrice } from "@/lib/foods"
+import { formatPrice } from "@/lib/foods"
+import { useFoods } from "@/lib/foods-client"
 import { cn } from "@/lib/utils"
 import type { ShopOrder, ShopOrderStatus } from "@/lib/orders-db"
 import { readPin, writePin, writeShop } from "@/lib/admin-pin"
@@ -237,6 +238,13 @@ export default function AdminPage() {
           Nhà hàng
         </Link>
         <Link
+          href="/admin/mon-an"
+          className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-bold shadow-sm transition-all hover:border-primary/40 active:scale-95"
+        >
+          <UtensilsCrossed className="size-4 text-primary" />
+          Món ăn
+        </Link>
+        <Link
           href="/admin/thong-ke"
           className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-bold shadow-sm transition-all hover:border-primary/40 active:scale-95"
         >
@@ -340,6 +348,7 @@ function OrderCard({
   const st = STATUS[o.status]
   const isNew = o.status === "ordered"
   const closed = isClosed(o.status)
+  const { getFood } = useFoods()
   const [rejecting, setRejecting] = useState(false)
   const [reason, setReason] = useState("")
 

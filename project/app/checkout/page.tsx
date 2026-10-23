@@ -25,7 +25,8 @@ import {
 import { toast } from "sonner"
 import { AppShell } from "@/components/app-shell"
 import { useApp } from "@/lib/store"
-import { getFood, formatPrice } from "@/lib/foods"
+import { formatPrice } from "@/lib/foods"
+import { useFoods } from "@/lib/foods-client"
 import { getShop } from "@/lib/shops"
 import { useTable } from "@/lib/table"
 import { linkOrder } from "@/lib/order-links"
@@ -155,6 +156,7 @@ const METHODS: { key: Method; icon: LucideIcon; label: "cod" | "qr" | "bank" | "
  
 export default function CheckoutPage() {
   const { lang, cart, cartTotal, user, hydrated, placeOrder, clearCart } = useApp()
+  const { getFood } = useFoods()
   const t = lang === "vi" ? TEXT.vi : TEXT.en
   const [table] = useTable()
  
@@ -260,6 +262,10 @@ export default function CheckoutPage() {
             body: JSON.stringify({ ...payload, items, table, transferNote }),
           })
           if (res.status === 409) {
+            if (((await res.json().catch(() => ({}))) as { error?: string }).error === "food unavailable") {
+              toast.error(lang === "vi" ? "Trong giỏ có món quán đã ngừng bán, hãy xóa món đó rồi đặt lại." : "Your cart has a dish that is no longer sold. Remove it and try again.")
+              return
+            }
             const shopName = getShop(getFood(items[0].foodId)?.shop)?.name ?? ""
             toast.error(lang === "vi" ? `${shopName} hiện không nhận đơn (đã đóng cửa hoặc tạm ngừng nhận đơn).` : `${shopName} is not accepting orders right now.`)
             return

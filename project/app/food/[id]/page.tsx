@@ -11,7 +11,8 @@ import { FoodCard } from "@/components/food-card"
 import { ReviewsPanel, useReviews } from "@/components/reviews"
 import { refreshFoodRatings } from "@/hooks/use-food-ratings"
 import { useApp } from "@/lib/store"
-import { getFood, formatPrice, FOODS } from "@/lib/foods"
+import { formatPrice } from "@/lib/foods"
+import { useFoods } from "@/lib/foods-client"
 import { getLanguage } from "@/lib/languages"
 import { useShopInfo } from "@/hooks/use-shop-info"
 import { ShopAvatar } from "@/components/shop-avatar"
@@ -27,7 +28,9 @@ export default function FoodDetailPage({ params }: { params: Promise<{ id: strin
   const requireLogin = useRequireLogin()
   const [qty, setQty] = useState(1)
 
-  const food = getFood(id)
+  const { foods, getFood, loaded } = useFoods()
+  const found = getFood(id)
+  const food = found?.hidden ? undefined : found // món đã ẩn = ngừng bán
   const shop = useShopInfo(food?.shop)
   const reviewsEndpoint = `/api/foods/${id}/reviews`
   const [reviews, loadReviews] = useReviews(reviewsEndpoint)
@@ -44,6 +47,8 @@ export default function FoodDetailPage({ params }: { params: Promise<{ id: strin
   }, [lang])
 
   if (!food) {
+    // món do admin mới thêm chưa có trong menu gốc → chờ tải xong menu rồi mới kết luận "không có"
+    if (!loaded) return <AppShell>{null}</AppShell>
     return (
       <AppShell>
         <div className="flex flex-col items-center gap-4 px-4 py-24 text-center">
@@ -60,7 +65,7 @@ export default function FoodDetailPage({ params }: { params: Promise<{ id: strin
   const info = food.t[lang]
   const speechLang = getLanguage(lang).speechLang
   const narration = `${info.name}. ${info.description}`
-  const related = FOODS.filter((f) => f.category === food.category && f.id !== food.id).slice(0, 4)
+  const related = foods.filter((f) => f.category === food.category && f.id !== food.id).slice(0, 4)
 
   const handlePlay = () => {
     if (!speech.supported) {

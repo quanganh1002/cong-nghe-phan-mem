@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { getFood } from "@/lib/foods"
+import { findFood as getFood } from "@/lib/foods-db"
 import {
   addReview,
   contentFromBody,
@@ -22,7 +22,7 @@ const ERROR_STATUS = { not_found: 404, forbidden: 403 } as const
 
 /** Danh sách đánh giá của món — ai cũng xem được. Header x-user-id (nếu có) để đánh dấu đánh giá của mình (mine) */
 export async function GET(req: NextRequest, { params }: Ctx) {
-  const food = getFood((await params).id)
+  const food = await getFood((await params).id)
   if (!food) return Response.json({ error: "not found" }, { status: 404 })
   const viewer = req.headers.get("x-user-id")
   return Response.json((await listReviews(food.shop, food.id)).map((r) => toPublic(r, viewer)))
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
 
 /** Khách viết đánh giá món mới (viết nhiều lần được). Body: { userId, name, rating: 1..5, comment } */
 export async function POST(req: NextRequest, { params }: Ctx) {
-  const food = getFood((await params).id)
+  const food = await getFood((await params).id)
   if (!food) return Response.json({ error: "not found" }, { status: 404 })
   const review = reviewFromBody(await body(req), food.shop, food.id)
   if (!review) return Response.json({ error: "bad review" }, { status: 400 })
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
 
 /** Chủ đánh giá sửa. Body: { id, userId, rating, comment } — userId phải là chủ đánh giá */
 export async function PATCH(req: NextRequest, { params }: Ctx) {
-  if (!getFood((await params).id)) return Response.json({ error: "not found" }, { status: 404 })
+  if (!(await getFood((await params).id))) return Response.json({ error: "not found" }, { status: 404 })
   const b = await body(req)
   const content = contentFromBody(b)
   if (typeof b.id !== "string" || !userIdOf(b) || !content) return Response.json({ error: "bad request" }, { status: 400 })
@@ -51,7 +51,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
 
 /** Chủ đánh giá xóa. Body: { id, userId } */
 export async function DELETE(req: NextRequest, { params }: Ctx) {
-  if (!getFood((await params).id)) return Response.json({ error: "not found" }, { status: 404 })
+  if (!(await getFood((await params).id))) return Response.json({ error: "not found" }, { status: 404 })
   const b = await body(req)
   if (typeof b.id !== "string" || !userIdOf(b)) return Response.json({ error: "bad request" }, { status: 400 })
   const result = await deleteReview(b.id, userIdOf(b))

@@ -21,7 +21,8 @@ import {
   Wallet,
   XCircle,
 } from "lucide-react"
-import { getFood, formatPrice } from "@/lib/foods"
+import { formatPrice } from "@/lib/foods"
+import { getFoodNow, useFoods } from "@/lib/foods-client"
 import { cn } from "@/lib/utils"
 import type { ShopOrder } from "@/lib/orders-db"
 import type { OnlineDevice } from "@/lib/presence-db"
@@ -48,7 +49,7 @@ import {
  */
 
 const RANGES: RangeKey[] = ["today", "yesterday", "7d", "30d", "month", "lastMonth", "all", "custom"]
-const dishName = (id: string) => getFood(id)?.t.vi.name ?? id
+const dishName = (id: string) => getFoodNow(id)?.t.vi.name ?? id
 const short = (n: number) =>
   n >= 1_000_000 ? `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1).replace(".0", "")}tr` : n >= 1000 ? `${Math.round(n / 1000)}k` : String(n)
 
@@ -104,6 +105,7 @@ function OnlineDialog({ devices, onClose }: { devices: OnlineDevice[]; onClose: 
 }
 
 export default function StatsPage() {
+  useFoods() // tải menu thật để dishName tra được tên món do admin thêm
   const [pin, setPin] = useState<string | null>(null)
   const [authed, setAuthed] = useState(false)
   const [pinError, setPinError] = useState("")

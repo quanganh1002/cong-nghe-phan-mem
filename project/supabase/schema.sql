@@ -68,3 +68,16 @@ alter table public.reviews add column if not exists edited_at timestamptz;
 alter table public.reviews drop constraint if exists reviews_pkey;
 alter table public.reviews add primary key (id);
 create index if not exists reviews_target_idx on public.reviews (shop_id, food_id, created_at desc);
+
+-- Món ăn do admin thêm/sửa (trang /admin/mon-an). Trùng id với menu gốc trong code thì bản này thắng.
+create table if not exists public.foods (
+  id         text primary key,
+  data       jsonb not null,
+  updated_at timestamptz not null default now()
+);
+alter table public.foods enable row level security;
+
+-- Kho ảnh món (công khai để khách xem được). Chỉ server (khóa secret) mới ghi được.
+insert into storage.buckets (id, name, public)
+values ('foods', 'foods', true)
+on conflict (id) do nothing;

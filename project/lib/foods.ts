@@ -18,6 +18,8 @@ export interface Food {
   image: string
   popular?: boolean
   isNew?: boolean
+  /** Quán đã ẩn món (ngừng bán): không hiện trên menu nhưng đơn cũ vẫn tra được tên/ảnh */
+  hidden?: boolean
   t: Record<LangCode, FoodText>
 }
 
@@ -744,6 +746,7 @@ const BASE_FOODS: Food[] = [
   },
 ]
 
+/** Menu gốc trong code (dữ liệu mẫu ban đầu). Món do admin thêm/sửa nằm trong DB — xem lib/foods-db.ts (server) và lib/foods-client.ts (trình duyệt) */
 export const FOODS: Food[] = [...BASE_FOODS, ...MORE_FOODS]
 
 export const CATEGORIES: { key: Category; icon: string }[] = [

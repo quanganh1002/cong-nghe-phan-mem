@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react"
 import { DEFAULT_LANG, getLanguage, type LangCode } from "./languages"
 import { translations, type Dict } from "./i18n"
-import { FOODS } from "./foods"
+import { getFoodNow, useFoods } from "./foods-client"
 
 export type OrderStatus = "ordered" | "confirmed" | "preparing" | "delivering" | "completed"
 
@@ -79,10 +79,11 @@ const USER_KEY = "foodlingo:user"
 const userCartKey = (userId: string) => `${CART_KEY}:${userId}`
 
 function price(foodId: string): number {
-  return FOODS.find((f) => f.id === foodId)?.price ?? 0
+  return getFoodNow(foodId)?.price ?? 0
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  useFoods() // tải menu thật từ server và render lại (cartTotal) khi admin đổi giá
   const [lang, setLangState] = useState<LangCode>(DEFAULT_LANG)
   const [cart, setCart] = useState<CartItem[]>([])
   const [orders, setOrders] = useState<Order[]>([])
