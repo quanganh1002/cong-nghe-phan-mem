@@ -9,6 +9,10 @@ create table if not exists presence (
   source text not null default 'link'
 );
 
+-- Nếu bảng presence đã có từ phiên bản cũ (thiếu cột) thì bổ sung; chạy lại nhiều lần vẫn an toàn
+alter table presence add column if not exists path text not null default '';
+alter table presence add column if not exists source text not null default 'link';
+
 -- Lượt truy cập theo ngày (giờ Việt Nam)
 create table if not exists visit_days (
   day date primary key,
