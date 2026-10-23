@@ -34,16 +34,42 @@ function persist(lang: LangCode) {
   }
 }
 
+/**
+ * Bản dịch dựng sẵn (scripts/pretranslate.mjs → public/translations/<lang>.json).
+ * Giữ trong bộ nhớ, ưu tiên hơn việc gọi /api/translate; chỉ chữ còn thiếu mới phải dịch lúc chạy.
+ */
+const statics = new Map<LangCode, Record<string, string>>()
+const staticLoads = new Map<LangCode, Promise<void>>()
+
+function loadStatic(lang: LangCode): Promise<void> {
+  let job = staticLoads.get(lang)
+  if (!job) {
+    job = fetch(`/translations/${lang}.json`)
+      .then((res) => (res.ok ? (res.json() as Promise<Record<string, string>>) : {}))
+      .then((table) => {
+        statics.set(lang, table)
+      })
+      .catch(() => {
+        statics.set(lang, {})
+      })
+    staticLoads.set(lang, job)
+  }
+  return job
+}
+
 /** Bản dịch đã có (hoặc chính văn bản gốc nếu chưa dịch) */
 function peek(texts: string[], lang: LangCode): string[] {
   if (typeof window === "undefined") return texts
   const c = cacheFor(lang)
-  return texts.map((t) => c[t] ?? t)
+  const s = statics.get(lang)
+  return texts.map((t) => s?.[t] ?? c[t] ?? t)
 }
 
 async function translate(texts: string[], lang: LangCode): Promise<void> {
+  await loadStatic(lang)
   const c = cacheFor(lang)
-  const missing = [...new Set(texts.filter((t) => t && !(t in c)))]
+  const s = statics.get(lang) ?? {}
+  const missing = [...new Set(texts.filter((t) => t && !(t in c) && !(t in s)))]
   for (let i = 0; i < missing.length; i += BATCH) {
     const batch = missing.slice(i, i + BATCH)
     const key = lang + "\u0000" + batch.join("\u0001")

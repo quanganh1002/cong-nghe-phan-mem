@@ -1,16 +1,16 @@
 "use client"
 
-import { use, useEffect, useState } from "react"
+import { use, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, BookOpen, Leaf, Map as MapIcon, MapPin, Pause, Play, RotateCcw, ScrollText, Utensils, Volume2 } from "lucide-react"
+import { ArrowLeft, BookOpen, Languages, Leaf, Map as MapIcon, MapPin, Pause, Play, RotateCcw, ScrollText, SkipBack, SkipForward, Utensils, Volume2 } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { DishCard, DishVisual } from "@/components/dish-card"
 import { useApp } from "@/lib/store"
 import { DISHES, getDish } from "@/lib/dishes"
 import { getLanguage } from "@/lib/languages"
 import { useDishText } from "@/lib/use-dish-text"
-import { useSpeech } from "@/hooks/use-speech"
+import { SPEEDS, splitText, useSpeech } from "@/hooks/use-speech"
 import { cn, goBack } from "@/lib/utils"
 
 const REGION_KEY = { north: "regionNorth", central: "regionCentral", south: "regionSouth" } as const
@@ -28,6 +28,7 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
   const router = useRouter()
   const speech = useSpeech()
   const [unsupported, setUnsupported] = useState(false)
+  const currentRef = useRef<HTMLButtonElement>(null)
 
   const dish = getDish(id)
   const related = dish
@@ -44,6 +45,10 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
     speech.stop()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang])
+  // Keep the sentence being read visible inside the transcript box
+  useEffect(() => {
+    currentRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" })
+  }, [speech.current])
 
   if (!dish) {
     return (
@@ -69,6 +74,7 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
     `${dict.sectionIngredients}. ${info.ingredients}`,
     `${dict.sectionTip}. ${info.tip}`,
   ].join("\n")
+  const segments = splitText(narration)
   const ingredients = info.ingredients.split(/\s*[,、，،]\s*/).filter(Boolean)
   const isPlaying = speech.speaking && !speech.paused
 
@@ -79,7 +85,7 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
     }
     if (speech.speaking && !speech.paused) speech.pause()
     else if (speech.speaking && speech.paused) speech.resume()
-    else speech.speak(narration, language.speechLang)
+    else speech.speak(segments, language.speechLang)
   }
 
   const sections = [
@@ -116,7 +122,17 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
             </span>
           </div>
           <h1 className="mt-2 text-2xl font-extrabold leading-tight">{info.name}</h1>
+          {/* Keep the original Vietnamese dish name next to a translated one */}
+          {lang !== "vi" && dish.vi.name !== info.name && (
+            <p className="mt-0.5 text-sm font-semibold text-primary">🇻🇳 {dish.vi.name}</p>
+          )}
           <p className="mt-2 text-pretty leading-relaxed text-muted-foreground">{info.summary}</p>
+          {lang !== "vi" && lang !== "en" && (
+            <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
+              <Languages className="mt-0.5 size-3.5 shrink-0" />
+              {dict.machineNotice}
+            </p>
+          )}
           <Link
             href={`/map?dish=${dish.id}`}
             className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/40 px-3.5 py-1.5 text-sm font-bold text-primary transition-colors hover:bg-primary/10"
@@ -156,10 +172,7 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
               </div>
               {speech.speaking && (
                 <button
-                  onClick={() => {
-                    speech.stop()
-                    speech.speak(narration, language.speechLang)
-                  }}
+                  onClick={() => speech.speak(segments, language.speechLang, 0)}
                   aria-label={dict.replay}
                   className="grid size-9 shrink-0 place-items-center rounded-full bg-background/70 text-foreground shadow transition-transform active:scale-90"
                 >
@@ -167,6 +180,53 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
                 </button>
               )}
             </div>
+
+            {/* Sentence controls + speed */}
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={speech.prev}
+                  disabled={!speech.speaking}
+                  aria-label={dict.prevSentence}
+                  className="grid size-9 place-items-center rounded-full bg-background/70 shadow transition-transform active:scale-90 disabled:opacity-40"
+                >
+                  <SkipBack className="size-4 rtl:rotate-180" />
+                </button>
+                <button
+                  onClick={speech.next}
+                  disabled={!speech.speaking}
+                  aria-label={dict.nextSentence}
+                  className="grid size-9 place-items-center rounded-full bg-background/70 shadow transition-transform active:scale-90 disabled:opacity-40"
+                >
+                  <SkipForward className="size-4 rtl:rotate-180" />
+                </button>
+              </div>
+              <button
+                onClick={() => speech.setSpeed(SPEEDS[(SPEEDS.indexOf(speech.speed as (typeof SPEEDS)[number]) + 1) % SPEEDS.length])}
+                aria-label={dict.speechSpeed}
+                title={dict.speechSpeed}
+                className="rounded-full bg-background/70 px-3 py-1.5 text-sm font-bold tabular-nums shadow transition-transform active:scale-90"
+              >
+                {speech.speed}x
+              </button>
+            </div>
+
+            {/* Transcript: current sentence is highlighted, tap a sentence to read from there */}
+            <p className="mt-3 max-h-48 overflow-y-auto text-pretty text-sm leading-relaxed">
+              {segments.map((s, i) => (
+                <button
+                  key={i}
+                  ref={i === speech.current ? currentRef : undefined}
+                  onClick={() => speech.speak(segments, language.speechLang, i)}
+                  className={cn(
+                    "me-1 inline rounded px-0.5 text-start transition-colors",
+                    i === speech.current ? "bg-primary/20 font-semibold text-foreground" : "text-muted-foreground hover:bg-background/60",
+                  )}
+                >
+                  {s}
+                </button>
+              ))}
+            </p>
             <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
               {unsupported ? dict.notSupported : dict.narrationNote}
             </p>

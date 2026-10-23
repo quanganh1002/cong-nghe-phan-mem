@@ -26,6 +26,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const l = localStorage.getItem(LANG_KEY) as LangCode | null
       if (l && LANGUAGES.some((x) => x.code === l)) setLangState(l)
+      else {
+        // First visit: pick the browser language if we support it
+        const preferred = (navigator.languages?.length ? navigator.languages : [navigator.language]).map((x) =>
+          x.toLowerCase().split("-")[0],
+        )
+        const match = preferred.find((p) => LANGUAGES.some((x) => x.code === p))
+        if (match) setLangState(match as LangCode)
+      }
     } catch {
       // không đọc được localStorage: dùng ngôn ngữ mặc định
     }
