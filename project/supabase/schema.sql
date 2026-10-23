@@ -75,6 +75,15 @@ create table if not exists public.foods (
 );
 alter table public.foods enable row level security;
 
+-- Thiết bị đang online (lib/presence-db.ts): mỗi tab gửi heartbeat, dashboard thống kê đếm
+create table if not exists public.presence (
+  device_id text primary key,
+  last_seen timestamptz not null
+);
+alter table public.presence add column if not exists path text;
+alter table public.presence add column if not exists user_info jsonb;
+alter table public.presence enable row level security;
+
 -- Kho ảnh món (công khai để khách xem được). Chỉ server (khóa secret) mới ghi được.
 insert into storage.buckets (id, name, public)
 values ('foods', 'foods', true)
