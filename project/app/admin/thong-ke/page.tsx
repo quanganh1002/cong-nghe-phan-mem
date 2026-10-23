@@ -24,6 +24,7 @@ import {
 import { getFood, formatPrice } from "@/lib/foods"
 import { cn } from "@/lib/utils"
 import type { ShopOrder } from "@/lib/orders-db"
+import type { OnlineDevice } from "@/lib/presence-db"
 import { readPin, writePin } from "@/lib/admin-pin"
 import { PinForm } from "@/components/admin-pin-form"
 import { downloadXlsx, type Cell } from "@/lib/xlsx-lite"
@@ -50,6 +51,57 @@ const RANGES: RangeKey[] = ["today", "yesterday", "7d", "30d", "month", "lastMon
 const dishName = (id: string) => getFood(id)?.t.vi.name ?? id
 const short = (n: number) =>
   n >= 1_000_000 ? `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1).replace(".0", "")}tr` : n >= 1000 ? `${Math.round(n / 1000)}k` : String(n)
+
+/** Popup listing who is online right now (profile is self-declared by each device) */
+function OnlineDialog({ devices, onClose }: { devices: OnlineDevice[]; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose()
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [onClose])
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-label="Thiết bị đang online"
+        className="flex max-h-[80dvh] w-full max-w-md flex-col rounded-2xl border border-border bg-card shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h2 className="font-extrabold">Đang online ({devices.length})</h2>
+          <button onClick={onClose} aria-label="Đóng" className="grid size-8 place-items-center rounded-full hover:bg-muted">
+            <XCircle className="size-5" />
+          </button>
+        </div>
+        <ul className="divide-y divide-border overflow-y-auto">
+          {devices.length === 0 && <li className="px-4 py-8 text-center text-sm text-muted-foreground">Chưa có ai online</li>}
+          {devices.map((d) => (
+            <li key={d.id} className="px-4 py-3 text-sm">
+              <div className="flex items-center gap-3">
+                <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 font-bold text-primary">
+                  {d.user ? d.user.name.trim().charAt(0).toUpperCase() : "?"}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate font-bold">{d.user ? d.user.name : "Khách (chưa đăng nhập)"}</p>
+                  <p className="truncate text-xs text-muted-foreground">Đang xem: {d.path || "/"}</p>
+                </div>
+              </div>
+              {d.user && (
+                <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 ps-[3.25rem]text-xs">
+                  {d.user.username && (<><dt className="text-muted-foreground">Tài khoản</dt><dd className="truncate">{d.user.username}</dd></>)}
+                  {d.user.email && (<><dt className="text-muted-foreground">Email</dt><dd className="truncate">{d.user.email}</dd></>)}
+                  {d.user.phone && (<><dt className="text-muted-foreground">SĐT</dt><dd>{d.user.phone}</dd></>)}
+                  {d.user.address && (<><dt className="text-muted-foreground">Địa chỉ</dt><dd>{d.user.address}</dd></>)}
+                </dl>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
 
 export default function StatsPage() {
   const [pin, setPin] = useState<string | null>(null)
@@ -104,12 +156,18 @@ export default function StatsPage() {
 
   // Devices online right now: poll the server every 5s (server counts heartbeats, see lib/presence-db.ts)
   const [online, setOnline] = useState<number | null>(null)
+  const [devices, setDevices] = useState<OnlineDevice[]>([])
+  const [showOnline, setShowOnline] = useState(false)
   useEffect(() => {
     if (!pin || !authed) return
     const poll = async () => {
       try {
         const res = await fetch("/api/presence", { headers: { "x-admin-pin": pin }, cache: "no-store" })
-        if (res.ok) setOnline(((await res.json()) as { online: number }).online)
+        if (res.ok) {
+          const data = (await res.json()) as { online: number; devices?: OnlineDevice[] }
+          setOnline(data.online)
+          setDevices(data.devices ?? [])
+        }
       } catch {}
     }
     poll()
@@ -167,14 +225,17 @@ export default function StatsPage() {
           </p>
         </div>
         {/* THE displayed online number: change `online` here to alter what the dashboard shows */}
-        <div className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-bold shadow-sm">
+        <button
+          onClick={() => setShowOnline(true)}
+          className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-bold shadow-sm transition-all hover:border-primary/40 active:scale-95"
+        >
           <span className="relative flex size-2.5">
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-chart-3 opacity-60" />
             <span className="relative inline-flex size-2.5 rounded-full bg-chart-3" />
           </span>
           <span className="tabular-nums">{online ?? "–"}</span>
           <span className="font-semibold text-muted-foreground">thiết bị đang online</span>
-        </div>
+        </button>
         <button
           onClick={() => exportExcel(stats, start, end)}
           disabled={stats.inRange.length === 0}
@@ -191,6 +252,8 @@ export default function StatsPage() {
           <RefreshCw className={cn("size-4", loading && "animate-spin")} />
         </button>
       </header>
+
+      {showOnline && <OnlineDialog devices={devices} onClose={() => setShowOnline(false)} />}
 
       {error && <p className="mt-3 rounded-xl bg-destructive/10 px-4 py-2.5 text-sm font-semibold text-destructive">{error}</p>}
 

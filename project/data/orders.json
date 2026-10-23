@@ -229,7 +229,7 @@
     "total": 45000,
     "id": "472901",
     "createdAt": "2026-10-22T16:50:53.546Z",
-    "status": "ordered"
+    "status": "completed"
   },
   {
     "table": null,
@@ -269,6 +269,6 @@
     "total": 45000,
     "id": "811640",
     "createdAt": "2026-10-22T16:56:11.294Z",
-    "status": "ordered"
+    "status": "completed"
   }
 ]
