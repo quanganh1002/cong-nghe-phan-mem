@@ -57,8 +57,6 @@ alter table public.reviews add column if not exists replied_at timestamptz;
 
 -- Đánh giá món: food_id rỗng = đánh giá quán, có giá trị = đánh giá món đó
 alter table public.reviews add column if not exists food_id text not null default '';
-alter table public.reviews drop constraint if exists reviews_pkey;
-alter table public.reviews add primary key (shop_id, food_id, user_id);
 
 -- Mỗi đánh giá có id riêng: khách viết được nhiều đánh giá cho 1 món, chủ đánh giá sửa/xóa theo id
 alter table public.reviews add column if not exists id text;
