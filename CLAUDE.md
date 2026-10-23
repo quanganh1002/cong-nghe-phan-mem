@@ -21,7 +21,7 @@ There is no lint script and no test suite configured, and no environment variabl
 
 ## Architecture
 
-**Content (`lib/dishes.ts`).** Static list of dishes (`DISHES`). Each has `region` (north/central/south), `category` (main/snack/drink/dessert/festival), optional `image` in `public/foods/` (no image → emoji on a gradient, see `DishVisual`), and Vietnamese + English text with fields `name, summary, origin, culture, ingredients, tip`. To add a dish, add one entry here; every page picks it up.
+**Content (`lib/dishes.ts`).** Static list of dishes (`DISHES`). Each has `region` (north/central/south), `category` (main/snack/drink/dessert/festival), optional `image` in `public/foods/` (no image → emoji on a gradient, see `DishVisual`), and Vietnamese + English text with fields `name, summary, origin, culture, ingredients, tip`. To add a dish, add one entry here; every page picks it up. Also add its Google Maps place to `DISH_PLACES` (same file) for the food map; otherwise `/map` falls back to the region's main city.
 
 **i18n.** 10 languages in `lib/languages.ts`. Only Vietnamese and English are hand-written (UI strings in `lib/i18n.ts`, dish text in `lib/dishes.ts`). The other 8 are machine-translated from the English text at runtime: `lib/translate-client.ts` (`useL10n`) calls `POST /api/translate` (Google Translate gtx, no key, server memory cache) and caches results in localStorage (`foodlingo:tr:v1:<lang>`). `useApp()` in `lib/store.tsx` gives `lang`, `setLang`, `dict`; dish text goes through `useDishText` in `lib/use-dish-text.ts`. New UI strings must be added to both `vi` and `en` in `lib/i18n.ts`.
 

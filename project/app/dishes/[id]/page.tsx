@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, BookOpen, Leaf, MapPin, Pause, Play, RotateCcw, ScrollText, Utensils, Volume2 } from "lucide-react"
+import { ArrowLeft, BookOpen, Leaf, Map as MapIcon, MapPin, Pause, Play, RotateCcw, ScrollText, Utensils, Volume2 } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { DishCard, DishVisual } from "@/components/dish-card"
 import { useApp } from "@/lib/store"
@@ -117,6 +117,13 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
           </div>
           <h1 className="mt-2 text-2xl font-extrabold leading-tight">{info.name}</h1>
           <p className="mt-2 text-pretty leading-relaxed text-muted-foreground">{info.summary}</p>
+          <Link
+            href={`/map?dish=${dish.id}`}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/40 px-3.5 py-1.5 text-sm font-bold text-primary transition-colors hover:bg-primary/10"
+          >
+            <MapIcon className="size-4" />
+            {dict.mapFindOnMap}
+          </Link>
 
           {/* Narration player */}
           <div className="mt-5 rounded-2xl bg-gradient-to-br from-accent to-secondary p-4">
