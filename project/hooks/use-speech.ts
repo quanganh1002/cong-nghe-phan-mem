@@ -19,7 +19,7 @@ function pickVoice(voices: SpeechSynthesisVoice[], lang: string): SpeechSynthesi
   const sameLang = voices.filter((v) => norm(v.lang).split("-")[0] === base)
   if (sameLang.length === 0) return null
   for (const re of PREFERRED) {
-    const exact = sameLang.find((v) => re.test(v.name) && norm(v.lang) === norm(lang))
+    const exact = sameLang.find((v) => re       .test(v.name) && norm(v.lang) === norm(lang))
     if (exact) return exact
     const any = sameLang.find((v) => re.test(v.name))
     if (any) return any
