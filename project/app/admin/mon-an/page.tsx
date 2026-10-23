@@ -19,13 +19,14 @@ function DishTable({ pin }: { pin: string }) {
         {DISHES.length} món · {CATEGORIES.length} nhóm. Để thêm hoặc sửa nội dung món, chỉnh file <code>lib/dishes.ts</code>.
       </p>
       <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm">
-        <table className="w-full min-w-[560px] text-sm">
+        <table className="w-full min-w-[620px] text-sm">
           <thead>
             <tr className="border-b border-border text-left text-xs text-muted-foreground">
               <th className="px-4 py-3 font-semibold">Món</th>
               <th className="px-2 py-3 font-semibold">Vùng</th>
               <th className="px-2 py-3 font-semibold">Loại</th>
               <th className="px-2 py-3 text-right font-semibold">Lượt xem</th>
+              <th className="px-2 py-3 text-right font-semibold">Lượt nghe</th>
               <th className="w-10 px-4 py-3" />
             </tr>
           </thead>
@@ -43,6 +44,7 @@ function DishTable({ pin }: { pin: string }) {
                 <td className="px-2 py-2.5 text-muted-foreground">{REGION[d.region]}</td>
                 <td className="px-2 py-2.5 text-muted-foreground">{CATEGORY[d.category]}</td>
                 <td className="px-2 py-2.5 text-right font-bold tabular-nums">{stats ? (stats.dishes[d.id] ?? 0) : "–"}</td>
+                <td className="px-2 py-2.5 text-right font-bold tabular-nums">{stats ? (stats.dishPlays[d.id] ?? 0) : "–"}</td>
                 <td className="px-4 py-2.5">
                   <Link href={`/dishes/${d.id}`} target="_blank" aria-label="Mở trang món" className="text-muted-foreground hover:text-primary">
                     <ExternalLink className="size-4" />

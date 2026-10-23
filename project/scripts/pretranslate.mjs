@@ -11,7 +11,7 @@ import { LANGUAGES } from "../lib/languages.ts"
 
 const GOOGLE_CODE = { zh: "zh-CN" }
 const CHUNK = 800
-const CONCURRENCY = 6
+const CONCURRENCY = 2 // higher values get rate-limited by Google
 const OUT_DIR = new URL("../public/translations/", import.meta.url)
 
 const sources = new Set(Object.values(DICT_EN))

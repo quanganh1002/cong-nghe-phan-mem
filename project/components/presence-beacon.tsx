@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react"
 import { usePathname } from "next/navigation"
+import { detectLang, useApp } from "@/lib/store"
 
 const HEARTBEAT_MS = 8_000
 const ID_KEY = "foodlingo:device-id"
@@ -37,16 +38,20 @@ function source(): "qr" | "link" {
 export function PresenceBeacon() {
   const pathname = usePathname()
   const isAdmin = pathname.startsWith("/admin") // màn hình quản trị không tính là khách
+  const { lang } = useApp()
   const pathRef = useRef(pathname)
   pathRef.current = pathname
+  const langRef = useRef<string>("")
   const hitRef = useRef<() => void>(() => {})
 
   useEffect(() => {
     if (isAdmin) return
     const id = deviceId()
     const src = source()
+    // AppProvider chưa kịp đọc ngôn ngữ ở lần chạy đầu, nên tự dò (cùng cách dò với provider)
+    langRef.current = detectLang()
     const send = (extra: Record<string, unknown> = {}) => {
-      const data = JSON.stringify({ id, path: pathRef.current, src, ...extra })
+      const data = JSON.stringify({ id, path: pathRef.current, src, lang: langRef.current, ...extra })
       fetch("/api/presence", { method: "POST", body: data, keepalive: true }).catch(() => {})
     }
 
@@ -74,6 +79,16 @@ export function PresenceBeacon() {
       send({ leave: true }) // chuyển vào /admin hoặc tắt component
     }
   }, [isAdmin])
+
+  // Khách đổi ngôn ngữ: heartbeat kế tiếp sẽ mang ngôn ngữ mới (bỏ qua lần đầu vì lúc đó lang chưa được đọc từ localStorage)
+  const firstLang = useRef(true)
+  useEffect(() => {
+    if (firstLang.current) {
+      firstLang.current = false
+      return
+    }
+    langRef.current = lang
+  }, [lang])
 
   // Khi khách chuyển trang: báo ngay trang mới (lần đầu đã gửi ở trên nên bỏ qua)
   const first = useRef(true)

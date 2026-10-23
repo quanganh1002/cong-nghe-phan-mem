@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server"
 import { isAdminPin } from "@/lib/admin-auth"
 import { getDish } from "@/lib/dishes"
+import { LANGUAGES } from "@/lib/languages"
 import { listOnline, removeDevice, touchDevice, type Source } from "@/lib/presence-db"
 import { recordDishView, recordVisit } from "@/lib/visits-db"
 
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
 /**
- * POST /api/presence  { id, leave?, path?, src?, start?, hit? } — công khai: thiết bị báo "tôi đang ở đây" (hoặc "tôi đã rời").
+ * POST /api/presence  { id, leave?, path?, src?, lang?, start?, hit? } — công khai: thiết bị báo "tôi đang ở đây" (hoặc "tôi đã rời").
  *   start = tab mới vào web (đếm 1 lượt truy cập), hit = vừa mở một trang (đếm lượt xem món ăn).
  * GET  /api/presence — chỉ admin (x-admin-pin): { online, devices } = thiết bị đang online ngay lúc này.
  */
@@ -25,10 +26,11 @@ export async function POST(req: NextRequest) {
     } else {
       const path = clip(body?.path, 200)
       const source: Source = body?.src === "qr" ? "qr" : "link"
-      const counted = await touchDevice(id, path, source, body?.hit === true)
+      const lang = LANGUAGES.some((l) => l.code === body?.lang) ? (body?.lang as string) : ""
+      const counted = await touchDevice(id, path, source, lang, body?.hit === true)
       if (body?.start === true) await recordVisit(source)
       const dishId = /^\/dishes\/([a-z0-9-]+)$/.exec(path)?.[1]
-      if (counted && dishId && getDish(dishId)) await recordDishView(dishId)
+      if (counted && dishId && getDish(dishId)) await recordDishView(dishId, lang)
     }
   } catch {
     return Response.json({ error: "server" }, { status: 500 })

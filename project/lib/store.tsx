@@ -18,25 +18,28 @@ const LANG_KEY = "foodlingo:lang"
 const VI_VALUES = DICT_KEYS.map((k) => DICT_VI[k])
 const EN_VALUES = DICT_KEYS.map((k) => DICT_EN[k])
 
+/** Saved language, else the browser language if supported, else the default. Client-side only. */
+export function detectLang(): LangCode {
+  try {
+    const saved = localStorage.getItem(LANG_KEY) as LangCode | null
+    if (saved && LANGUAGES.some((x) => x.code === saved)) return saved
+    const preferred = (navigator.languages?.length ? navigator.languages : [navigator.language]).map((x) =>
+      x.toLowerCase().split("-")[0],
+    )
+    const match = preferred.find((p) => LANGUAGES.some((x) => x.code === p))
+    if (match) return match as LangCode
+  } catch {
+    // không đọc được localStorage: dùng ngôn ngữ mặc định
+  }
+  return DEFAULT_LANG
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<LangCode>(DEFAULT_LANG)
   const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
-    try {
-      const l = localStorage.getItem(LANG_KEY) as LangCode | null
-      if (l && LANGUAGES.some((x) => x.code === l)) setLangState(l)
-      else {
-        // First visit: pick the browser language if we support it
-        const preferred = (navigator.languages?.length ? navigator.languages : [navigator.language]).map((x) =>
-          x.toLowerCase().split("-")[0],
-        )
-        const match = preferred.find((p) => LANGUAGES.some((x) => x.code === p))
-        if (match) setLangState(match as LangCode)
-      }
-    } catch {
-      // không đọc được localStorage: dùng ngôn ngữ mặc định
-    }
+    setLangState(detectLang())
     setHydrated(true)
   }, [])
 

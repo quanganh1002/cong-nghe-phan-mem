@@ -1,14 +1,16 @@
 "use client"
 
 import { useState } from "react"
-import { Eye, Link2, QrCode, TrendingUp, Trophy, Users } from "lucide-react"
+import { Eye, Globe, Headphones, Link2, QrCode, TrendingUp, Trophy, Users } from "lucide-react"
 import { AdminShell } from "@/components/admin-shell"
-import { StatCard } from "@/components/admin-ui"
+import { StatCard, langLabel } from "@/components/admin-ui"
 import { usePresence, useStats, type DayRow, type StatsData } from "@/hooks/use-admin-data"
 import { DISHES } from "@/lib/dishes"
 import { cn } from "@/lib/utils"
 
 /** Thống kê lượt truy cập: http://localhost:3000/admin/thong-ke (dùng chung PIN với /admin) */
+
+const TOP_DISHES = 10
 
 const dayLabel = (d: string) => `${d.slice(8)}/${d.slice(5, 7)}`
 
@@ -34,7 +36,7 @@ function VisitBars({ days }: { days: DayRow[] }) {
       <p className="mb-2 h-5 text-xs text-muted-foreground">
         {shown ? (
           <b className="text-foreground">
-            {dayLabel(shown.date)}: {shown.visits} lượt (QR {shown.qr} · link {shown.link}) · {shown.views} lượt xem món
+            {dayLabel(shown.date)}: {shown.visits} lượt (QR {shown.qr} · link {shown.link}) · {shown.views} lượt xem món · {shown.plays} lượt nghe
           </b>
         ) : (
           `Nhiều nhất: ${max} lượt/ngày`
@@ -72,19 +74,29 @@ function VisitBars({ days }: { days: DayRow[] }) {
 }
 
 function Dashboard({ stats, online }: { stats: StatsData; online: number | undefined }) {
+  const [showAll, setShowAll] = useState(false)
   const { total, days } = stats
   const last7 = days.slice(-7).reduce((n, d) => n + d.visits, 0)
   const qrPct = total.visits ? Math.round((total.qr / total.visits) * 100) : 0
-  const ranked = DISHES.map((d) => ({ dish: d, views: stats.dishes[d.id] ?? 0 })).sort((a, b) => b.views - a.views)
+  const ranked = DISHES.map((d) => ({ dish: d, views: stats.dishes[d.id] ?? 0, plays: stats.dishPlays[d.id] ?? 0 })).sort(
+    (a, b) => b.views - a.views || b.plays - a.plays,
+  )
   const topMax = Math.max(1, ranked[0]?.views ?? 0)
+  const shownDishes = showAll ? ranked : ranked.slice(0, TOP_DISHES)
+  const langs = Object.entries(stats.langs)
+    .map(([code, s]) => ({ code, ...s }))
+    .sort((a, b) => b.views + b.plays - (a.views + a.plays))
+  const langMax = Math.max(1, ...langs.map((l) => l.views))
+  const listenPct = total.views ? Math.min(100, Math.round((total.plays / total.views) * 100)) : 0
 
   return (
     <>
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <StatCard icon={Users} label="Đang online" value={online} />
         <StatCard icon={TrendingUp} label="Lượt vào 7 ngày qua" value={last7} />
         <StatCard icon={Users} label="Tổng lượt vào" value={total.visits} />
         <StatCard icon={Eye} label="Tổng lượt xem món" value={total.views} />
+        <StatCard icon={Headphones} label="Tổng lượt nghe thuyết minh" value={total.plays} />
       </section>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
@@ -122,19 +134,56 @@ function Dashboard({ stats, online }: { stats: StatsData; online: number | undef
           </p>
         </Panel>
 
+        <Panel icon={Globe} title="Ngôn ngữ được dùng" className="lg:col-span-3">
+          {langs.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Chưa có dữ liệu.</p>
+          ) : (
+            <>
+              <ul className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
+                {langs.map((l) => (
+                  <li key={l.code} className="flex items-center gap-3 text-sm">
+                    <span className="w-32 shrink-0 truncate font-semibold">{langLabel(l.code)}</span>
+                    <span className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                      <span className="block h-full rounded-full bg-primary" style={{ width: `${(l.views / langMax) * 100}%` }} />
+                    </span>
+                    <span className="w-24 text-right text-xs tabular-nums text-muted-foreground">
+                      <b className="text-sm text-foreground">{l.views}</b> xem · {l.plays} nghe
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Tính theo lượt xem trang món và lượt bấm nghe. Cứ 100 lượt xem món thì có khoảng {listenPct} lượt nghe thuyết minh.
+              </p>
+            </>
+          )}
+        </Panel>
+
         <Panel icon={Trophy} title="Món được xem nhiều nhất" className="lg:col-span-3">
           <ul className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
-            {ranked.map((r, i) => (
+            {shownDishes.map((r, i) => (
               <li key={r.dish.id} className="flex items-center gap-3 text-sm">
                 <span className="w-5 text-right text-xs font-bold text-muted-foreground">{i + 1}</span>
                 <span className="w-36 shrink-0 truncate font-semibold">{r.dish.vi.name}</span>
                 <span className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
                   <span className="block h-full rounded-full bg-primary" style={{ width: `${(r.views / topMax) * 100}%` }} />
                 </span>
-                <span className="w-10 text-right font-bold tabular-nums">{r.views}</span>
+                <span className="w-16 text-right tabular-nums">
+                  <b className="font-bold">{r.views}</b>
+                  <span className="ms-1 text-xs text-muted-foreground">· {r.plays} nghe</span>
+                </span>
               </li>
             ))}
           </ul>
+          {ranked.length > TOP_DISHES && (
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => !v)}
+              className="mt-3 text-sm font-semibold text-primary hover:underline"
+            >
+              {showAll ? "Thu gọn" : `Xem tất cả ${ranked.length} món`}
+            </button>
+          )}
         </Panel>
       </div>
     </>

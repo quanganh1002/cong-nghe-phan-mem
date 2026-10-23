@@ -9,12 +9,17 @@ export interface DayRow {
   qr: number
   link: number
   views: number
+  plays: number
 }
 
 export interface StatsData {
   days: DayRow[]
-  total: { visits: number; qr: number; link: number; views: number }
+  total: { visits: number; qr: number; link: number; views: number; plays: number }
+  /** Lượt xem trang món */
   dishes: Record<string, number>
+  /** Lượt nghe thuyết minh */
+  dishPlays: Record<string, number>
+  langs: Record<string, { views: number; plays: number }>
 }
 
 /** Gọi API của admin theo `pin` mỗi `every` ms; lỗi mạng thì giữ số liệu cũ */

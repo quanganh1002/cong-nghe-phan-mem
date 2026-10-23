@@ -78,6 +78,18 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
   const ingredients = info.ingredients.split(/\s*[,、，،]\s*/).filter(Boolean)
   const isPlaying = speech.speaking && !speech.paused
 
+  /** Start reading from sentence `from`; a start from idle counts as one listen in the admin stats */
+  const startSpeech = (from = 0) => {
+    if (!speech.speaking) {
+      fetch("/api/play", {
+        method: "POST",
+        body: JSON.stringify({ dish: dish.id, lang }),
+        keepalive: true,
+      }).catch(() => {})
+    }
+    speech.speak(segments, language.speechLang, from)
+  }
+
   const handlePlay = () => {
     if (!speech.supported) {
       setUnsupported(true)
@@ -85,7 +97,7 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
     }
     if (speech.speaking && !speech.paused) speech.pause()
     else if (speech.speaking && speech.paused) speech.resume()
-    else speech.speak(segments, language.speechLang)
+    else startSpeech()
   }
 
   const sections = [
@@ -217,7 +229,7 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
                 <button
                   key={i}
                   ref={i === speech.current ? currentRef : undefined}
-                  onClick={() => speech.speak(segments, language.speechLang, i)}
+                  onClick={() => startSpeech(i)}
                   className={cn(
                     "me-1 inline rounded px-0.5 text-start transition-colors",
                     i === speech.current ? "bg-primary/20 font-semibold text-foreground" : "text-muted-foreground hover:bg-background/60",

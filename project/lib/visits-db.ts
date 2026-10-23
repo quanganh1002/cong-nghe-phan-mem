@@ -15,17 +15,27 @@ export interface DayStats {
   link: number
   /** Số lượt xem trang món ăn */
   views: number
+  /** Số lượt bấm nghe thuyết minh */
+  plays: number
+}
+
+/** Lượt xem trang món và lượt nghe theo từng ngôn ngữ */
+export interface LangStats {
+  views: number
+  plays: number
 }
 
 export interface VisitData {
   days: Record<string, DayStats>
   dishes: Record<string, number>
+  dishPlays: Record<string, number>
+  langs: Record<string, LangStats>
 }
 
 const FILE = path.join(process.cwd(), "data", "visits.json")
 const KEEP_DAYS = 400
 
-const empty = (): DayStats => ({ visits: 0, qr: 0, link: 0, views: 0 })
+const empty = (): DayStats => ({ visits: 0, qr: 0, link: 0, views: 0, plays: 0 })
 
 /** Ngày theo giờ Việt Nam (UTC+7), dạng yyyy-mm-dd */
 export const vnDay = (ms = Date.now()) => new Date(ms + 7 * 3600_000).toISOString().slice(0, 10)
@@ -39,9 +49,11 @@ async function load(): Promise<VisitData> {
   if (data) return data
   try {
     const raw = JSON.parse(await fs.readFile(FILE, "utf8")) as Partial<VisitData>
-    data = { days: raw.days ?? {}, dishes: raw.dishes ?? {} }
+    data = { days: raw.days ?? {}, dishes: raw.dishes ?? {}, dishPlays: raw.dishPlays ?? {}, langs: raw.langs ?? {} }
+    // file cũ chưa có số lượt nghe
+    for (const day of Object.values(data.days)) day.plays ??= 0
   } catch {
-    data = { days: {}, dishes: {} }
+    data = { days: {}, dishes: {}, dishPlays: {}, langs: {} }
   }
   return data
 }
@@ -73,9 +85,9 @@ export async function recordVisit(source: Source): Promise<void> {
   save(d)
 }
 
-export async function recordDishView(dishId: string): Promise<void> {
+export async function recordDishView(dishId: string, lang: string): Promise<void> {
   if (USE_SUPABASE) {
-    const res = await sb("rpc/record_dish_view", { method: "POST", body: { p_day: vnDay(), p_dish: dishId } })
+    const res = await sb("rpc/record_dish_view", { method: "POST", body: { p_day: vnDay(), p_dish: dishId, p_lang: lang } })
     if (!res.ok) await sbFail(res, "ghi lượt xem món")
     return
   }
@@ -83,22 +95,46 @@ export async function recordDishView(dishId: string): Promise<void> {
   const day = (d.days[vnDay()] ??= empty())
   day.views++
   d.dishes[dishId] = (d.dishes[dishId] ?? 0) + 1
+  if (lang) (d.langs[lang] ??= { views: 0, plays: 0 }).views++
+  save(d)
+}
+
+/** Khách bấm nghe thuyết minh một món */
+export async function recordPlay(dishId: string, lang: string): Promise<void> {
+  if (USE_SUPABASE) {
+    const res = await sb("rpc/record_play", { method: "POST", body: { p_day: vnDay(), p_dish: dishId, p_lang: lang } })
+    if (!res.ok) await sbFail(res, "ghi lượt nghe")
+    return
+  }
+  const d = await load()
+  const day = (d.days[vnDay()] ??= empty())
+  day.plays++
+  d.dishPlays[dishId] = (d.dishPlays[dishId] ?? 0) + 1
+  if (lang) (d.langs[lang] ??= { views: 0, plays: 0 }).plays++
   save(d)
 }
 
 export async function readVisits(): Promise<VisitData> {
   if (!USE_SUPABASE) return load()
-  const [daysRes, dishesRes] = await Promise.all([
-    sb(`visit_days?select=day,visits,qr,link,views&order=day.desc&limit=${KEEP_DAYS}`),
-    sb("dish_views?select=dish_id,views"),
+  const [daysRes, dishesRes, langsRes] = await Promise.all([
+    sb(`visit_days?select=day,visits,qr,link,views,plays&order=day.desc&limit=${KEEP_DAYS}`),
+    sb("dish_views?select=dish_id,views,plays"),
+    sb("lang_stats?select=lang,views,plays"),
   ])
   if (!daysRes.ok) await sbFail(daysRes, "đọc thống kê")
   if (!dishesRes.ok) await sbFail(dishesRes, "đọc lượt xem món")
+  if (!langsRes.ok) await sbFail(langsRes, "đọc thống kê ngôn ngữ")
   const days: Record<string, DayStats> = {}
   for (const r of (await daysRes.json()) as ({ day: string } & DayStats)[]) {
-    days[r.day] = { visits: r.visits, qr: r.qr, link: r.link, views: r.views }
+    days[r.day] = { visits: r.visits, qr: r.qr, link: r.link, views: r.views, plays: r.plays }
   }
   const dishes: Record<string, number> = {}
-  for (const r of (await dishesRes.json()) as { dish_id: string; views: number }[]) dishes[r.dish_id] = r.views
-  return { days, dishes }
+  const dishPlays: Record<string, number> = {}
+  for (const r of (await dishesRes.json()) as { dish_id: string; views: number; plays: number }[]) {
+    dishes[r.dish_id] = r.views
+    dishPlays[r.dish_id] = r.plays
+  }
+  const langs: Record<string, LangStats> = {}
+  for (const r of (await langsRes.json()) as ({ lang: string } & LangStats)[]) langs[r.lang] = { views: r.views, plays: r.plays }
+  return { days, dishes, dishPlays, langs }
 }

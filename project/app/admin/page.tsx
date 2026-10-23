@@ -1,8 +1,8 @@
 "use client"
 
-import { Activity, Eye, Link2, LogIn, LogOut, QrCode, Users } from "lucide-react"
+import { Activity, Eye, Headphones, Link2, LogIn, LogOut, QrCode, Users } from "lucide-react"
 import { AdminShell } from "@/components/admin-shell"
-import { StatCard } from "@/components/admin-ui"
+import { StatCard, langLabel } from "@/components/admin-ui"
 import { useLiveEvents, usePresence, useStats } from "@/hooks/use-admin-data"
 import { getDish } from "@/lib/dishes"
 import { cn } from "@/lib/utils"
@@ -12,6 +12,7 @@ function pageLabel(path: string) {
   if (path === "/" || path === "") return "Trang chủ"
   if (path === "/dishes") return "Danh sách món ăn"
   if (path === "/about") return "Giới thiệu"
+  if (path === "/map") return "Bản đồ ẩm thực"
   const id = /^\/dishes\/([^/]+)$/.exec(path)?.[1]
   const dish = id ? getDish(id) : undefined
   return dish ? `Món: ${dish.vi.name}` : path
@@ -53,7 +54,7 @@ function Overview({ pin }: { pin: string }) {
         <StatCard icon={Users} label="Lượt vào hôm nay" value={today?.visits} />
         <StatCard icon={Eye} label="Lượt xem món hôm nay" value={today?.views} />
         <StatCard icon={QrCode} label="Vào bằng QR hôm nay" value={today?.qr} />
-        <StatCard icon={Link2} label="Vào bằng link hôm nay" value={today?.link} />
+        <StatCard icon={Headphones} label="Lượt nghe thuyết minh hôm nay" value={today?.plays} />
       </section>
 
       {/* Ai vừa vào / vừa rời đi: cập nhật mỗi 2 giây khi trang này đang mở */}
@@ -85,7 +86,7 @@ function Overview({ pin }: { pin: string }) {
                       : "Vừa rời khỏi web"}
                   </span>
                   <span className="block truncate text-xs text-muted-foreground">
-                    {pageLabel(e.device.path)} · thiết bị {e.device.id.slice(0, 6)}
+                    {[langLabel(e.device.lang), pageLabel(e.device.path)].filter(Boolean).join(" · ")}
                   </span>
                 </span>
                 <time className="shrink-0 text-xs tabular-nums text-muted-foreground">
@@ -116,7 +117,7 @@ function Overview({ pin }: { pin: string }) {
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold">{pageLabel(d.path)}</span>
                   <span className="block text-xs text-muted-foreground">
-                    {d.source === "qr" ? "Vào bằng mã QR" : "Vào bằng link"} · thiết bị {d.id.slice(0, 6)}
+                    {[langLabel(d.lang), d.source === "qr" ? "Vào bằng mã QR" : "Vào bằng link"].filter(Boolean).join(" · ")}
                   </span>
                 </span>
               </li>
