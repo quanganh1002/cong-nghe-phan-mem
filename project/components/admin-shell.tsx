@@ -69,12 +69,15 @@ export function AdminShell({ title, children }: { title: string; children: (pin:
   }
   if (!authed) return <main className="grid min-h-dvh place-items-center text-muted-foreground">{error || "Đang tải…"}</main>
 
+  // Trang con của admin thì quay về Tổng quan, chỉ từ Tổng quan mới ra trang web
+  const isOverview = pathname === "/admin"
+
   return (
     <main className="mx-auto min-h-dvh max-w-6xl px-4 py-5">
       <header className="flex items-center gap-3">
         <Link
-          href="/"
-          aria-label="Về trang web"
+          href={isOverview ? "/" : "/admin"}
+          aria-label={isOverview ? "Về trang web" : "Về trang quản trị"}
           className="grid size-10 place-items-center rounded-full border border-border bg-card shadow-sm transition-transform active:scale-90"
         >
           <ArrowLeft className="size-5" />
