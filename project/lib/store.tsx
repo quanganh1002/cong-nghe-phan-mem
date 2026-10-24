@@ -18,9 +18,11 @@ const LANG_KEY = "foodlingo:lang"
 const VI_VALUES = DICT_KEYS.map((k) => DICT_VI[k])
 const EN_VALUES = DICT_KEYS.map((k) => DICT_EN[k])
 
-/** Saved language, else the browser language if supported, else the default. Client-side only. */
+/** `?lang=ja` in the URL (QR codes for a given language), else the saved language, else the browser language if supported, else the default. Client-side only. */
 export function detectLang(): LangCode {
   try {
+    const fromUrl = new URLSearchParams(window.location.search).get("lang")
+    if (fromUrl && LANGUAGES.some((x) => x.code === fromUrl)) return fromUrl as LangCode
     const saved = localStorage.getItem(LANG_KEY) as LangCode | null
     if (saved && LANGUAGES.some((x) => x.code === saved)) return saved
     const preferred = (navigator.languages?.length ? navigator.languages : [navigator.language]).map((x) =>
