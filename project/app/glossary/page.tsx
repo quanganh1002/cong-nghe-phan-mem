@@ -8,6 +8,7 @@ import { GLOSSARY } from "@/lib/glossary"
 import { getLanguage } from "@/lib/languages"
 import { useL10n } from "@/lib/translate-client"
 import { splitText, useSpeech } from "@/hooks/use-speech"
+import { trackFeature } from "@/lib/track"
 import { cn } from "@/lib/utils"
 
 const VI_NAMES = GLOSSARY.map((g) => g.vi.name)
@@ -46,6 +47,7 @@ export default function GlossaryPage() {
       return
     }
     setActive(key)
+    trackFeature(`glossary:${key}`)
     speech.speak(segments, speechLang, 0, title)
   }
 

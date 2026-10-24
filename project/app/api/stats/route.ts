@@ -15,11 +15,11 @@ export async function GET(req: NextRequest) {
   } catch {
     return Response.json({ error: "server" }, { status: 500 })
   }
-  const { days, dishes, dishPlays, langs } = visits
+  const { days, dishes, dishPlays, langs, features } = visits
   const out = []
   for (let i = 29; i >= 0; i--) {
     const date = vnDay(Date.now() - i * 86_400_000)
-    out.push({ date, ...(days[date] ?? { visits: 0, qr: 0, link: 0, views: 0, plays: 0 }) })
+    out.push({ date, ...(days[date] ?? { visits: 0, qr: 0, link: 0, views: 0, plays: 0, completes: 0 }) })
   }
   const all = Object.values(days).reduce(
     (t, d) => ({
@@ -28,8 +28,9 @@ export async function GET(req: NextRequest) {
       link: t.link + d.link,
       views: t.views + d.views,
       plays: t.plays + d.plays,
+      completes: t.completes + d.completes,
     }),
-    { visits: 0, qr: 0, link: 0, views: 0, plays: 0 },
+    { visits: 0, qr: 0, link: 0, views: 0, plays: 0, completes: 0 },
   )
-  return Response.json({ days: out, total: all, dishes, dishPlays, langs }, { headers: { "Cache-Control": "no-store" } })
+  return Response.json({ days: out, total: all, dishes, dishPlays, langs, features }, { headers: { "Cache-Control": "no-store" } })
 }

@@ -25,6 +25,7 @@ function Overview({ pin }: { pin: string }) {
   const devices = presence?.devices ?? []
   const events = useLiveEvents(presence?.devices)
   const byQr = devices.filter((d) => d.source === "qr").length
+  const listening = devices.filter((d) => d.listening).length
   const today = stats?.days[stats.days.length - 1]
 
   return (
@@ -47,6 +48,10 @@ function Overview({ pin }: { pin: string }) {
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5">
             <Link2 className="size-4" />
             Mở link: {presence ? devices.length - byQr : "–"}
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5">
+            <Headphones className="size-4" />
+            Đang nghe: {presence ? listening : "–"}
           </span>
         </div>
       </section>
@@ -117,6 +122,12 @@ function Overview({ pin }: { pin: string }) {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold">{pageLabel(d.path)}</span>
+                  {d.listening && (
+                    <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
+                      <Headphones className="size-3" />
+                      Đang nghe: {getDish(d.listening)?.vi.name ?? d.listening}
+                    </span>
+                  )}
                   <span className="block text-xs text-muted-foreground">
                     {[langLabel(d.lang), d.source === "qr" ? "Vào bằng mã QR" : "Vào bằng link"].filter(Boolean).join(" · ")}
                   </span>

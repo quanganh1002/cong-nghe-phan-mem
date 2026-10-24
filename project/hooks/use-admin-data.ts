@@ -10,16 +10,26 @@ export interface DayRow {
   link: number
   views: number
   plays: number
+  completes: number
+}
+
+export interface DishPlays {
+  plays: number
+  /** Số lượt nghe bản tóm tắt (còn lại là bản đầy đủ) */
+  short: number
+  completes: number
 }
 
 export interface StatsData {
   days: DayRow[]
-  total: { visits: number; qr: number; link: number; views: number; plays: number }
+  total: { visits: number; qr: number; link: number; views: number; plays: number; completes: number }
   /** Lượt xem trang món */
   dishes: Record<string, number>
   /** Lượt nghe thuyết minh */
-  dishPlays: Record<string, number>
-  langs: Record<string, { views: number; plays: number }>
+  dishPlays: Record<string, DishPlays>
+  langs: Record<string, { views: number; plays: number; completes: number }>
+  /** "near_me", "near_listen", "glossary:<id>:term|meaning" */
+  features: Record<string, number>
 }
 
 /** Gọi API của admin theo `pin` mỗi `every` ms; lỗi mạng thì giữ số liệu cũ */

@@ -75,6 +75,8 @@ export function useSpeech() {
   /** Index of the sentence being read, -1 when idle */
   const [current, setCurrent] = useState(-1)
   const [speed, setSpeedState] = useState(1)
+  /** Increases each time the last sentence is read to the end (not when the visitor stops or skips) */
+  const [finished, setFinished] = useState(0)
 
   const voicesRef = useRef<SpeechSynthesisVoice[]>([])
   const tokenRef = useRef(0)
@@ -149,7 +151,9 @@ export function useSpeech() {
       const base = lang.split("-")[0].toLowerCase()
       const rate = (RATE[base] ?? 1) * speedRef.current
       const advance = () => {
-        if (token === tokenRef.current) playRef.current(index + 1)
+        if (token !== tokenRef.current) return
+        if (index + 1 >= segs.length) setFinished((n) => n + 1)
+        playRef.current(index + 1)
       }
 
       const speakSynth = (voice: SpeechSynthesisVoice | null) => {
@@ -288,5 +292,5 @@ export function useSpeech() {
     }
   }, [speaking, resume, pause, next, prev])
 
-  return { supported, speaking, paused, current, speed, speak, next, prev, setSpeed, pause, resume, stop }
+  return { supported, speaking, paused, current, speed, finished, speak, next, prev, setSpeed, pause, resume, stop }
 }

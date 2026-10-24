@@ -9,6 +9,8 @@ import { useApp } from "@/lib/store"
 import { DISHES, REGIONS, distanceKm, getDish, getDishCoords, getDishPlace, type Region } from "@/lib/dishes"
 import { getLanguage } from "@/lib/languages"
 import { useSpeech } from "@/hooks/use-speech"
+import { useReportListening } from "@/lib/listening"
+import { trackFeature } from "@/lib/track"
 import { useDishText } from "@/lib/use-dish-text"
 import { cn } from "@/lib/utils"
 
@@ -45,6 +47,7 @@ export default function MapPage() {
   const { dict, lang } = useApp()
   const speech = useSpeech()
   const [playingId, setPlayingId] = useState<string | null>(null)
+  useReportListening(speech.speaking && !speech.paused ? playingId : null)
   const dishText = useDishText(DISHES, ["name", "summary"])
   const [region, setRegion] = useState<Region>("north")
   const [dishId, setDishId] = useState(DISHES.find((d) => d.region === "north")!.id)
@@ -103,6 +106,7 @@ export default function MapPage() {
       return
     }
     const t = dishText(d)
+    trackFeature("near_listen")
     setPlayingId(d.id)
     speech.speak([t.name, ...t.summary.split(/(?<=[.!?。！？])\s+/)], getLanguage(lang).speechLang, 0, t.name)
   }
@@ -157,7 +161,10 @@ export default function MapPage() {
               {status === "error" && <p className="mt-2 text-sm text-destructive">{dict.mapLocateError}</p>}
               <button
                 type="button"
-                onClick={locate}
+                onClick={() => {
+                  trackFeature("near_me")
+                  locate()
+                }}
                 disabled={status === "locating"}
                 className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 font-bold text-primary-foreground shadow transition-transform active:scale-95 disabled:opacity-60"
               >

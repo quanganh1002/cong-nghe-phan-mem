@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react"
 import { usePathname } from "next/navigation"
+import { LISTENING_EVENT, getListening } from "@/lib/listening"
 import { detectLang, useApp } from "@/lib/store"
 
 const HEARTBEAT_MS = 8_000
@@ -51,7 +52,7 @@ export function PresenceBeacon() {
     // AppProvider chưa kịp đọc ngôn ngữ ở lần chạy đầu, nên tự dò (cùng cách dò với provider)
     langRef.current = detectLang()
     const send = (extra: Record<string, unknown> = {}) => {
-      const data = JSON.stringify({ id, path: pathRef.current, src, lang: langRef.current, ...extra })
+      const data = JSON.stringify({ id, path: pathRef.current, src, lang: langRef.current, listening: getListening(), ...extra })
       fetch("/api/presence", { method: "POST", body: data, keepalive: true }).catch(() => {})
     }
 
@@ -72,7 +73,11 @@ export function PresenceBeacon() {
       if (navigator.sendBeacon) navigator.sendBeacon("/api/presence", data)
     }
     window.addEventListener("pagehide", onHide)
+    // Khách bắt đầu / dừng nghe: báo ngay, không đợi nhịp heartbeat kế tiếp
+    const onListening = () => send()
+    window.addEventListener(LISTENING_EVENT, onListening)
     return () => {
+      window.removeEventListener(LISTENING_EVENT, onListening)
       hitRef.current = () => {}
       clearInterval(timer)
       window.removeEventListener("pagehide", onHide)

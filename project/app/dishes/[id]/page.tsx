@@ -11,6 +11,8 @@ import { DISHES, getDish } from "@/lib/dishes"
 import { getLanguage } from "@/lib/languages"
 import { useDishText } from "@/lib/use-dish-text"
 import { SPEEDS, splitText, useSpeech } from "@/hooks/use-speech"
+import { useReportListening } from "@/lib/listening"
+import { trackComplete, trackPlay } from "@/lib/track"
 import { cn, goBack } from "@/lib/utils"
 
 const REGION_KEY = { north: "regionNorth", central: "regionCentral", south: "regionSouth" } as const
@@ -33,6 +35,11 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
   const [unsupported, setUnsupported] = useState(false)
   const currentRef = useRef<HTMLButtonElement>(null)
   const [mode, setMode] = useState<NarrationMode>("full")
+  // True while the current listen began at the first sentence, so only a full run counts as "listened to the end"
+  const countCompleteRef = useRef(false)
+
+  // Tell the admin which dish this visitor is listening to right now
+  useReportListening(speech.speaking && !speech.paused ? id : null)
 
   // Remember the visitor's choice between the short and full narration
   useEffect(() => {
@@ -56,6 +63,13 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
     speech.stop()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang])
+  // Count a listen when the last sentence finishes by itself
+  useEffect(() => {
+    if (speech.finished === 0 || !countCompleteRef.current) return
+    countCompleteRef.current = false
+    trackComplete(id, lang)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [speech.finished])
   // Keep the sentence being read visible inside the transcript box
   useEffect(() => {
     currentRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" })
@@ -97,11 +111,8 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
   /** Start reading from sentence `from`; a start from idle counts as one listen in the admin stats */
   const startSpeech = (from = 0) => {
     if (!speech.speaking) {
-      fetch("/api/play", {
-        method: "POST",
-        body: JSON.stringify({ dish: dish.id, lang }),
-        keepalive: true,
-      }).catch(() => {})
+      trackPlay(dish.id, lang, mode === "short")
+      countCompleteRef.current = from === 0
     }
     speech.speak(segments, language.speechLang, from, info.name)
   }

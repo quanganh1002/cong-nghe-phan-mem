@@ -44,7 +44,7 @@ function DishTable({ pin }: { pin: string }) {
                 <td className="px-2 py-2.5 text-muted-foreground">{REGION[d.region]}</td>
                 <td className="px-2 py-2.5 text-muted-foreground">{CATEGORY[d.category]}</td>
                 <td className="px-2 py-2.5 text-right font-bold tabular-nums">{stats ? (stats.dishes[d.id] ?? 0) : "–"}</td>
-                <td className="px-2 py-2.5 text-right font-bold tabular-nums">{stats ? (stats.dishPlays[d.id] ?? 0) : "–"}</td>
+                <td className="px-2 py-2.5 text-right font-bold tabular-nums">{stats ? (stats.dishPlays[d.id]?.plays ?? 0) : "–"}</td>
                 <td className="px-4 py-2.5">
                   <Link href={`/dishes/${d.id}`} target="_blank" aria-label="Mở trang món" className="text-muted-foreground hover:text-primary">
                     <ExternalLink className="size-4" />

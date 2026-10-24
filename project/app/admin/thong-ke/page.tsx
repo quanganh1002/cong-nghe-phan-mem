@@ -1,16 +1,19 @@
 "use client"
 
 import { useState } from "react"
-import { Eye, Globe, Headphones, Link2, QrCode, TrendingUp, Trophy, Users } from "lucide-react"
+import { Eye, Globe, Headphones, Link2, MapPin, QrCode, TrendingUp, Trophy, Users } from "lucide-react"
 import { AdminShell } from "@/components/admin-shell"
 import { StatCard, langLabel } from "@/components/admin-ui"
 import { usePresence, useStats, type DayRow, type StatsData } from "@/hooks/use-admin-data"
 import { DISHES } from "@/lib/dishes"
+import { GLOSSARY } from "@/lib/glossary"
 import { cn } from "@/lib/utils"
 
 /** Thống kê lượt truy cập: http://localhost:3000/admin/thong-ke (dùng chung PIN với /admin) */
 
 const TOP_DISHES = 10
+
+const pct = (n: number, of: number) => (of > 0 ? Math.min(100, Math.round((n / of) * 100)) : 0)
 
 const dayLabel = (d: string) => `${d.slice(8)}/${d.slice(5, 7)}`
 
@@ -78,15 +81,30 @@ function Dashboard({ stats, online }: { stats: StatsData; online: number | undef
   const { total, days } = stats
   const last7 = days.slice(-7).reduce((n, d) => n + d.visits, 0)
   const qrPct = total.visits ? Math.round((total.qr / total.visits) * 100) : 0
-  const ranked = DISHES.map((d) => ({ dish: d, views: stats.dishes[d.id] ?? 0, plays: stats.dishPlays[d.id] ?? 0 })).sort(
-    (a, b) => b.views - a.views || b.plays - a.plays,
-  )
+  const ranked = DISHES.map((d) => {
+    const p = stats.dishPlays[d.id]
+    return { dish: d, views: stats.dishes[d.id] ?? 0, plays: p?.plays ?? 0, completes: p?.completes ?? 0 }
+  }).sort((a, b) => b.views - a.views || b.plays - a.plays)
   const topMax = Math.max(1, ranked[0]?.views ?? 0)
   const shownDishes = showAll ? ranked : ranked.slice(0, TOP_DISHES)
   const langs = Object.entries(stats.langs)
     .map(([code, s]) => ({ code, ...s }))
     .sort((a, b) => b.views + b.plays - (a.views + a.plays))
   const langMax = Math.max(1, ...langs.map((l) => l.views))
+  const playsByDish = Object.values(stats.dishPlays)
+  const shortPlays = playsByDish.reduce((n, p) => n + p.short, 0)
+  const allPlays = playsByDish.reduce((n, p) => n + p.plays, 0)
+  const feat = (prefix: string, suffix: string) =>
+    Object.entries(stats.features)
+      .filter(([k]) => k.startsWith(prefix) && k.endsWith(suffix))
+      .reduce((n, [, v]) => n + v, 0)
+  const topWords = GLOSSARY.map((g) => ({
+    name: g.vi.name,
+    n: (stats.features[`glossary:${g.id}:term`] ?? 0) + (stats.features[`glossary:${g.id}:meaning`] ?? 0),
+  }))
+    .filter((w) => w.n > 0)
+    .sort((a, b) => b.n - a.n)
+    .slice(0, 5)
   const listenPct = total.views ? Math.min(100, Math.round((total.plays / total.views) * 100)) : 0
 
   return (
@@ -146,8 +164,9 @@ function Dashboard({ stats, online }: { stats: StatsData; online: number | undef
                     <span className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
                       <span className="block h-full rounded-full bg-primary" style={{ width: `${(l.views / langMax) * 100}%` }} />
                     </span>
-                    <span className="w-24 text-right text-xs tabular-nums text-muted-foreground">
+                    <span className="w-44 text-right text-xs tabular-nums text-muted-foreground">
                       <b className="text-sm text-foreground">{l.views}</b> xem · {l.plays} nghe
+                      {l.plays > 0 && ` · ${pct(l.completes, l.plays)}% hết`}
                     </span>
                   </li>
                 ))}
@@ -156,6 +175,61 @@ function Dashboard({ stats, online }: { stats: StatsData; online: number | undef
                 Tính theo lượt xem trang món và lượt bấm nghe. Cứ 100 lượt xem món thì có khoảng {listenPct} lượt nghe thuyết minh.
               </p>
             </>
+          )}
+        </Panel>
+
+        <Panel icon={Headphones} title="Khách nghe thế nào?">
+          {allPlays === 0 ? (
+            <p className="text-sm text-muted-foreground">Chưa có lượt nghe nào.</p>
+          ) : (
+            <ul className="space-y-3">
+              {[
+                { label: "Bản tóm tắt", n: shortPlays },
+                { label: "Bản đầy đủ", n: allPlays - shortPlays },
+              ].map((r) => (
+                <li key={r.label}>
+                  <div className="flex items-baseline justify-between text-sm">
+                    <span className="font-semibold">{r.label}</span>
+                    <span className="font-bold tabular-nums">{pct(r.n, allPlays)}%</span>
+                  </div>
+                  <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-primary" style={{ width: `${pct(r.n, allPlays)}%` }} />
+                  </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{r.n} lượt</p>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-4 text-xs text-muted-foreground">
+            <b className="text-foreground">{pct(total.completes, total.plays)}%</b> lượt nghe được nghe đến hết câu cuối ({total.completes}/{total.plays}).
+            Chỉ tính khi khách bắt đầu từ câu đầu tiên.
+          </p>
+        </Panel>
+
+        <Panel icon={MapPin} title="Tính năng khác" className="lg:col-span-2">
+          <ul className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+            {[
+              { label: "Bấm 'Tìm món ăn gần tôi'", n: stats.features.near_me ?? 0 },
+              { label: "Nghe thuyết minh ở mục 'gần tôi'", n: stats.features.near_listen ?? 0 },
+              { label: "Từ điển: nghe phát âm", n: feat("glossary:", ":term") },
+              { label: "Từ điển: nghe giải nghĩa", n: feat("glossary:", ":meaning") },
+            ].map((r) => (
+              <li key={r.label} className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="text-muted-foreground">{r.label}</span>
+                <b className="text-lg tabular-nums">{r.n}</b>
+              </li>
+            ))}
+          </ul>
+          {topWords.length > 0 && (
+            <p className="mt-4 text-xs text-muted-foreground">
+              Từ được nghe nhiều nhất:{" "}
+              {topWords.map((w, i) => (
+                <span key={w.name}>
+                  {i > 0 && ", "}
+                  <b className="text-foreground">{w.name}</b> ({w.n})
+                </span>
+              ))}
+            </p>
           )}
         </Panel>
 
@@ -168,9 +242,11 @@ function Dashboard({ stats, online }: { stats: StatsData; online: number | undef
                 <span className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
                   <span className="block h-full rounded-full bg-primary" style={{ width: `${(r.views / topMax) * 100}%` }} />
                 </span>
-                <span className="w-16 text-right tabular-nums">
+                <span className="w-40 text-right tabular-nums">
                   <b className="font-bold">{r.views}</b>
-                  <span className="ms-1 text-xs text-muted-foreground">· {r.plays} nghe</span>
+                  <span className="ms-1 text-xs text-muted-foreground">
+                    · {r.plays} nghe{r.plays > 0 && ` · ${pct(r.completes, r.plays)}% hết`}
+                  </span>
                 </span>
               </li>
             ))}
