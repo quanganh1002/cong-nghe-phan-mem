@@ -22,6 +22,9 @@ const CAT_KEY = {
   festival: "catFestival",
 } as const
 
+type NarrationMode = "short" | "full"
+const MODE_KEY = "foodlingo:narration"
+
 export default function DishDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const { dict, lang } = useApp()
@@ -29,6 +32,14 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
   const speech = useSpeech()
   const [unsupported, setUnsupported] = useState(false)
   const currentRef = useRef<HTMLButtonElement>(null)
+  const [mode, setMode] = useState<NarrationMode>("full")
+
+  // Remember the visitor's choice between the short and full narration
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(MODE_KEY) === "short") setMode("short")
+    } catch {}
+  }, [])
 
   const dish = getDish(id)
   const related = dish
@@ -66,14 +77,19 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
 
   const info = text(dish)
   const language = getLanguage(lang)
-  const narration = [
-    info.name,
-    info.summary,
-    `${dict.sectionOrigin}. ${info.origin}`,
-    `${dict.sectionCulture}. ${info.culture}`,
-    `${dict.sectionIngredients}. ${info.ingredients}`,
-    `${dict.sectionTip}. ${info.tip}`,
-  ].join("\n")
+  const firstSentence = (s: string) => s.match(/^[^.!?…。！？]+[.!?…。！？]?/)?.[0].trim() ?? s
+  const narration = (
+    mode === "short"
+      ? [info.name, info.summary, firstSentence(info.origin), firstSentence(info.culture)]
+      : [
+          info.name,
+          info.summary,
+          `${dict.sectionOrigin}. ${info.origin}`,
+          `${dict.sectionCulture}. ${info.culture}`,
+          `${dict.sectionIngredients}. ${info.ingredients}`,
+          `${dict.sectionTip}. ${info.tip}`,
+        ]
+  ).join("\n")
   const segments = splitText(narration)
   const ingredients = info.ingredients.split(/\s*[,、，،]\s*/).filter(Boolean)
   const isPlaying = speech.speaking && !speech.paused
@@ -87,7 +103,16 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
         keepalive: true,
       }).catch(() => {})
     }
-    speech.speak(segments, language.speechLang, from)
+    speech.speak(segments, language.speechLang, from, info.name)
+  }
+
+  const pickMode = (m: NarrationMode) => {
+    if (m === mode) return
+    speech.stop()
+    setMode(m)
+    try {
+      localStorage.setItem(MODE_KEY, m)
+    } catch {}
   }
 
   const handlePlay = () => {
@@ -223,6 +248,23 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
               </button>
             </div>
 
+            {/* Short summary or the full story */}
+            <div className="mt-3 grid grid-cols-2 gap-1 rounded-full bg-background/60 p-1">
+              {(["short", "full"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => pickMode(m)}
+                  aria-pressed={mode === m}
+                  className={cn(
+                    "rounded-full px-3 py-1.5 text-sm font-semibold transition-colors",
+                    mode === m ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground",
+                  )}
+                >
+                  {m === "short" ? dict.narrationShort : dict.narrationFull}
+                </button>
+              ))}
+            </div>
+
             {/* Transcript: current sentence is highlighted, tap a sentence to read from there */}
             <p className="mt-3 max-h-48 overflow-y-auto text-pretty text-sm leading-relaxed">
               {segments.map((s, i) => (
@@ -240,7 +282,7 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
               ))}
             </p>
             <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
-              {unsupported ? dict.notSupported : dict.narrationNote}
+              {unsupported ? dict.notSupported : speech.speaking ? dict.keepAwakeNote : dict.narrationNote}
             </p>
           </div>
         </div>

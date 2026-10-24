@@ -13,6 +13,7 @@ function pageLabel(path: string) {
   if (path === "/dishes") return "Danh sách món ăn"
   if (path === "/about") return "Giới thiệu"
   if (path === "/map") return "Bản đồ ẩm thực"
+  if (path === "/glossary") return "Từ điển món ăn"
   const id = /^\/dishes\/([^/]+)$/.exec(path)?.[1]
   const dish = id ? getDish(id) : undefined
   return dish ? `Món: ${dish.vi.name}` : path

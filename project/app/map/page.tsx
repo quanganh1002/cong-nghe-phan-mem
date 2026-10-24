@@ -2,11 +2,13 @@
 
 import { useEffect, useState, type ReactNode } from "react"
 import Link from "next/link"
-import { MapPin, Map as MapIcon, LocateFixed, Navigation, Loader2, Landmark, Store, Volume2 } from "lucide-react"
+import { MapPin, Map as MapIcon, LocateFixed, Navigation, Loader2, Landmark, Store, Volume2, Pause } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { DishVisual } from "@/components/dish-card"
 import { useApp } from "@/lib/store"
-import { DISHES, REGIONS, getDish, getDishPlace, type Region } from "@/lib/dishes"
+import { DISHES, REGIONS, distanceKm, getDish, getDishCoords, getDishPlace, type Region } from "@/lib/dishes"
+import { getLanguage } from "@/lib/languages"
+import { useSpeech } from "@/hooks/use-speech"
 import { useDishText } from "@/lib/use-dish-text"
 import { cn } from "@/lib/utils"
 
@@ -40,7 +42,9 @@ function Step({ n, title, desc, highlight, children }: { n: number; title: strin
 }
 
 export default function MapPage() {
-  const { dict } = useApp()
+  const { dict, lang } = useApp()
+  const speech = useSpeech()
+  const [playingId, setPlayingId] = useState<string | null>(null)
   const dishText = useDishText(DISHES, ["name", "summary"])
   const [region, setRegion] = useState<Region>("north")
   const [dishId, setDishId] = useState(DISHES.find((d) => d.region === "north")!.id)
@@ -83,6 +87,26 @@ export default function MapPage() {
     )
   }
 
+  // Dishes whose place is closest to the visitor (straight-line distance)
+  const nearest = coords
+    ? DISHES.flatMap((d) => {
+        const at = getDishCoords(d)
+        return at ? [{ dish: d, km: distanceKm([coords.lat, coords.lng], at) }] : []
+      })
+        .sort((a, b) => a.km - b.km)
+        .slice(0, 4)
+    : []
+
+  const listenNear = (d: (typeof DISHES)[number]) => {
+    if (playingId === d.id && speech.speaking) {
+      speech.stop()
+      return
+    }
+    const t = dishText(d)
+    setPlayingId(d.id)
+    speech.speak([t.name, ...t.summary.split(/(?<=[.!?。！？])\s+/)], getLanguage(lang).speechLang, 0, t.name)
+  }
+
   const pickMode = (m: Mode) => {
     setMode(m)
     if (m === "nearby" && !coords && status !== "locating") locate()
@@ -120,6 +144,59 @@ export default function MapPage() {
           <h1 className="text-2xl font-extrabold">{dict.mapTitle}</h1>
           <p className="mt-1 text-muted-foreground">{dict.mapSubtitle}</p>
         </div>
+
+        {/* Món ăn gần vị trí hiện tại */}
+        <section className="rounded-3xl border border-primary/40 bg-primary/5 p-4 shadow-sm sm:p-5">
+          <h2 className="flex items-center gap-2 font-bold leading-tight">
+            <LocateFixed className="size-5 text-primary" />
+            {dict.mapNearYouTitle}
+          </h2>
+          {nearest.length === 0 ? (
+            <>
+              <p className="mt-1 text-sm text-muted-foreground">{dict.mapNearYouDesc}</p>
+              {status === "error" && <p className="mt-2 text-sm text-destructive">{dict.mapLocateError}</p>}
+              <button
+                type="button"
+                onClick={locate}
+                disabled={status === "locating"}
+                className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 font-bold text-primary-foreground shadow transition-transform active:scale-95 disabled:opacity-60"
+              >
+                {status === "locating" ? <Loader2 className="size-4 animate-spin" /> : <LocateFixed className="size-4" />}
+                {status === "locating" ? dict.mapLocating : dict.mapNearYouFind}
+              </button>
+            </>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {nearest.map(({ dish: d, km }) => {
+                const on = speech.speaking && playingId === d.id
+                return (
+                  <li key={d.id} className="flex items-center gap-3 rounded-2xl bg-card p-2.5 shadow-sm">
+                    <Link href={`/dishes/${d.id}`} className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-muted [&_span]:text-3xl">
+                      <DishVisual dish={d} alt={dishText(d).name} sizes="56px" />
+                    </Link>
+                    <div className="min-w-0 flex-1">
+                      <Link href={`/dishes/${d.id}`} className="block truncate font-bold hover:underline">
+                        {dishText(d).name}
+                      </Link>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {km < 10 ? km.toFixed(1) : Math.round(km)} km · {getDishPlace(d)}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => listenNear(d)}
+                      aria-label={dict.mapListenHere}
+                      title={dict.mapListenHere}
+                      className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow transition-transform active:scale-90"
+                    >
+                      {on ? <Pause className="size-4" /> : <Volume2 className="size-4" />}
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
 
         {/* 1. Vùng miền */}
         <Step n={1} title={dict.mapStep1} desc={dict.mapStep1Desc}>

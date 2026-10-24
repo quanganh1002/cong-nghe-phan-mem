@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, UtensilsCrossed, BookOpen, Map as MapIcon } from "lucide-react"
+import { Home, UtensilsCrossed, BookOpen, BookA, Map as MapIcon } from "lucide-react"
 import { useApp } from "@/lib/store"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -16,6 +16,7 @@ function useNav() {
     { href: "/", label: dict.navHome, icon: Home },
     { href: "/dishes", label: dict.navDishes, icon: UtensilsCrossed },
     { href: "/map", label: dict.navMap, icon: MapIcon },
+    { href: "/glossary", label: dict.navGlossary, icon: BookA },
     { href: "/about", label: dict.navAbout, icon: BookOpen },
   ]
 }
@@ -68,7 +69,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Mobile bottom nav */}
       <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/90 backdrop-blur-xl md:hidden">
-        <div className="mx-auto grid max-w-md grid-cols-4">
+        <div className="mx-auto grid max-w-md grid-cols-5">
           {nav.map((item) => {
             const active = isActive(pathname, item.href)
             const Icon = item.icon

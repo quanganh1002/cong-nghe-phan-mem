@@ -87,6 +87,8 @@ export function useSpeech() {
   const pausedRef = useRef(false)
   const activeRef = useRef(false)
   const playRef = useRef<(i: number) => void>(() => {})
+  const titleRef = useRef("")
+  const wakeRef = useRef<{ release: () => Promise<void> } | null>(null)
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -187,11 +189,12 @@ export function useSpeech() {
   )
   playRef.current = playFrom
 
-  /** Start reading the given sentences from `from` */
+  /** Start reading the given sentences from `from`; `title` is shown by the OS media controls */
   const speak = useCallback(
-    (segments: string[], lang: string, from = 0) => {
+    (segments: string[], lang: string, from = 0, title = "") => {
       segsRef.current = segments
       langRef.current = lang
+      titleRef.current = title
       playFrom(from)
     },
     [playFrom],
@@ -225,6 +228,65 @@ export function useSpeech() {
   }, [])
 
   useEffect(() => () => stop(), [stop])
+
+  // Hands-free: keep the screen on while reading (phones stop speech synthesis when the screen sleeps)
+  const reading = speaking && !paused
+  useEffect(() => {
+    if (!reading || !("wakeLock" in navigator)) return
+    let cancelled = false
+    navigator.wakeLock
+      .request("screen")
+      .then((lock) => {
+        if (cancelled) lock.release().catch(() => {})
+        else wakeRef.current = lock
+      })
+      .catch(() => {}) // denied (battery saver, hidden tab): reading still works
+    return () => {
+      cancelled = true
+      wakeRef.current?.release().catch(() => {})
+      wakeRef.current = null
+    }
+  }, [reading])
+
+  // The lock is dropped when the tab is hidden; take it again when the visitor comes back mid-reading
+  useEffect(() => {
+    if (!reading || !("wakeLock" in navigator)) return
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && !wakeRef.current) {
+        navigator.wakeLock
+          .request("screen")
+          .then((lock) => {
+            wakeRef.current = lock
+          })
+          .catch(() => {})
+      }
+    }
+    document.addEventListener("visibilitychange", onVisible)
+    return () => document.removeEventListener("visibilitychange", onVisible)
+  }, [reading])
+
+  // Lock-screen / notification controls (Chrome shows them while an <audio> element plays, i.e. the online-voice mode)
+  useEffect(() => {
+    if (!speaking || !("mediaSession" in navigator)) return
+    const ms = navigator.mediaSession
+    if (titleRef.current) ms.metadata = new MediaMetadata({ title: titleRef.current, artist: "Vị Việt" })
+    const set = (action: MediaSessionAction, fn: () => void) => {
+      try {
+        ms.setActionHandler(action, fn)
+      } catch {}
+    }
+    set("play", resume)
+    set("pause", pause)
+    set("nexttrack", next)
+    set("previoustrack", prev)
+    return () => {
+      for (const a of ["play", "pause", "nexttrack", "previoustrack"] as const) {
+        try {
+          ms.setActionHandler(a, null)
+        } catch {}
+      }
+    }
+  }, [speaking, resume, pause, next, prev])
 
   return { supported, speaking, paused, current, speed, speak, next, prev, setSpeed, pause, resume, stop }
 }

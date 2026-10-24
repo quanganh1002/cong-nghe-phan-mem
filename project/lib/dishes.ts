@@ -1396,3 +1396,53 @@ export const DISH_PLACES: Record<string, string> = {
 
 const REGION_FALLBACK: Record<Region, string> = { north: "Hà Nội", central: "Huế", south: "TP. Hồ Chí Minh" }
 export const getDishPlace = (dish: Dish) => DISH_PLACES[dish.id] ?? REGION_FALLBACK[dish.region]
+
+/**
+ * Tọa độ gần đúng (vĩ độ, kinh độ) của các địa điểm trong DISH_PLACES, dùng để gợi ý món ăn gần người dùng.
+ * Chỉ chính xác cỡ vài trăm mét đến vài km (khu phố, chợ, xã); khi thêm địa điểm mới vào DISH_PLACES hãy thêm vào đây.
+ */
+const PLACE_COORDS: Record<string, [number, number]> = {
+  "Làng Vân Cù, Nam Trực, Nam Định": [20.37, 106.2],
+  "Phố Hàng Mành, Hà Nội": [21.034, 105.8505],
+  "Phố cổ Hà Nội": [21.0343, 105.851],
+  "Thanh Trì, Hà Nội": [20.94, 105.85],
+  "Làng Tranh Khúc, Thanh Trì, Hà Nội": [20.933, 105.857],
+  "Chợ Đông Ba, Huế": [16.4695, 107.587],
+  "Làng Phú Chiêm, Điện Bàn, Quảng Nam": [15.892, 108.23],
+  "Phố cổ Hội An": [15.8794, 108.335],
+  "Chợ Bến Thành, TP. Hồ Chí Minh": [10.7725, 106.698],
+  "Ninh Kiều, Cần Thơ": [10.034, 105.788],
+  "Buôn Ma Thuột, Đắk Lắk": [12.667, 108.038],
+  "Phố Chả Cá, Hà Nội": [21.035, 105.849],
+  "Làng Vòng, Cầu Giấy, Hà Nội": [21.042, 105.796],
+  "Đền Hùng, Phú Thọ": [21.346, 105.315],
+  "Chợ Đồng Xuân, Hà Nội": [21.038, 105.849],
+  "Cà phê Giảng, Nguyễn Hữu Huân, Hà Nội": [21.033, 105.853],
+  "Quảng An, Tây Hồ, Hà Nội": [21.069, 105.824],
+  "Cồn Hến, Huế": [16.478, 107.606],
+  "Quy Nhơn, Bình Định": [13.7765, 109.2237],
+  "Chợ Lớn, TP. Hồ Chí Minh": [10.75, 106.662],
+  "Bến Tre": [10.243, 106.375],
+  "Trà Cuôn, Cầu Kè, Trà Vinh": [9.87, 106.06],
+  "Chợ Bắc Hà, Lào Cai": [22.538, 104.288],
+  "Hải Dương": [20.94, 106.33],
+  "Chợ Cồn, Đà Nẵng": [16.068, 108.214],
+  "Phan Rang, Ninh Thuận": [11.564, 108.988],
+  "Buôn Đôn, Đắk Lắk": [12.91, 107.78],
+  "Vũng Thơm, Sóc Trăng": [9.6, 105.98],
+  "Cao Lãnh, Đồng Tháp": [10.46, 105.633],
+  "Sóc Trăng": [9.603, 105.974],
+  "Hà Nội": [21.0285, 105.8542],
+  Huế: [16.4637, 107.5909],
+  "TP. Hồ Chí Minh": [10.7769, 106.7009],
+}
+
+export const getDishCoords = (dish: Dish): [number, number] | null => PLACE_COORDS[getDishPlace(dish)] ?? null
+
+/** Khoảng cách theo đường chim bay (km) giữa hai điểm */
+export function distanceKm(a: [number, number], b: [number, number]): number {
+  const rad = (d: number) => (d * Math.PI) / 180
+  const h =
+    Math.sin(rad(b[0] - a[0]) / 2) ** 2 + Math.cos(rad(a[0])) * Math.cos(rad(b[0])) * Math.sin(rad(b[1] - a[1]) / 2) ** 2
+  return 12742 * Math.asin(Math.sqrt(h))
+}

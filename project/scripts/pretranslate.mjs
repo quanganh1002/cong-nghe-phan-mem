@@ -6,6 +6,7 @@
 // Requires Node 22.6+ (runs the .ts data files directly) and an internet connection.
 import { mkdir, readFile, writeFile } from "node:fs/promises"
 import { DISHES } from "../lib/dishes.ts"
+import { GLOSSARY } from "../lib/glossary.ts"
 import { DICT_EN } from "../lib/i18n.ts"
 import { LANGUAGES } from "../lib/languages.ts"
 
@@ -16,6 +17,10 @@ const OUT_DIR = new URL("../public/translations/", import.meta.url)
 
 const sources = new Set(Object.values(DICT_EN))
 for (const d of DISHES) for (const v of Object.values(d.en)) if (typeof v === "string" && v.trim()) sources.add(v)
+for (const g of GLOSSARY) {
+  sources.add(g.en.name)
+  sources.add(g.en.desc)
+}
 
 const split = (text) => {
   if (text.length <= CHUNK) return [text]
