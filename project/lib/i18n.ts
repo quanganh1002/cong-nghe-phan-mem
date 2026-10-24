@@ -39,7 +39,7 @@ const vi = {
   heroBadge: "Hành trình ẩm thực Việt",
   heroTitle: "Nghe kể chuyện những món ăn truyền thống Việt Nam",
   heroSubtitle:
-    "Mỗi món ăn là một câu chuyện về vùng đất, con người và phong tục. Khám phá nguồn gốc, ý nghĩa văn hóa và nghe thuyết minh bằng giọng nói trong 10 ngôn ngữ.",
+    "Mỗi món ăn là một câu chuyện về vùng đất, con người và phong tục. Khám phá nguồn gốc, ý nghĩa văn hóa và nghe thuyết minh bằng giọng nói trong nhiều ngôn ngữ khác nhau.",
   startExplore: "Bắt đầu khám phá",
   listen: "Nghe thuyết minh",
   replay: "Nghe lại",
@@ -110,7 +110,7 @@ const vi = {
   aboutP2:
     "Mỗi món ăn được giới thiệu qua nguồn gốc, nguyên liệu, giá trị văn hóa và cách thưởng thức đúng điệu. Du khách và người yêu ẩm thực có thể vừa đọc vừa nghe thuyết minh.",
   aboutP3:
-    "Trang hỗ trợ 10 ngôn ngữ phổ biến nhất thế giới. Nội dung gốc bằng tiếng Việt và tiếng Anh, các ngôn ngữ còn lại được dịch tự động nên có thể còn thiếu chính xác.",
+    "Trang hỗ trợ nhiều ngôn ngữ khác nhau, gồm những ngôn ngữ phổ biến nhất thế giới. Nội dung gốc bằng tiếng Việt và tiếng Anh, các ngôn ngữ còn lại được dịch tự động nên có thể còn thiếu chính xác.",
   aboutHowTitle: "Cách sử dụng",
   aboutHow1: "Chọn ngôn ngữ ở góc trên bên phải.",
   aboutHow2: "Vào mục Món ăn, lọc theo vùng miền hoặc loại món.",
@@ -157,7 +157,7 @@ const en: Dict = {
   heroBadge: "A Vietnamese culinary journey",
   heroTitle: "Hear the stories behind Vietnam's traditional dishes",
   heroSubtitle:
-    "Every dish tells a story of a land, its people and their customs. Discover the origins and cultural meaning of each dish and listen to spoken narration in 10 languages.",
+    "Every dish tells a story of a land, its people and their customs. Discover the origins and cultural meaning of each dish and listen to spoken narration in many different languages.",
   startExplore: "Start exploring",
   listen: "Listen to the narration",
   replay: "Replay",
@@ -229,7 +229,7 @@ const en: Dict = {
   aboutP2:
     "Each dish is introduced through its origin, ingredients, cultural meaning and the proper way to enjoy it. Visitors and food lovers can read and listen at the same time.",
   aboutP3:
-    "The site supports the 10 most widely spoken languages. The source content is written in Vietnamese and English; the other languages are machine-translated and may contain inaccuracies.",
+    "The site supports many different languages, including the most widely spoken ones in the world. The source content is written in Vietnamese and English; the other languages are machine-translated and may contain inaccuracies.",
   aboutHowTitle: "How to use",
   aboutHow1: "Pick a language at the top right.",
   aboutHow2: "Open Dishes and filter by region or type.",

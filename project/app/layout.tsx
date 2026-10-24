@@ -14,7 +14,7 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   title: "Vị Việt — Văn hóa ẩm thực truyền thống Việt Nam",
   description:
-    "Thuyết minh bằng giọng nói về các món ăn truyền thống và văn hóa ẩm thực Việt Nam trong 10 ngôn ngữ. Discover the stories behind traditional Vietnamese dishes.",
+    "Thuyết minh bằng giọng nói về các món ăn truyền thống và văn hóa ẩm thực Việt Nam bằng nhiều ngôn ngữ khác nhau. Discover the stories behind traditional Vietnamese dishes.",
 }
 
 export const viewport: Viewport = {

@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils"
 Tạo mã QR cho trang chủ và từng món ăn. Link trong QR có thêm ?src=qr
  * để trang thống kê biết khách vào bằng cách quét mã (còn mở link thường thì tính là "link").
  * Có thể thêm &lang=xx để web mở sẵn đúng ngôn ngữ cho khách quét: một ngôn ngữ cho mọi món,
- * hoặc một món với đủ 10 ngôn ngữ (bảng đa ngôn ngữ đặt cạnh món).
+ * hoặc một món với mọi ngôn ngữ (bảng đa ngôn ngữ đặt cạnh món).
  */
 
 type Card = { key: string; title: string; subtitle: string; url: string; lang?: LangCode }
@@ -110,13 +110,13 @@ function QrCards() {
       <section className="rounded-3xl border border-border bg-card p-5 shadow-sm print:hidden">
         <p className="text-sm text-muted-foreground">
           Mỗi món có một mã QR dẫn thẳng tới trang thuyết minh của món đó. Chọn ngôn ngữ để web mở sẵn đúng ngôn ngữ khi khách quét, hoặc
-          chọn "Một món, đủ 10 ngôn ngữ" để in một bảng đa ngôn ngữ đặt cạnh món. In ra dán cạnh hiện vật, bảng giới thiệu hoặc đăng lên mạng xã hội.
+          chọn "Một món, mọi ngôn ngữ" để in một bảng đa ngôn ngữ đặt cạnh món. In ra dán cạnh hiện vật, bảng giới thiệu hoặc đăng lên mạng xã hội.
         </p>
         <div className="mt-4 grid grid-cols-2 gap-1 rounded-full bg-muted p-1">
           {(
             [
               { key: "dishes", label: "Mỗi món một mã" },
-              { key: "one-dish", label: "Một món, đủ 10 ngôn ngữ" },
+              { key: "one-dish", label: "Một món, mọi ngôn ngữ" },
             ] as const
           ).map((m) => (
             <button
