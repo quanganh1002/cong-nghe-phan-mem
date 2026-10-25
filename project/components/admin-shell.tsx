@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import { PinForm } from "@/components/admin-pin-form"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { readPin, writePin } from "@/lib/admin-pin"
 import { cn } from "@/lib/utils"
 
@@ -82,7 +83,10 @@ export function AdminShell({ title, children }: { title: string; children: (pin:
         >
           <ArrowLeft className="size-5" />
         </Link>
-        <h1 className="text-2xl font-extrabold">{title}</h1>
+        <h1 className="min-w-0 flex-1 truncate text-2xl font-extrabold">{title}</h1>
+        <div className="print:hidden">
+          <ThemeToggle />
+        </div>
       </header>
       <nav className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 print:hidden">
         {TABS.map((t) => (
