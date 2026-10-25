@@ -3,12 +3,15 @@
 import Link from "next/link"
 import Image from "next/image"
 import Form from "next/form"
-import { ArrowRight, Search, Sparkles, Volume2 } from "lucide-react"
+import { useEffect } from "react"
+import { ArrowRight, Pause, Search, Sparkles, Volume2 } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { DishCard } from "@/components/dish-card"
 import { useApp } from "@/lib/store"
 import { DISHES, REGIONS } from "@/lib/dishes"
 import { useDishText } from "@/lib/use-dish-text"
+import { getLanguage } from "@/lib/languages"
+import { splitText, useSpeech } from "@/hooks/use-speech"
 
 const REGION_DICT = {
   north: { name: "regionNorth", desc: "regionNorthDesc", icon: "🏯" },
@@ -22,8 +25,21 @@ const listed = [...featured, ...festival]
 const hero = DISHES.find((d) => d.id === "pho-bo") ?? DISHES[0]
 
 export default function HomePage() {
-  const { dict } = useApp()
+  const { dict, lang } = useApp()
   const text = useDishText(listed, ["name", "summary"])
+  const speech = useSpeech()
+
+  // Stop reading when the language changes (the text on screen changes with it)
+  useEffect(() => {
+    speech.stop()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang])
+
+  /** Read the hero title and description aloud in the selected language; a second press stops it */
+  const readIntro = () => {
+    if (speech.speaking) return speech.stop()
+    speech.speak(splitText(`${dict.heroTitle}\n${dict.heroSubtitle}`), getLanguage(lang).speechLang, 0, dict.appName)
+  }
 
   return (
     <AppShell>
@@ -48,10 +64,15 @@ export default function HomePage() {
                   {dict.startExplore}
                   <ArrowRight className="size-4 rtl:rotate-180" />
                 </Link>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-4 py-2.5 text-sm font-semibold backdrop-blur">
-                  <Volume2 className="size-4" />
+                <button
+                  type="button"
+                  onClick={readIntro}
+                  aria-pressed={speech.speaking}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-4 py-2.5 text-sm font-semibold backdrop-blur transition-all active:scale-95 hover:bg-white/25"
+                >
+                  {speech.speaking ? <Pause className="size-4" /> : <Volume2 className="size-4" />}
                   {dict.listen}
-                </span>
+                </button>
               </div>
             </div>
             <div className="relative hidden aspect-square w-40 shrink-0 sm:block lg:w-52">
