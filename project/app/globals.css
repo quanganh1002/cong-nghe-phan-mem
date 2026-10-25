@@ -128,9 +128,9 @@
   color: oklch(0.985 0.004 265);
   border: 1px solid oklch(1 0 0 / 10%);
   background:
-    radial-gradient(42rem 26rem at 8% -10%, oklch(0.55 0.25 285 / 0.7), transparent 62%),
-    radial-gradient(38rem 24rem at 105% 110%, oklch(0.68 0.16 215 / 0.55), transparent 60%),
-    oklch(0.15 0.03 272);
+    radial-gradient(42rem 26rem at 8% -10%, var(--hero-a, oklch(0.55 0.25 285 / 0.7)), transparent 62%),
+    radial-gradient(38rem 24rem at 105% 110%, var(--hero-b, oklch(0.68 0.16 215 / 0.55)), transparent 60%),
+    var(--hero-base, oklch(0.15 0.03 272));
 }
 .hero-surface::before {
   content: "";
