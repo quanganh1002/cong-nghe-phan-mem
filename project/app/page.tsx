@@ -45,7 +45,7 @@ export default function HomePage() {
     <AppShell>
       {/* Hero */}
       <section className="px-4 pt-4">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-chart-2 p-6 text-primary-foreground shadow-lg sm:p-8">
+        <div className="relative overflow-hidden rounded-3xl hero-surface p-6 shadow-lg sm:p-8">
           <div className="absolute -end-10 -top-10 size-40 rounded-full bg-white/10 blur-2xl" />
           <div className="absolute -bottom-12 -start-8 size-44 rounded-full bg-white/10 blur-2xl" />
           <div className="relative flex items-center gap-4">

@@ -1,13 +1,14 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { Nunito } from "next/font/google"
+import { Be_Vietnam_Pro } from "next/font/google"
 import { AppProvider } from "@/lib/store"
 import { PresenceBeacon } from "@/components/presence-beacon"
 import "./globals.css"
 
-const nunito = Nunito({
+const sans = Be_Vietnam_Pro({
   subsets: ["latin", "vietnamese"],
-  variable: "--font-nunito",
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-sans-app",
   display: "swap",
 })
 
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#e2562f",
+  themeColor: "#6d4aff",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -30,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="vi" className={`light ${nunito.variable}`} style={{ colorScheme: "light" }} suppressHydrationWarning>
+    <html lang="vi" className={`light ${sans.variable}`} style={{ colorScheme: "light" }} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -38,7 +39,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${nunito.className} antialiased`}>
+      <body className={`${sans.className} antialiased`}>
         <AppProvider>
           {children}
           <PresenceBeacon />
