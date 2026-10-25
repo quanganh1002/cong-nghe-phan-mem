@@ -72,7 +72,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Mobile bottom nav: floating dock, the active tab expands to show its label */}
       <nav className="safe-bottom pointer-events-none fixed inset-x-0 bottom-3 z-40 flex justify-center px-4 md:hidden">
-        <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-border/70 bg-background/85 p-1.5 shadow-xl shadow-black/10 backdrop-blur-xl">
+        <div className="pointer-events-auto flex items-center gap-1 rounded-full border-2 border-primary/30 bg-card/95 p-1.5 shadow-2xl shadow-primary/25 ring-4 ring-primary/10 backdrop-blur-xl">
           {nav.map((item) => {
             const active = isActive(pathname, item.href)
             const Icon = item.icon
@@ -84,7 +84,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex h-11 items-center justify-center gap-2 rounded-full text-xs font-bold transition-all",
-                  active ? "bg-primary px-4 text-primary-foreground shadow-sm" : "w-11 text-muted-foreground",
+                  active ? "bg-primary px-4 text-primary-foreground shadow-sm" : "w-11 text-foreground/60 hover:text-foreground",
                 )}
               >
                 <Icon className="size-5 shrink-0" />
