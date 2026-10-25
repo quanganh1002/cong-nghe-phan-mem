@@ -130,6 +130,7 @@ export const DISHES: Dish[] = [
     id: "banh-cuon",
     region: "north",
     category: "snack",
+    image: "/foods/banh-cuon.jpg",
     emoji: "🫓",
     vi: {
       name: "Bánh cuốn",
@@ -158,6 +159,7 @@ export const DISHES: Dish[] = [
     id: "banh-chung",
     region: "north",
     category: "festival",
+    image: "/foods/banh-chung.jpg",
     emoji: "🟩",
     popular: true,
     vi: {
@@ -187,6 +189,7 @@ export const DISHES: Dish[] = [
     id: "bun-bo-hue",
     region: "central",
     category: "main",
+    image: "/foods/bun-bo-hue.jpg",
     emoji: "🌶️",
     popular: true,
     vi: {
@@ -216,6 +219,7 @@ export const DISHES: Dish[] = [
     id: "mi-quang",
     region: "central",
     category: "main",
+    image: "/foods/mi-quang.jpg",
     emoji: "🍲",
     vi: {
       name: "Mì Quảng",
@@ -244,6 +248,7 @@ export const DISHES: Dish[] = [
     id: "cao-lau",
     region: "central",
     category: "main",
+    image: "/foods/cao-lau.jpg",
     emoji: "🍝",
     vi: {
       name: "Cao lầu",
@@ -360,6 +365,7 @@ export const DISHES: Dish[] = [
     id: "banh-xeo",
     region: "south",
     category: "main",
+    image: "/foods/banh-xeo.jpg",
     emoji: "🥞",
     vi: {
       name: "Bánh xèo",
@@ -476,6 +482,7 @@ export const DISHES: Dish[] = [
     id: "cha-ca-la-vong",
     region: "north",
     category: "main",
+    image: "/foods/cha-ca-la-vong.jpg",
     emoji: "🐟",
     vi: {
       name: "Chả cá Lã Vọng",
@@ -504,6 +511,7 @@ export const DISHES: Dish[] = [
     id: "bun-thang",
     region: "north",
     category: "main",
+    image: "/foods/bun-thang.jpg",
     emoji: "🍲",
     vi: {
       name: "Bún thang",
@@ -532,6 +540,7 @@ export const DISHES: Dish[] = [
     id: "com-lang-vong",
     region: "north",
     category: "dessert",
+    image: "/foods/com-lang-vong.jpg",
     emoji: "🌾",
     vi: {
       name: "Cốm làng Vòng",
@@ -560,6 +569,7 @@ export const DISHES: Dish[] = [
     id: "banh-troi-banh-chay",
     region: "north",
     category: "festival",
+    image: "/foods/banh-troi-banh-chay.jpg",
     emoji: "🍡",
     vi: {
       name: "Bánh trôi, bánh chay",
@@ -588,6 +598,7 @@ export const DISHES: Dish[] = [
     id: "xoi-gac",
     region: "north",
     category: "festival",
+    image: "/foods/xoi-gac.jpg",
     emoji: "🍚",
     vi: {
       name: "Xôi gấc",
@@ -616,6 +627,7 @@ export const DISHES: Dish[] = [
     id: "ca-phe-trung",
     region: "north",
     category: "drink",
+    image: "/foods/ca-phe-trung.jpg",
     emoji: "☕",
     vi: {
       name: "Cà phê trứng",
@@ -644,6 +656,7 @@ export const DISHES: Dish[] = [
     id: "tra-sen-tay-ho",
     region: "north",
     category: "drink",
+    image: "/foods/tra-sen-tay-ho.jpg",
     emoji: "🍵",
     vi: {
       name: "Trà sen Tây Hồ",
@@ -672,6 +685,7 @@ export const DISHES: Dish[] = [
     id: "com-hen",
     region: "central",
     category: "main",
+    image: "/foods/com-hen.jpg",
     emoji: "🐚",
     vi: {
       name: "Cơm hến",
@@ -700,6 +714,7 @@ export const DISHES: Dish[] = [
     id: "banh-beo",
     region: "central",
     category: "snack",
+    image: "/foods/banh-beo.jpg",
     emoji: "🥟",
     vi: {
       name: "Bánh bèo",
@@ -728,6 +743,7 @@ export const DISHES: Dish[] = [
     id: "nem-lui",
     region: "central",
     category: "snack",
+    image: "/foods/nem-lui.jpg",
     emoji: "🍢",
     vi: {
       name: "Nem lụi",
@@ -756,6 +772,7 @@ export const DISHES: Dish[] = [
     id: "banh-it-la-gai",
     region: "central",
     category: "dessert",
+    image: "/foods/banh-it-la-gai.jpg",
     emoji: "🍃",
     vi: {
       name: "Bánh ít lá gai",
@@ -784,6 +801,7 @@ export const DISHES: Dish[] = [
     id: "hu-tieu-nam-vang",
     region: "south",
     category: "main",
+    image: "/foods/hu-tieu-nam-vang.jpg",
     emoji: "🍜",
     vi: {
       name: "Hủ tiếu Nam Vang",
@@ -812,6 +830,7 @@ export const DISHES: Dish[] = [
     id: "canh-chua-ca-loc",
     region: "south",
     category: "main",
+    image: "/foods/canh-chua-ca-loc.jpg",
     emoji: "🥘",
     vi: {
       name: "Canh chua cá lóc",
@@ -840,6 +859,7 @@ export const DISHES: Dish[] = [
     id: "thit-kho-trung",
     region: "south",
     category: "festival",
+    image: "/foods/thit-kho-trung.jpg",
     emoji: "🥚",
     vi: {
       name: "Thịt kho trứng",
@@ -868,6 +888,7 @@ export const DISHES: Dish[] = [
     id: "banh-tet",
     region: "south",
     category: "festival",
+    image: "/foods/banh-tet.jpg",
     emoji: "🎍",
     vi: {
       name: "Bánh tét",
@@ -896,6 +917,7 @@ export const DISHES: Dish[] = [
     id: "banh-da-lon",
     region: "south",
     category: "dessert",
+    image: "/foods/banh-da-lon.jpg",
     emoji: "🍮",
     vi: {
       name: "Bánh da lợn",
@@ -924,6 +946,7 @@ export const DISHES: Dish[] = [
     id: "bun-rieu-cua",
     region: "north",
     category: "main",
+    image: "/foods/bun-rieu-cua.jpg",
     emoji: "🦀",
     vi: {
       name: "Bún riêu cua",
@@ -952,6 +975,7 @@ export const DISHES: Dish[] = [
     id: "bun-dau-mam-tom",
     region: "north",
     category: "main",
+    image: "/foods/bun-dau-mam-tom.jpg",
     emoji: "🍢",
     vi: {
       name: "Bún đậu mắm tôm",
@@ -980,6 +1004,7 @@ export const DISHES: Dish[] = [
     id: "thang-co",
     region: "north",
     category: "main",
+    image: "/foods/thang-co.jpg",
     emoji: "🥘",
     vi: {
       name: "Thắng cố",
@@ -1008,6 +1033,7 @@ export const DISHES: Dish[] = [
     id: "banh-dau-xanh",
     region: "north",
     category: "dessert",
+    image: "/foods/banh-dau-xanh.jpg",
     emoji: "🟨",
     vi: {
       name: "Bánh đậu xanh Hải Dương",
@@ -1036,6 +1062,7 @@ export const DISHES: Dish[] = [
     id: "thit-dong",
     region: "north",
     category: "festival",
+    image: "/foods/thit-dong.jpg",
     emoji: "🧊",
     vi: {
       name: "Thịt đông",
@@ -1064,6 +1091,7 @@ export const DISHES: Dish[] = [
     id: "bun-cha-ca",
     region: "central",
     category: "main",
+    image: "/foods/bun-cha-ca.jpg",
     emoji: "🐠",
     vi: {
       name: "Bún chả cá",
@@ -1092,6 +1120,7 @@ export const DISHES: Dish[] = [
     id: "com-ga-hoi-an",
     region: "central",
     category: "main",
+    image: "/foods/com-ga-hoi-an.jpg",
     emoji: "🍗",
     vi: {
       name: "Cơm gà Hội An",
@@ -1120,6 +1149,7 @@ export const DISHES: Dish[] = [
     id: "banh-bot-loc",
     region: "central",
     category: "snack",
+    image: "/foods/banh-bot-loc.jpg",
     emoji: "🥟",
     vi: {
       name: "Bánh bột lọc",
@@ -1148,6 +1178,7 @@ export const DISHES: Dish[] = [
     id: "banh-can",
     region: "central",
     category: "snack",
+    image: "/foods/banh-can.jpg",
     emoji: "🍳",
     vi: {
       name: "Bánh căn",
@@ -1176,6 +1207,7 @@ export const DISHES: Dish[] = [
     id: "me-xung-hue",
     region: "central",
     category: "dessert",
+    image: "/foods/me-xung-hue.jpg",
     emoji: "🍬",
     vi: {
       name: "Mè xửng Huế",
@@ -1204,6 +1236,7 @@ export const DISHES: Dish[] = [
     id: "banh-to-hoi-an",
     region: "central",
     category: "festival",
+    image: "/foods/banh-to-hoi-an.jpg",
     emoji: "🎑",
     vi: {
       name: "Bánh tổ",
@@ -1232,6 +1265,7 @@ export const DISHES: Dish[] = [
     id: "ruou-can",
     region: "central",
     category: "drink",
+    image: "/foods/ruou-can.jpg",
     emoji: "🏺",
     vi: {
       name: "Rượu cần Tây Nguyên",
@@ -1260,6 +1294,7 @@ export const DISHES: Dish[] = [
     id: "banh-pia",
     region: "south",
     category: "snack",
+    image: "/foods/banh-pia.jpg",
     emoji: "🥮",
     vi: {
       name: "Bánh pía Sóc Trăng",
@@ -1288,6 +1323,7 @@ export const DISHES: Dish[] = [
     id: "ca-loc-nuong-trui",
     region: "south",
     category: "main",
+    image: "/foods/ca-loc-nuong-trui.jpg",
     emoji: "🔥",
     vi: {
       name: "Cá lóc nướng trui",
@@ -1316,6 +1352,7 @@ export const DISHES: Dish[] = [
     id: "bun-nuoc-leo",
     region: "south",
     category: "main",
+    image: "/foods/bun-nuoc-leo.jpg",
     emoji: "🍲",
     vi: {
       name: "Bún nước lèo Sóc Trăng",

@@ -4,6 +4,8 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { useApp } from "@/lib/store"
+import { getDish } from "@/lib/dishes"
+import { PHOTO_CREDITS } from "@/lib/photo-credits"
 
 export default function AboutPage() {
   const { dict } = useApp()
@@ -32,6 +34,26 @@ export default function AboutPage() {
             ))}
           </ol>
         </section>
+
+        {Object.keys(PHOTO_CREDITS).length > 0 && (
+          <section className="mt-6 rounded-3xl border border-border bg-card p-5 shadow-sm">
+            <h2 className="mb-1 font-bold">{dict.photoCreditsTitle}</h2>
+            <p className="mb-3 text-sm text-muted-foreground">{dict.photoCreditsNote}</p>
+            <ul className="space-y-1 text-xs leading-relaxed text-muted-foreground">
+              {Object.entries(PHOTO_CREDITS).map(([id, c]) => (
+                <li key={id}>
+                  <span className="font-semibold text-foreground">{getDish(id)?.vi.name ?? id}</span>
+                  {" · "}
+                  {c.author}
+                  {" · "}
+                  <a href={c.source} target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
+                    {c.license}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <Link
           href="/dishes"

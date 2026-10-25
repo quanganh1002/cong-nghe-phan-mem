@@ -111,6 +111,8 @@ const vi = {
     "Mỗi món ăn được giới thiệu qua nguồn gốc, nguyên liệu, giá trị văn hóa và cách thưởng thức đúng điệu. Du khách và người yêu ẩm thực có thể vừa đọc vừa nghe thuyết minh.",
   aboutP3:
     "Trang hỗ trợ nhiều ngôn ngữ khác nhau, gồm những ngôn ngữ phổ biến nhất thế giới. Nội dung gốc bằng tiếng Việt và tiếng Anh, các ngôn ngữ còn lại được dịch tự động nên có thể còn thiếu chính xác.",
+  photoCreditsTitle: "Nguồn ảnh",
+  photoCreditsNote: "Một số ảnh món ăn lấy từ Wikimedia Commons theo giấy phép mở của từng tác giả:",
   aboutHowTitle: "Cách sử dụng",
   aboutHow1: "Chọn ngôn ngữ ở góc trên bên phải.",
   aboutHow2: "Vào mục Món ăn, lọc theo vùng miền hoặc loại món.",
@@ -230,6 +232,8 @@ const en: Dict = {
     "Each dish is introduced through its origin, ingredients, cultural meaning and the proper way to enjoy it. Visitors and food lovers can read and listen at the same time.",
   aboutP3:
     "The site supports many different languages, including the most widely spoken ones in the world. The source content is written in Vietnamese and English; the other languages are machine-translated and may contain inaccuracies.",
+  photoCreditsTitle: "Photo credits",
+  photoCreditsNote: "Some dish photos come from Wikimedia Commons under their authors' open licenses:",
   aboutHowTitle: "How to use",
   aboutHow1: "Pick a language at the top right.",
   aboutHow2: "Open Dishes and filter by region or type.",
