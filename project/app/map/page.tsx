@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { MapPin, Map as MapIcon, LocateFixed, Navigation, Loader2, Landmark, Store, Volume2, Pause } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
@@ -21,25 +21,13 @@ type Mode = "origin" | "nearby"
 const REGION_KEY = { north: "regionNorth", central: "regionCentral", south: "regionSouth" } as const
 const REGION_EMOJI = { north: "🏯", central: "🏮", south: "🌴" } as const
 
-function Step({ n, title, desc, highlight, children }: { n: number; title: string; desc: string; highlight?: boolean; children: ReactNode }) {
+/** Small numbered label above a control group, so the page reads top to bottom: region → dish → map */
+function Label({ n, children }: { n: number; children: React.ReactNode }) {
   return (
-    <section
-      className={cn(
-        "rounded-3xl border p-4 shadow-sm sm:p-5",
-        highlight ? "border-primary/40 bg-primary/5" : "border-border bg-card",
-      )}
-    >
-      <div className="mb-3 flex items-start gap-3">
-        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-          {n}
-        </span>
-        <div>
-          <h2 className="font-bold leading-tight">{title}</h2>
-          <p className="text-sm text-muted-foreground">{desc}</p>
-        </div>
-      </div>
+    <p className="mb-2.5 flex items-center gap-2 text-sm font-bold">
+      <span className="grid size-5 place-items-center rounded-full bg-primary text-[11px] text-primary-foreground">{n}</span>
       {children}
-    </section>
+    </p>
   )
 }
 
@@ -143,182 +131,97 @@ export default function MapPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-3xl space-y-4 px-4 pt-6">
-        <div>
-          <h1 className="text-2xl font-extrabold">{dict.mapTitle}</h1>
-          <p className="mt-1 text-muted-foreground">{dict.mapSubtitle}</p>
-        </div>
+      <div className="px-5 pt-8 md:px-8 md:pt-12">
+        <h1 className="text-balance text-4xl font-extrabold leading-tight sm:text-5xl">{dict.mapTitle}</h1>
+        <p className="mt-3 max-w-2xl text-muted-foreground">{dict.mapSubtitle}</p>
+      </div>
 
-        {/* Món ăn gần vị trí hiện tại */}
-        <section className="rounded-3xl border border-primary/40 bg-primary/5 p-4 shadow-sm sm:p-5">
-          <h2 className="flex items-center gap-2 font-bold leading-tight">
-            <LocateFixed className="size-5 text-primary" />
-            {dict.mapNearYouTitle}
-          </h2>
-          {nearest.length === 0 ? (
-            <>
-              <p className="mt-1 text-sm text-muted-foreground">{dict.mapNearYouDesc}</p>
-              {status === "error" && <p className="mt-2 text-sm text-destructive">{dict.mapLocateError}</p>}
-              <button
-                type="button"
-                onClick={() => {
-                  trackFeature("near_me")
-                  locate()
-                }}
-                disabled={status === "locating"}
-                className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 font-bold text-primary-foreground shadow transition-transform active:scale-95 disabled:opacity-60"
-              >
-                {status === "locating" ? <Loader2 className="size-4 animate-spin" /> : <LocateFixed className="size-4" />}
-                {status === "locating" ? dict.mapLocating : dict.mapNearYouFind}
-              </button>
-            </>
-          ) : (
-            <ul className="mt-3 space-y-2">
-              {nearest.map(({ dish: d, km }) => {
-                const on = speech.speaking && playingId === d.id
+      <div className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-6 px-5 md:px-8 lg:grid-cols-[22rem_minmax(0,1fr)] lg:items-start">
+        {/* Left: choose a region, then a dish */}
+        <div className="min-w-0 space-y-6">
+          <div>
+            <Label n={1}>{dict.mapStep1}</Label>
+            <div className="grid grid-cols-3 gap-1 rounded-2xl border border-border bg-card p-1 shadow-sm">
+              {REGIONS.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => pickRegion(r)}
+                  aria-pressed={region === r}
+                  className={cn(
+                    "flex flex-col items-center gap-0.5 rounded-xl px-2 py-2.5 transition-all",
+                    region === r ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:bg-accent",
+                  )}
+                >
+                  <span className="text-xl">{REGION_EMOJI[r]}</span>
+                  <span className="text-sm font-bold">{dict[REGION_KEY[r]]}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <Label n={2}>{dict.mapStep2}</Label>
+            <div className="-mx-5 flex snap-x gap-2 overflow-x-auto px-5 pb-2 no-scrollbar md:-mx-8 md:px-8 lg:mx-0 lg:max-h-[26rem] lg:flex-col lg:overflow-y-auto lg:px-0 lg:pb-0 lg:pe-1">
+              {regionDishes.map((d) => {
+                const on = d.id === dish.id
                 return (
-                  <li key={d.id} className="flex items-center gap-3 rounded-2xl bg-card p-2.5 shadow-sm">
-                    <Link href={`/dishes/${d.id}`} className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-muted [&_span]:text-3xl">
-                      <DishVisual dish={d} alt={dishText(d).name} sizes="56px" />
-                    </Link>
-                    <div className="min-w-0 flex-1">
-                      <Link href={`/dishes/${d.id}`} className="block truncate font-bold hover:underline">
-                        {dishText(d).name}
-                      </Link>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {km < 10 ? km.toFixed(1) : Math.round(km)} km · {getDishPlace(d)}
-                      </p>
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() => setDishId(d.id)}
+                    aria-pressed={on}
+                    className={cn(
+                      "flex w-36 shrink-0 snap-start flex-col overflow-hidden rounded-2xl border text-start transition-all lg:w-full lg:flex-row lg:items-center lg:gap-3 lg:p-2",
+                      on
+                        ? "border-primary bg-accent shadow-md shadow-primary/10 ring-2 ring-primary/30"
+                        : "border-border bg-card hover:border-primary/40",
+                    )}
+                  >
+                    <div className="relative aspect-[4/3] w-full bg-muted lg:size-14 lg:shrink-0 lg:overflow-hidden lg:rounded-xl [&_span]:text-4xl">
+                      <DishVisual dish={d} alt={dishText(d).name} sizes="144px" />
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => listenNear(d)}
-                      aria-label={dict.mapListenHere}
-                      title={dict.mapListenHere}
-                      className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow transition-transform active:scale-90"
-                    >
-                      {on ? <Pause className="size-4" /> : <Volume2 className="size-4" />}
-                    </button>
-                  </li>
+                    <p className="line-clamp-2 px-2.5 py-2 text-sm font-bold leading-tight lg:p-0">{dishText(d).name}</p>
+                  </button>
                 )
               })}
-            </ul>
-          )}
-        </section>
-
-        {/* 1. Vùng miền */}
-        <Step n={1} title={dict.mapStep1} desc={dict.mapStep1Desc}>
-          <div className="grid grid-cols-3 gap-2">
-            {REGIONS.map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => pickRegion(r)}
-                className={cn(
-                  "flex flex-col items-center gap-1 rounded-2xl border px-2 py-3 font-semibold transition-colors",
-                  region === r
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-background hover:bg-accent",
-                )}
-              >
-                <span className="text-2xl">{REGION_EMOJI[r]}</span>
-                <span className="text-sm">{dict[REGION_KEY[r]]}</span>
-                <span className={cn("text-xs", region === r ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                  {DISHES.filter((d) => d.region === r).length} {dict.dishesCount}
-                </span>
-              </button>
-            ))}
-          </div>
-        </Step>
-
-        {/* 2. Món ăn */}
-        <Step n={2} title={dict.mapStep2} desc={dict.mapStep2Desc}>
-          <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-2 sm:-mx-5 sm:px-5">
-            {regionDishes.map((d) => (
-              <button
-                key={d.id}
-                type="button"
-                onClick={() => setDishId(d.id)}
-                className={cn(
-                  "w-24 shrink-0 snap-start overflow-hidden rounded-2xl border-2 bg-background text-start transition-colors",
-                  d.id === dish.id ? "border-primary" : "border-transparent",
-                )}
-              >
-                <div className="relative aspect-square bg-muted [&_span]:text-4xl">
-                  <DishVisual dish={d} alt={dishText(d).name} sizes="96px" />
-                </div>
-                <p className="line-clamp-2 px-1.5 py-1 text-xs font-semibold leading-tight">{dishText(d).name}</p>
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-3 flex gap-3 rounded-2xl bg-secondary/60 p-3">
-            <div className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-muted [&_span]:text-4xl">
-              <DishVisual dish={dish} alt={info.name} sizes="80px" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="font-bold leading-tight">{info.name}</h3>
-              <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{info.summary}</p>
-              <Link
-                href={`/dishes/${dish.id}`}
-                className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline"
-              >
-                <Volume2 className="size-4" />
-                {dict.mapViewDish}
-              </Link>
             </div>
           </div>
-        </Step>
+        </div>
 
-        {/* 3. Bản đồ */}
-        <Step n={3} title={dict.mapStep3} desc={dict.mapStep3Desc}>
-          <div className="grid grid-cols-2 gap-2">
-            {(
-              [
-                { key: "origin", label: dict.mapModeOrigin, icon: Landmark },
-                { key: "nearby", label: dict.mapNearby, icon: Store },
-              ] as const
-            ).map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => pickMode(key)}
-                className={cn(
-                  "flex items-center justify-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition-colors",
-                  mode === key
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-background text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <Icon className="size-4" />
-                {label}
-              </button>
-            ))}
-          </div>
+        {/* Right: the map is the main thing; mode toggle on top, actions underneath */}
+        <div className="min-w-0 lg:sticky lg:top-24">
+          <Label n={3}>{dict.mapStep3}</Label>
+          <div className="overflow-hidden rounded-3xl border border-primary/25 bg-card shadow-lg shadow-primary/10">
+            <div className="grid grid-cols-2 gap-1 border-b border-border bg-muted/50 p-1.5">
+              {(
+                [
+                  { key: "origin", label: dict.mapModeOrigin, icon: Landmark },
+                  { key: "nearby", label: dict.mapNearby, icon: Store },
+                ] as const
+              ).map(({ key, label, icon: Icon }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => pickMode(key)}
+                  aria-pressed={mode === key}
+                  className={cn(
+                    "flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition-all",
+                    mode === key ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Icon className="size-4" />
+                  {label}
+                </button>
+              ))}
+            </div>
 
-          <div className="mt-3 flex items-start gap-3">
-            <MapPin className="mt-0.5 size-5 shrink-0 text-destructive" />
-            {mode === "origin" ? (
-              <div>
-                <p className="font-bold">{place}</p>
-                <p className="text-sm text-muted-foreground">{dict.mapModeOriginDesc}</p>
-              </div>
-            ) : (
-              <div>
-                <p className="font-bold">{dict.mapYourLocation}</p>
-                <p className={cn("text-sm", status === "error" ? "text-destructive" : "text-muted-foreground")}>
-                  {statusText}
-                </p>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-3 overflow-hidden rounded-2xl border border-border">
             {embedSrc ? (
               <iframe
                 key={embedSrc}
                 title={dict.mapPlaceholderTitle}
                 src={embedSrc}
-                className="block h-[50vh] min-h-72 w-full"
+                className="block h-[52vh] min-h-72 w-full lg:h-[26rem]"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
               />
@@ -327,7 +230,7 @@ export default function MapPage() {
                 type="button"
                 onClick={locate}
                 disabled={status === "locating"}
-                className="flex w-full flex-col items-center gap-3 bg-primary/10 px-4 py-10 text-center transition-colors hover:bg-primary/15"
+                className="flex h-[52vh] min-h-72 w-full flex-col items-center justify-center gap-3 bg-accent/40 px-4 text-center transition-colors hover:bg-accent/60 lg:h-[26rem]"
               >
                 {status === "locating" ? (
                   <Loader2 className="size-8 animate-spin text-primary" />
@@ -335,42 +238,134 @@ export default function MapPage() {
                   <MapIcon className="size-8 text-primary" />
                 )}
                 <span className="text-lg font-bold text-primary">{dict.mapPlaceholderTitle}</span>
-                <span className="text-muted-foreground">{dict.mapPlaceholderDesc}</span>
+                <span className="text-sm text-muted-foreground">{dict.mapPlaceholderDesc}</span>
               </button>
             )}
-          </div>
-        </Step>
 
-        {/* 4. Đường đi */}
-        <Step n={4} title={dict.mapStep4} desc={dict.mapStep4Desc} highlight>
-          <p className="mb-3 text-sm">
-            <span className="text-muted-foreground">{dict.mapDestination}: </span>
-            <span className="font-bold">{mode === "origin" ? place : `${info.name} · ${dict.mapNearby}`}</span>
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={locate}
-              disabled={status === "locating"}
-              className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card px-3 py-4 font-semibold transition-colors hover:bg-accent disabled:opacity-60"
-            >
-              {status === "locating" ? <Loader2 className="size-5 animate-spin" /> : <LocateFixed className="size-5" />}
-              {coords ? "✓ " : ""}
-              {dict.mapMyLocation}
-            </button>
-            <button
-              type="button"
-              onClick={directions}
-              className="flex flex-col items-center gap-2 rounded-2xl bg-primary px-3 py-4 font-bold text-primary-foreground shadow-md transition-transform active:scale-95"
-            >
-              <Navigation className="size-5" />
-              {dict.mapDirections}
-            </button>
-          </div>
-        </Step>
+            {/* Destination + actions */}
+            <div className="space-y-4 p-4 sm:p-5">
+              <div className="flex items-start gap-3">
+                <MapPin className="mt-0.5 size-5 shrink-0 text-destructive" />
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{dict.mapDestination}</p>
+                  {mode === "origin" ? (
+                    <>
+                      <p className="font-bold">{place}</p>
+                      <p className="text-sm text-muted-foreground">{dict.mapModeOriginDesc}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-bold">
+                        {info.name} · {dict.mapNearby}
+                      </p>
+                      <p className={cn("text-sm", status === "error" ? "text-destructive" : "text-muted-foreground")}>
+                        {dict.mapYourLocation}: {statusText}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
 
-        <p className="text-sm text-muted-foreground">{dict.mapNote}</p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={locate}
+                  disabled={status === "locating"}
+                  className="flex items-center justify-center gap-2 rounded-full border border-border bg-card px-3 py-3 text-sm font-bold transition-colors hover:bg-accent disabled:opacity-60"
+                >
+                  {status === "locating" ? <Loader2 className="size-4 animate-spin" /> : <LocateFixed className="size-4" />}
+                  {coords ? "✓ " : ""}
+                  {dict.mapMyLocation}
+                </button>
+                <button
+                  type="button"
+                  onClick={directions}
+                  className="flex items-center justify-center gap-2 rounded-full bg-primary px-3 py-3 text-sm font-bold text-primary-foreground shadow-md shadow-primary/25 transition-transform active:scale-95"
+                >
+                  <Navigation className="size-4" />
+                  {dict.mapDirections}
+                </button>
+              </div>
+
+              {/* The chosen dish, with a link to its story */}
+              <div className="flex gap-3 rounded-2xl bg-accent/50 p-3">
+                <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-muted [&_span]:text-3xl">
+                  <DishVisual dish={dish} alt={info.name} sizes="64px" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold leading-tight">{info.name}</h3>
+                  <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{info.summary}</p>
+                  <Link
+                    href={`/dishes/${dish.id}`}
+                    className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline"
+                  >
+                    <Volume2 className="size-4" />
+                    {dict.mapViewDish}
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Dishes near the visitor */}
+      <section className="mx-5 mt-10 rounded-3xl border border-primary/30 bg-gradient-to-br from-accent via-accent/40 to-card p-5 shadow-md shadow-primary/10 md:mx-8 sm:p-6">
+        <h2 className="flex items-center gap-2 text-xl font-bold leading-tight">
+          <LocateFixed className="size-5 text-primary" />
+          {dict.mapNearYouTitle}
+        </h2>
+        {nearest.length === 0 ? (
+          <>
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{dict.mapNearYouDesc}</p>
+            {status === "error" && <p className="mt-2 text-sm text-destructive">{dict.mapLocateError}</p>}
+            <button
+              type="button"
+              onClick={() => {
+                trackFeature("near_me")
+                locate()
+              }}
+              disabled={status === "locating"}
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 font-bold text-primary-foreground shadow transition-transform active:scale-95 disabled:opacity-60"
+            >
+              {status === "locating" ? <Loader2 className="size-4 animate-spin" /> : <LocateFixed className="size-4" />}
+              {status === "locating" ? dict.mapLocating : dict.mapNearYouFind}
+            </button>
+          </>
+        ) : (
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+            {nearest.map(({ dish: d, km }) => {
+              const on = speech.speaking && playingId === d.id
+              return (
+                <li key={d.id} className="flex items-center gap-3 rounded-2xl bg-card p-2.5 shadow-sm">
+                  <Link href={`/dishes/${d.id}`} className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-muted [&_span]:text-3xl">
+                    <DishVisual dish={d} alt={dishText(d).name} sizes="56px" />
+                  </Link>
+                  <div className="min-w-0 flex-1">
+                    <Link href={`/dishes/${d.id}`} className="block truncate font-bold hover:underline">
+                      {dishText(d).name}
+                    </Link>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {km < 10 ? km.toFixed(1) : Math.round(km)} km · {getDishPlace(d)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => listenNear(d)}
+                    aria-label={dict.mapListenHere}
+                    title={dict.mapListenHere}
+                    className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow transition-transform active:scale-90"
+                  >
+                    {on ? <Pause className="size-4" /> : <Volume2 className="size-4" />}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </section>
+
+      <p className="px-5 pt-6 text-xs text-muted-foreground md:px-8">{dict.mapNote}</p>
     </AppShell>
   )
 }
