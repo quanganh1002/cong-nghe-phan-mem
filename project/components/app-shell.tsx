@@ -7,6 +7,7 @@ import { useApp } from "@/lib/store"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Logo } from "@/components/logo"
+import { ScrollToTop } from "@/components/scroll-to-top"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 
@@ -66,6 +67,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       <main className="mx-auto w-full max-w-6xl flex-1 pb-28 md:pb-16">{children}</main>
+
+      <ScrollToTop />
 
       {/* Mobile bottom nav: floating dock, the active tab expands to show its label */}
       <nav className="safe-bottom pointer-events-none fixed inset-x-0 bottom-3 z-40 flex justify-center px-4 md:hidden">
