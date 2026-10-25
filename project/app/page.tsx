@@ -103,7 +103,7 @@ export default function HomePage() {
             enterKeyHint="search"
             placeholder={dict.searchPlaceholder}
             aria-label={dict.searchPlaceholder}
-            className="w-full rounded-full border border-border bg-card py-3.5 ps-6 pe-14 text-sm shadow-sm outline-none transition-all focus:border-primary focus:shadow-md focus:shadow-primary/10"
+            className="w-full rounded-full border-2 border-primary/40 bg-card py-3.5 ps-6 pe-14 text-sm shadow-lg shadow-primary/15 outline-none ring-4 ring-primary/10 transition-all placeholder:text-muted-foreground/80 focus:border-primary focus:ring-primary/15"
           />
           <button
             type="submit"
@@ -126,12 +126,12 @@ export default function HomePage() {
                 key={r}
                 href={`/dishes?region=${r}`}
                 style={{ animationDelay: `${i * 60}ms` }}
-                className="animate-fade-up group relative flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-card p-5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] sm:flex-col sm:items-start sm:gap-6 sm:p-6"
+                className="animate-fade-up group relative flex items-center gap-4 overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-accent via-accent/40 to-card p-5 shadow-md shadow-primary/10 transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/15 active:scale-[0.98] sm:flex-col sm:items-start sm:gap-6 sm:p-6"
               >
-                <span className="pointer-events-none absolute -end-2 -top-5 select-none font-display text-8xl font-bold text-primary/[0.07]">
+                <span className="pointer-events-none absolute -end-2 -top-5 select-none font-display text-8xl font-bold text-primary/[0.12]">
                   0{i + 1}
                 </span>
-                <span className="relative grid size-12 shrink-0 place-items-center rounded-full bg-accent text-2xl">{k.icon}</span>
+                <span className="relative grid size-12 shrink-0 place-items-center rounded-full bg-card text-2xl shadow-sm ring-1 ring-primary/20">{k.icon}</span>
                 <span className="relative min-w-0">
                   <span className="block font-display text-xl font-bold">{dict[k.name]}</span>
                   <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{dict[k.desc]}</span>
