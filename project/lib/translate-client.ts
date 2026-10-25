@@ -57,6 +57,12 @@ function loadStatic(lang: LangCode): Promise<void> {
   return job
 }
 
+/** Tải sẵn bản dịch dựng sẵn để lúc đổi ngôn ngữ có chữ ngay, không phải chờ mạng */
+export function preloadStatic(lang: LangCode): Promise<void> {
+  if (typeof window === "undefined" || lang === "vi" || lang === "en") return Promise.resolve()
+  return loadStatic(lang)
+}
+
 /** Bản dịch đã có (hoặc chính văn bản gốc nếu chưa dịch) */
 function peek(texts: string[], lang: LangCode): string[] {
   if (typeof window === "undefined") return texts

@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react"
 import { DEFAULT_LANG, LANGUAGES, getLanguage, type LangCode } from "./languages"
 import { DICT_EN, DICT_KEYS, DICT_VI, type Dict } from "./i18n"
-import { useL10n } from "./translate-client"
+import { preloadStatic, useL10n } from "./translate-client"
 
 interface AppState {
   lang: LangCode
@@ -55,7 +55,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     document.documentElement.dir = getLanguage(lang).dir
   }, [lang, hydrated])
 
-  const setLang = useCallback((l: LangCode) => setLangState(l), [])
+  // Tải sẵn bản dịch của mọi ngôn ngữ khi trình duyệt rảnh để đổi ngôn ngữ là có chữ ngay
+  useEffect(() => {
+    if (!hydrated) return
+    const run = () => LANGUAGES.forEach((x) => void preloadStatic(x.code))
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number }
+    if (w.requestIdleCallback) w.requestIdleCallback(run)
+    else setTimeout(run, 500)
+  }, [hydrated])
+
+  // Đổi ngôn ngữ: chờ bản dịch dựng sẵn (tối đa 600ms) rồi đổi một lần, tránh nháy tiếng Anh
+  const setLang = useCallback((l: LangCode) => {
+    Promise.race([preloadStatic(l), new Promise((r) => setTimeout(r, 600))]).then(() => setLangState(l))
+  }, [])
 
   const values = useL10n(VI_VALUES, EN_VALUES, lang)
   const dict = Object.fromEntries(DICT_KEYS.map((k, i) => [k, values[i]])) as Dict
