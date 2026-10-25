@@ -31,27 +31,27 @@ export function AppShell({ children }: { children: ReactNode }) {
   const nav = useNav()
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col">
-      {/* Top header */}
-      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-xl">
-        <div className="flex items-center justify-between gap-3 px-4 py-3">
+    <div className="flex min-h-dvh w-full flex-col">
+      {/* Top header: full-width bar, content aligned with the page column */}
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-5 py-3 md:px-8">
           <Logo />
 
-          {/* Desktop nav */}
-          <nav className="hidden items-center gap-1 md:flex">
+          {/* Desktop nav: text links with an underline on the current page */}
+          <nav className="hidden items-center gap-7 md:flex">
             {nav.map((item) => {
               const active = isActive(pathname, item.href)
-              const Icon = item.icon
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors",
-                    active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                    "relative py-1.5 text-sm font-semibold transition-colors after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:origin-center after:rounded-full after:bg-primary after:transition-transform",
+                    active
+                      ? "text-foreground after:scale-x-100"
+                      : "text-muted-foreground after:scale-x-0 hover:text-foreground hover:after:scale-x-50",
                   )}
                 >
-                  <Icon className="size-4" />
                   {item.label}
                 </Link>
               )
@@ -65,11 +65,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 pb-24 md:pb-10">{children}</main>
+      <main className="mx-auto w-full max-w-6xl flex-1 pb-28 md:pb-16">{children}</main>
 
-      {/* Mobile bottom nav */}
-      <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/90 backdrop-blur-xl md:hidden">
-        <div className="mx-auto grid max-w-md grid-cols-5">
+      {/* Mobile bottom nav: floating dock, the active tab expands to show its label */}
+      <nav className="safe-bottom pointer-events-none fixed inset-x-0 bottom-3 z-40 flex justify-center px-4 md:hidden">
+        <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-border/70 bg-background/85 p-1.5 shadow-xl shadow-black/10 backdrop-blur-xl">
           {nav.map((item) => {
             const active = isActive(pathname, item.href)
             const Icon = item.icon
@@ -77,19 +77,15 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold"
+                aria-label={item.label}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "flex h-11 items-center justify-center gap-2 rounded-full text-xs font-bold transition-all",
+                  active ? "bg-primary px-4 text-primary-foreground shadow-sm" : "w-11 text-muted-foreground",
+                )}
               >
-                <span
-                  className={cn(
-                    "grid size-9 place-items-center rounded-2xl transition-all",
-                    active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground",
-                  )}
-                >
-                  <Icon className="size-5" />
-                </span>
-                <span className={cn("transition-colors", active ? "text-primary" : "text-muted-foreground")}>
-                  {item.label}
-                </span>
+                <Icon className="size-5 shrink-0" />
+                {active && <span className="max-w-24 truncate">{item.label}</span>}
               </Link>
             )
           })}

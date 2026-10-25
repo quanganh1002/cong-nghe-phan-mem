@@ -144,53 +144,66 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
   return (
     <AppShell>
       {/* Hero image */}
-      <div className="relative">
-        <div className="relative aspect-[16/11] w-full overflow-hidden sm:aspect-[21/9]">
-          <DishVisual dish={dish} alt={info.name} sizes="100vw" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
+      <div className="px-4 pt-4 md:px-8 md:pt-6">
+        <div className="hero-surface flex flex-col items-center gap-8 overflow-hidden rounded-[2rem] p-6 shadow-xl sm:p-10 md:flex-row-reverse md:justify-between">
+          <button
+            onClick={() => goBack(router)}
+            aria-label={dict.back}
+            className="absolute start-4 top-4 z-10 grid size-10 place-items-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur transition-transform active:scale-90"
+          >
+            <ArrowLeft className="size-5 rtl:rotate-180" />
+          </button>
+          <div className="planet mt-8 w-44 shrink-0 sm:w-52 md:mt-0 lg:w-64">
+            <div className="planet-img relative aspect-square overflow-hidden rounded-full">
+              <DishVisual dish={dish} alt={info.name} sizes="256px" />
+            </div>
+          </div>
+          <div className="animate-fade-up w-full self-center md:max-w-xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold backdrop-blur">
+                <MapPin className="size-3.5" />
+                {dict[REGION_KEY[dish.region]]}
+              </span>
+              <span className="rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold backdrop-blur">
+                {dict[CAT_KEY[dish.category]]}
+              </span>
+            </div>
+            <h1 className="mt-3 text-balance font-display text-4xl font-bold leading-[1.1] sm:text-5xl">
+              {info.name}
+            </h1>
+            {/* Keep the original Vietnamese dish name next to a translated one */}
+            {lang !== "vi" && dish.vi.name !== info.name && (
+              <p className="mt-1 text-sm font-semibold text-white/80">🇻🇳 {dish.vi.name}</p>
+            )}
+          </div>
         </div>
-        <button
-          onClick={() => goBack(router)}
-          aria-label={dict.back}
-          className="absolute start-4 top-4 grid size-10 place-items-center rounded-full bg-background/80 shadow-md backdrop-blur transition-transform active:scale-90"
-        >
-          <ArrowLeft className="size-5 rtl:rotate-180" />
-        </button>
       </div>
 
-      <div className="relative -mt-8 px-4">
-        <div className="animate-fade-up rounded-3xl border border-border bg-card p-5 shadow-sm">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-accent-foreground">
-              <MapPin className="size-3.5" />
-              {dict[REGION_KEY[dish.region]]}
-            </span>
-            <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-secondary-foreground">
-              {dict[CAT_KEY[dish.category]]}
-            </span>
-          </div>
-          <h1 className="mt-2 text-2xl font-extrabold leading-tight">{info.name}</h1>
-          {/* Keep the original Vietnamese dish name next to a translated one */}
-          {lang !== "vi" && dish.vi.name !== info.name && (
-            <p className="mt-0.5 text-sm font-semibold text-primary">🇻🇳 {dish.vi.name}</p>
-          )}
-          <p className="mt-2 text-pretty leading-relaxed text-muted-foreground">{info.summary}</p>
+      {/* Lead paragraph */}
+      <div className="px-5 pt-8 md:px-8">
+        <div className="max-w-3xl">
+          <p className="text-pretty font-display text-xl leading-relaxed sm:text-2xl">{info.summary}</p>
           {lang !== "vi" && lang !== "en" && (
-            <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
+            <p className="mt-3 flex items-start gap-1.5 text-xs text-muted-foreground">
               <Languages className="mt-0.5 size-3.5 shrink-0" />
               {dict.machineNotice}
             </p>
           )}
           <Link
             href={`/map?dish=${dish.id}`}
-            className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/40 px-3.5 py-1.5 text-sm font-bold text-primary transition-colors hover:bg-primary/10"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-primary/40 px-4 py-2 text-sm font-bold text-primary transition-colors hover:bg-primary/10"
           >
             <MapIcon className="size-4" />
             {dict.mapFindOnMap}
           </Link>
+        </div>
+      </div>
 
-          {/* Narration player */}
-          <div className="mt-5 rounded-2xl bg-gradient-to-br from-accent to-secondary p-4">
+      <div className="grid gap-10 px-5 pt-8 md:px-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-14">
+        {/* Narration player: sticks beside the article on desktop, sits above it on mobile */}
+        <aside className="order-first lg:sticky lg:top-24 lg:order-last">
+          <div className="rounded-3xl shadow-lg shadow-primary/10">
+          <div className="rounded-3xl border border-border bg-gradient-to-br from-accent to-secondary p-5">
             <div className="flex items-center gap-3">
               <button
                 onClick={handlePlay}
@@ -296,51 +309,50 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
               {unsupported ? dict.notSupported : speech.speaking ? dict.keepAwakeNote : dict.narrationNote}
             </p>
           </div>
-        </div>
-      </div>
+          </div>
+        </aside>
 
-      {/* Origin + culture */}
-      <div className="grid gap-4 px-4 pt-5 md:grid-cols-2">
-        {sections.map(({ title, icon: Icon, body }) => (
-          <section key={title} className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-            <h2 className="mb-2 flex items-center gap-2 font-bold">
-              <Icon className="size-5 text-primary" />
-              {title}
-            </h2>
-            <p className="text-pretty leading-relaxed text-muted-foreground">{body}</p>
-          </section>
-        ))}
-      </div>
-
-      {/* Ingredients */}
-      <section className="mx-4 mt-4 rounded-3xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="mb-3 flex items-center gap-2 font-bold">
-          <Leaf className="size-5 text-primary" />
-          {dict.sectionIngredients}
-        </h2>
-        <div className="flex flex-wrap gap-2">
-          {ingredients.map((x) => (
-            <span key={x} className="rounded-full bg-secondary px-3 py-1 text-sm font-medium text-secondary-foreground">
-              {x}
-            </span>
+        {/* Article: flowing text with small headings instead of boxed cards */}
+        <article className="max-w-3xl space-y-10">
+          {sections.map(({ title, icon: Icon, body }) => (
+            <section key={title}>
+              <h2 className="mb-3 flex items-center gap-2.5 font-display text-2xl font-bold">
+                <Icon className="size-5 text-primary" />
+                {title}
+              </h2>
+              <p className="text-pretty text-base leading-8 text-foreground/80">{body}</p>
+            </section>
           ))}
-        </div>
-      </section>
 
-      {/* How to enjoy */}
-      <section className="mx-4 mt-4 rounded-3xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="mb-2 flex items-center gap-2 font-bold">
-          <Utensils className="size-5 text-primary" />
-          {dict.sectionTip}
-        </h2>
-        <p className="text-pretty leading-relaxed text-muted-foreground">{info.tip}</p>
-      </section>
+          <section>
+            <h2 className="mb-3 flex items-center gap-2.5 font-display text-2xl font-bold">
+              <Leaf className="size-5 text-primary" />
+              {dict.sectionIngredients}
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {ingredients.map((x) => (
+                <span key={x} className="rounded-full border border-border bg-card px-3.5 py-1.5 text-sm font-medium">
+                  {x}
+                </span>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-2xl border-s-4 border-primary bg-accent/50 p-5">
+            <h2 className="mb-2 flex items-center gap-2.5 font-display text-xl font-bold">
+              <Utensils className="size-5 text-primary" />
+              {dict.sectionTip}
+            </h2>
+            <p className="text-pretty leading-relaxed text-foreground/80">{info.tip}</p>
+          </section>
+        </article>
+      </div>
 
       {/* Related */}
       {related.length > 0 && (
-        <section className="px-4 pt-7">
-          <h2 className="mb-3 text-lg font-bold">{dict.related}</h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <section className="px-5 pt-14 md:px-8">
+          <h2 className="mb-6 border-b border-border pb-3 font-display text-2xl font-bold sm:text-3xl">{dict.related}</h2>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
             {related.map((d, i) => (
               <DishCard key={d.id} dish={d} name={text(d).name} summary={text(d).summary} index={i} />
             ))}

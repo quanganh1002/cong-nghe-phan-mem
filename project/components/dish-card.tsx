@@ -41,32 +41,33 @@ export function DishCard({
     <Link
       href={`/dishes/${dish.id}`}
       style={{ animationDelay: `${index * 60}ms` }}
-      className="animate-fade-up group flex flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+      className="animate-fade-up group flex flex-col"
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+      <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-muted ring-1 ring-border transition-shadow duration-300 group-hover:shadow-xl group-hover:shadow-primary/15">
         <DishVisual
           dish={dish}
           alt={name}
           sizes="(max-width: 768px) 50vw, 25vw"
-          className="transition-transform duration-500 group-hover:scale-110"
+          className="transition-transform duration-700 group-hover:scale-105"
         />
-        <div className="absolute start-2 top-2 flex gap-1.5">
-          {dish.popular && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-primary-foreground shadow">
-              <Flame className="size-3" />
-              {dict.featured}
-            </span>
-          )}
-        </div>
-        <span className="absolute end-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-bold text-white backdrop-blur">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/45 to-transparent" />
+        {dish.popular && (
+          <span className="absolute start-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[11px] font-bold text-primary-foreground shadow">
+            <Flame className="size-3" />
+            {dict.featured}
+          </span>
+        )}
+        <span className="absolute bottom-2.5 start-2.5 inline-flex items-center gap-1 text-[11px] font-semibold text-white drop-shadow">
           <MapPin className="size-3" />
           {dict[REGION_KEY[dish.region]]}
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col gap-1 p-3">
-        <h3 className="line-clamp-1 font-bold leading-tight">{name}</h3>
-        <p className="line-clamp-3 text-xs leading-relaxed text-muted-foreground">{summary}</p>
+      <div className="flex flex-1 flex-col gap-1 px-0.5 pt-3">
+        <h3 className="line-clamp-1 font-display text-lg font-bold leading-snug transition-colors group-hover:text-primary">
+          {name}
+        </h3>
+        <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">{summary}</p>
       </div>
     </Link>
   )
