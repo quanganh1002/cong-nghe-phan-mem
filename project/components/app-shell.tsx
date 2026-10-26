@@ -8,6 +8,7 @@ import { LanguageSwitcher } from "@/components/language-switcher"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Logo } from "@/components/logo"
 import { ScrollToTop } from "@/components/scroll-to-top"
+import { SiteFooter } from "@/components/site-footer"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 
@@ -66,7 +67,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 pb-28 md:pb-16">{children}</main>
+      <main className="mx-auto w-full max-w-6xl flex-1">{children}</main>
+
+      <div className="pb-24 md:pb-0">
+        <SiteFooter />
+      </div>
 
       <ScrollToTop />
 

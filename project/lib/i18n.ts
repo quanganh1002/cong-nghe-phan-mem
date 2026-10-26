@@ -119,6 +119,10 @@ const vi = {
   aboutHow2: "Vào mục Món ăn, lọc theo vùng miền hoặc loại món.",
   aboutHow3: "Mở một món và bấm nút phát để nghe thuyết minh.",
   footer: "Vị Việt · Gìn giữ và lan tỏa văn hóa ẩm thực Việt Nam",
+  footerBlurb: "Nghe thuyết minh về nguồn gốc và văn hóa của các món ăn Việt Nam bằng nhiều ngôn ngữ khác nhau.",
+  footerExplore: "Khám phá",
+  footerRegions: "Theo miền",
+  footerNote: "Đồ án môn Công nghệ phần mềm · Bản dịch được thực hiện tự động bằng máy",
 }
 
 export type Dict = Record<keyof typeof vi, string>
@@ -241,6 +245,10 @@ const en: Dict = {
   aboutHow2: "Open Dishes and filter by region or type.",
   aboutHow3: "Open a dish and press play to hear the narration.",
   footer: "Vị Việt · Preserving and sharing Vietnamese food culture",
+  footerBlurb: "Listen to the origins and culture of Vietnamese dishes narrated in many different languages.",
+  footerExplore: "Explore",
+  footerRegions: "By region",
+  footerNote: "Software engineering course project · Translations are machine-generated",
 }
 
 export const DICT_VI: Dict = vi

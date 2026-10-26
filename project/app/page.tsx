@@ -154,9 +154,6 @@ export default function HomePage() {
         ))}
       </Section>
 
-      <footer className="mx-4 mt-14 border-t border-border py-8 text-center text-xs text-muted-foreground md:mx-8">
-        {dict.footer}
-      </footer>
     </AppShell>
   )
 }
