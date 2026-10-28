@@ -1,4 +1,4 @@
-// Usage: node scripts/gen-shop-qr.mjs [baseUrl] [lang]   (mặc định https://foodlingo.vercel.app, không gắn ngôn ngữ)
+﻿// Usage: node scripts/gen-shop-qr.mjs [baseUrl] [lang]   (mặc định https://viviet.vercel.app, không gắn ngôn ngữ)
 // Tạo qr-codes/qr-home.png (trang chủ) và qr-<id món>.png cho từng món trong lib/dishes.ts.
 // Có [lang] (vi, en, ja, ...) thì link thêm &lang=<lang> để web mở sẵn ngôn ngữ đó, file đặt tên qr-<id>-<lang>.png.
 // Link có thêm ?src=qr để trang /admin/thong-ke biết khách vào bằng cách quét QR.
@@ -6,7 +6,7 @@ import { mkdir, readFile } from "node:fs/promises"
 import path from "node:path"
 import QRCode from "qrcode"
 
-const base = (process.argv[2] ?? "https://foodlingo.vercel.app").replace(/\/+$/, "")
+const base = (process.argv[2] ?? "https://viviet.vercel.app").replace(/\/+$/, "")
 const lang = process.argv[3] ?? ""
 if (lang && !/^[a-z]{2}$/.test(lang)) throw new Error(`Mã ngôn ngữ không hợp lệ: ${lang}`)
 const out = path.join(process.cwd(), "qr-codes")

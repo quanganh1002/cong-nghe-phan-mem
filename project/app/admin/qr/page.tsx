@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useState } from "react"
 import QRCode from "qrcode"
@@ -170,7 +170,7 @@ function QrCards() {
           <input
             value={base}
             onChange={(e) => setBase(e.target.value)}
-            placeholder="https://foodlingo.vercel.app"
+            placeholder="https://viviet.vercel.app"
             className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
           />
         </label>
