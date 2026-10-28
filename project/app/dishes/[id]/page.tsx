@@ -169,11 +169,11 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
               </span>
             </div>
             <h1 className="mt-3 text-balance font-display text-4xl font-bold leading-[1.1] sm:text-5xl">
-              {info.name}
+              {dish.vi.name}
             </h1>
-            {/* Keep the original Vietnamese dish name next to a translated one */}
-            {lang !== "vi" && dish.vi.name !== info.name && (
-              <p className="mt-1 text-sm font-semibold text-white/80">🇻🇳 {dish.vi.name}</p>
+            {/* Tên Việt là tên chính; bản dịch hiện bên dưới */}
+            {dish.vi.name !== info.name && (
+              <p className="mt-1 text-base font-semibold text-white/80">{info.name}</p>
             )}
           </div>
         </div>
@@ -354,7 +354,7 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
           <h2 className="mb-6 border-b border-border pb-3 font-display text-2xl font-bold sm:text-3xl">{dict.related}</h2>
           <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
             {related.map((d, i) => (
-              <DishCard key={d.id} dish={d} name={text(d).name} summary={text(d).summary} index={i} />
+              <DishCard key={d.id} dish={d} name={d.vi.name} altName={text(d).name} summary={text(d).summary} index={i} />
             ))}
           </div>
         </section>

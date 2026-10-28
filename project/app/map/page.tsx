@@ -181,7 +181,7 @@ export default function MapPage() {
                     <div className="relative aspect-[4/3] w-full bg-muted lg:size-14 lg:shrink-0 lg:overflow-hidden lg:rounded-xl [&_span]:text-4xl">
                       <DishVisual dish={d} alt={dishText(d).name} sizes="144px" />
                     </div>
-                    <p className="line-clamp-2 px-2.5 py-2 text-sm font-bold leading-tight lg:p-0">{dishText(d).name}</p>
+                    <p className="line-clamp-2 px-2.5 py-2 text-sm font-bold leading-tight lg:p-0">{d.vi.name}</p>
                   </button>
                 )
               })}
@@ -293,7 +293,8 @@ export default function MapPage() {
                   <DishVisual dish={dish} alt={info.name} sizes="64px" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-bold leading-tight">{info.name}</h3>
+                  <h3 className="font-bold leading-tight">{dish.vi.name}</h3>
+                  {info.name !== dish.vi.name && <p className="text-xs font-semibold text-primary">{info.name}</p>}
                   <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{info.summary}</p>
                   <Link
                     href={`/dishes/${dish.id}`}
@@ -343,7 +344,7 @@ export default function MapPage() {
                   </Link>
                   <div className="min-w-0 flex-1">
                     <Link href={`/dishes/${d.id}`} className="block truncate font-bold hover:underline">
-                      {dishText(d).name}
+                      {d.vi.name}
                     </Link>
                     <p className="truncate text-xs text-muted-foreground">
                       {km < 10 ? km.toFixed(1) : Math.round(km)} km · {getDishPlace(d)}

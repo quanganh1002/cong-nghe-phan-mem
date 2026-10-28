@@ -27,11 +27,14 @@ export function DishVisual({ dish, alt, sizes, className }: { dish: Dish; alt: s
 export function DishCard({
   dish,
   name,
+  altName,
   summary,
   index = 0,
 }: {
   dish: Dish
   name: string
+  /** Bản dịch của tên (ngôn ngữ khác tiếng Việt), hiện dưới tên gốc */
+  altName?: string
   summary: string
   index?: number
 }) {
@@ -67,6 +70,7 @@ export function DishCard({
         <h3 className="line-clamp-1 font-display text-lg font-bold leading-snug transition-colors group-hover:text-primary">
           {name}
         </h3>
+        {altName && altName !== name && <p className="line-clamp-1 text-xs font-semibold text-primary">{altName}</p>}
         <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">{summary}</p>
       </div>
     </Link>

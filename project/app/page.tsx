@@ -144,13 +144,13 @@ export default function HomePage() {
 
       <Section title={dict.featured} href="/dishes">
         {featured.map((d, i) => (
-          <DishCard key={d.id} dish={d} name={text(d).name} summary={text(d).summary} index={i} />
+          <DishCard key={d.id} dish={d} name={d.vi.name} altName={text(d).name} summary={text(d).summary} index={i} />
         ))}
       </Section>
 
       <Section title={dict.festivalTitle} href="/dishes?cat=festival">
         {festival.map((d, i) => (
-          <DishCard key={d.id} dish={d} name={text(d).name} summary={text(d).summary} index={i} />
+          <DishCard key={d.id} dish={d} name={d.vi.name} altName={text(d).name} summary={text(d).summary} index={i} />
         ))}
       </Section>
 

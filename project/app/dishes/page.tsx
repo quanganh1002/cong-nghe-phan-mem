@@ -115,7 +115,7 @@ function DishList() {
         ) : (
           <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
             {list.map((d, i) => (
-              <DishCard key={d.id} dish={d} name={text(d).name} summary={text(d).summary} index={i} />
+              <DishCard key={d.id} dish={d} name={d.vi.name} altName={text(d).name} summary={text(d).summary} index={i} />
             ))}
           </div>
         )}
