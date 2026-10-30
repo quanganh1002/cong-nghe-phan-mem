@@ -1,0 +1,176 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="1080" viewBox="0 0 1060 1080" font-family="Segoe UI, Arial, sans-serif">
+<rect width="1060" height="1080" fill="#ffffff"/>
+<rect x="15" y="22" width="655" height="920" rx="10" fill="none" stroke="#888" stroke-dasharray="6 4"/>
+<text x="30" y="44" font-size="13" font-weight="700" fill="#333">DỮ LIỆU NỘI DUNG (mã nguồn / tệp tĩnh)</text>
+<rect x="710" y="22" width="335" height="920" rx="10" fill="none" stroke="#888" stroke-dasharray="6 4"/>
+<text x="725" y="44" font-size="13" font-weight="700" fill="#333">CƠ SỞ DỮ LIỆU SUPABASE (5 bảng)</text>
+<path d="M 105 110 L 105 200" fill="none" stroke="#000" stroke-width="1.5"/>
+<line x1="97" y1="116" x2="113" y2="116" stroke="#000" stroke-width="1.5"/>
+<line x1="97" y1="121" x2="113" y2="121" stroke="#000" stroke-width="1.5"/>
+<path d="M 96 188 L 105 200 L 114 188 M 105 188 L 105 200" fill="none" stroke="#000" stroke-width="1.5"/>
+<rect x="113.5" y="146.0" width="39.0" height="16" fill="#fff"/>
+<text x="133" y="158.0" font-size="11" text-anchor="middle" fill="#000">1 - N</text>
+<path d="M 285 110 L 285 200" fill="none" stroke="#000" stroke-width="1.5"/>
+<line x1="277" y1="116" x2="293" y2="116" stroke="#000" stroke-width="1.5"/>
+<line x1="277" y1="121" x2="293" y2="121" stroke="#000" stroke-width="1.5"/>
+<path d="M 276 188 L 285 200 L 294 188 M 285 188 L 285 200" fill="none" stroke="#000" stroke-width="1.5"/>
+<rect x="293.5" y="146.0" width="39.0" height="16" fill="#fff"/>
+<text x="313" y="158.0" font-size="11" text-anchor="middle" fill="#000">1 - N</text>
+<path d="M 195 448 L 195 490" fill="none" stroke="#000" stroke-width="1.5"/>
+<line x1="187" y1="454" x2="203" y2="454" stroke="#000" stroke-width="1.5"/>
+<line x1="187" y1="459" x2="203" y2="459" stroke="#000" stroke-width="1.5"/>
+<line x1="187" y1="484" x2="203" y2="484" stroke="#000" stroke-width="1.5"/>
+<circle cx="195" cy="476" r="4" fill="#fff" stroke="#000" stroke-width="1.5"/>
+<rect x="194.2" y="460.0" width="57.6" height="16" fill="#fff"/>
+<text x="223" y="472.0" font-size="11" text-anchor="middle" fill="#000">1 - 0..1</text>
+<path d="M 730 329 L 360 329" fill="none" stroke="#000" stroke-width="1.5" stroke-dasharray="7 5"/>
+<path d="M 370 324 L 360 329 L 370 334" fill="none" stroke="#000" stroke-width="1.5"/>
+<rect x="519.3" y="314" width="51.4" height="16" fill="#fff"/>
+<text x="545" y="326" font-size="11" text-anchor="middle" fill="#000">dish_id</text>
+<path d="M 730 597 L 690 597 L 690 437 L 360 437" fill="none" stroke="#000" stroke-width="1.5" stroke-dasharray="7 5"/>
+<path d="M 370 432 L 360 437 L 370 442" fill="none" stroke="#000" stroke-width="1.5"/>
+<rect x="658.1" y="506" width="63.800000000000004" height="16" fill="#fff"/>
+<text x="690" y="518" font-size="11" text-anchor="middle" fill="#000">listening</text>
+<path d="M 730 619 L 650 619" fill="none" stroke="#000" stroke-width="1.5" stroke-dasharray="7 5"/>
+<path d="M 660 614 L 650 619 L 660 624" fill="none" stroke="#000" stroke-width="1.5"/>
+<rect x="673.6" y="604" width="32.8" height="16" fill="#fff"/>
+<text x="690" y="616" font-size="11" text-anchor="middle" fill="#000">lang</text>
+<path d="M 730 709 L 650 709" fill="none" stroke="#000" stroke-width="1.5" stroke-dasharray="7 5"/>
+<path d="M 660 704 L 650 709 L 660 714" fill="none" stroke="#000" stroke-width="1.5"/>
+<rect x="673.6" y="694" width="32.8" height="16" fill="#fff"/>
+<text x="690" y="706" font-size="11" text-anchor="middle" fill="#000">lang</text>
+<path d="M 730 849 L 650 849" fill="none" stroke="#000" stroke-width="1.5" stroke-dasharray="7 5"/>
+<path d="M 660 844 L 650 849 L 660 854" fill="none" stroke="#000" stroke-width="1.5"/>
+<rect x="664.3" y="834" width="51.4" height="16" fill="#fff"/>
+<text x="690" y="846" font-size="11" text-anchor="middle" fill="#000">feature</text>
+<path d="M 990 143 L 1015 143 L 1015 575 L 990 575" fill="none" stroke="#000" stroke-width="1.5" stroke-dasharray="7 5"/>
+<rect x="992.4" y="350.0" width="45.2" height="16" fill="#fff"/>
+<text x="1015" y="362.0" font-size="11" text-anchor="middle" fill="#000">source</text>
+<rect x="30" y="60" width="150" height="50" rx="5" fill="#fff" stroke="#000" stroke-width="1.5"/>
+<path d="M 30 88 L 30 65 Q 30 60 35 60 L 175 60 Q 180 60 180 65 L 180 88 Z" fill="#e6e6e6" stroke="#000" stroke-width="1.5"/>
+<text x="105.0" y="79" font-size="13" font-weight="700" text-anchor="middle">Region</text>
+<text x="38" y="103" font-size="12" font-weight="700">PK  code</text>
+<rect x="210" y="60" width="150" height="50" rx="5" fill="#fff" stroke="#000" stroke-width="1.5"/>
+<path d="M 210 88 L 210 65 Q 210 60 215 60 L 355 60 Q 360 60 360 65 L 360 88 Z" fill="#e6e6e6" stroke="#000" stroke-width="1.5"/>
+<text x="285.0" y="79" font-size="13" font-weight="700" text-anchor="middle">Category</text>
+<text x="218" y="103" font-size="12" font-weight="700">PK  code</text>
+<rect x="30" y="200" width="330" height="248" rx="5" fill="#fff" stroke="#000" stroke-width="1.5"/>
+<path d="M 30 228 L 30 205 Q 30 200 35 200 L 355 200 Q 360 200 360 205 L 360 228 Z" fill="#e6e6e6" stroke="#000" stroke-width="1.5"/>
+<text x="195.0" y="219" font-size="13" font-weight="700" text-anchor="middle">Dish (lib/dishes.ts)</text>
+<text x="38" y="243" font-size="12" font-weight="700">PK  id : string</text>
+<line x1="30" y1="250" x2="360" y2="250" stroke="#bbb"/>
+<text x="38" y="265" font-size="12" font-weight="700">FK  region : Region.code</text>
+<line x1="30" y1="272" x2="360" y2="272" stroke="#bbb"/>
+<text x="38" y="287" font-size="12" font-weight="700">FK  category : Category.code</text>
+<line x1="30" y1="294" x2="360" y2="294" stroke="#bbb"/>
+<text x="38" y="309" font-size="12">image : string?</text>
+<line x1="30" y1="316" x2="360" y2="316" stroke="#bbb"/>
+<text x="38" y="331" font-size="12">emoji : string</text>
+<line x1="30" y1="338" x2="360" y2="338" stroke="#bbb"/>
+<text x="38" y="353" font-size="12">popular : boolean?</text>
+<line x1="30" y1="360" x2="360" y2="360" stroke="#bbb"/>
+<text x="38" y="375" font-size="12">place : string (DISH_PLACES)</text>
+<line x1="30" y1="382" x2="360" y2="382" stroke="#bbb"/>
+<text x="38" y="397" font-size="12">lat, lng : number (PLACE_COORDS)</text>
+<line x1="30" y1="404" x2="360" y2="404" stroke="#bbb"/>
+<text x="38" y="419" font-size="12">vi.* : name, summary, origin, culture, ingredients, tip</text>
+<line x1="30" y1="426" x2="360" y2="426" stroke="#bbb"/>
+<text x="38" y="441" font-size="12">en.* : 6 trường như trên</text>
+<rect x="30" y="490" width="330" height="116" rx="5" fill="#fff" stroke="#000" stroke-width="1.5"/>
+<path d="M 30 518 L 30 495 Q 30 490 35 490 L 355 490 Q 360 490 360 495 L 360 518 Z" fill="#e6e6e6" stroke="#000" stroke-width="1.5"/>
+<text x="195.0" y="509" font-size="13" font-weight="700" text-anchor="middle">PhotoCredit (lib/photo-credits.ts)</text>
+<text x="38" y="533" font-size="12" font-weight="700">PK/FK  dish_id : Dish.id</text>
+<line x1="30" y1="540" x2="360" y2="540" stroke="#bbb"/>
+<text x="38" y="555" font-size="12">author : string</text>
+<line x1="30" y1="562" x2="360" y2="562" stroke="#bbb"/>
+<text x="38" y="577" font-size="12">license : string</text>
+<line x1="30" y1="584" x2="360" y2="584" stroke="#bbb"/>
+<text x="38" y="599" font-size="12">source : string (URL)</text>
+<rect x="400" y="580" width="250" height="138" rx="5" fill="#fff" stroke="#000" stroke-width="1.5"/>
+<path d="M 400 608 L 400 585 Q 400 580 405 580 L 645 580 Q 650 580 650 585 L 650 608 Z" fill="#e6e6e6" stroke="#000" stroke-width="1.5"/>
+<text x="525.0" y="599" font-size="13" font-weight="700" text-anchor="middle">Language (lib/languages.ts)</text>
+<text x="408" y="623" font-size="12" font-weight="700">PK  code : vi|en|ja|zh|...</text>
+<line x1="400" y1="630" x2="650" y2="630" stroke="#bbb"/>
+<text x="408" y="645" font-size="12">name, englishName : string</text>
+<line x1="400" y1="652" x2="650" y2="652" stroke="#bbb"/>
+<text x="408" y="667" font-size="12">flag : string</text>
+<line x1="400" y1="674" x2="650" y2="674" stroke="#bbb"/>
+<text x="408" y="689" font-size="12">speechLang : BCP-47</text>
+<line x1="400" y1="696" x2="650" y2="696" stroke="#bbb"/>
+<text x="408" y="711" font-size="12">dir : ltr | rtl</text>
+<rect x="400" y="790" width="250" height="116" rx="5" fill="#fff" stroke="#000" stroke-width="1.5"/>
+<path d="M 400 818 L 400 795 Q 400 790 405 790 L 645 790 Q 650 790 650 795 L 650 818 Z" fill="#e6e6e6" stroke="#000" stroke-width="1.5"/>
+<text x="525.0" y="809" font-size="13" font-weight="700" text-anchor="middle">GlossaryTerm (lib/glossary.ts)</text>
+<text x="408" y="833" font-size="12" font-weight="700">PK  id : string</text>
+<line x1="400" y1="840" x2="650" y2="840" stroke="#bbb"/>
+<text x="408" y="855" font-size="12">term : string</text>
+<line x1="400" y1="862" x2="650" y2="862" stroke="#bbb"/>
+<text x="408" y="877" font-size="12">vi.name, vi.desc</text>
+<line x1="400" y1="884" x2="650" y2="884" stroke="#bbb"/>
+<text x="408" y="899" font-size="12">en.name, en.desc</text>
+<rect x="730" y="60" width="260" height="182" rx="5" fill="#fff" stroke="#000" stroke-width="1.5"/>
+<path d="M 730 88 L 730 65 Q 730 60 735 60 L 985 60 Q 990 60 990 65 L 990 88 Z" fill="#e6e6e6" stroke="#000" stroke-width="1.5"/>
+<text x="860.0" y="79" font-size="13" font-weight="700" text-anchor="middle">visit_days</text>
+<text x="738" y="103" font-size="12" font-weight="700">PK  day : date</text>
+<line x1="730" y1="110" x2="990" y2="110" stroke="#bbb"/>
+<text x="738" y="125" font-size="12">visits : int</text>
+<line x1="730" y1="132" x2="990" y2="132" stroke="#bbb"/>
+<text x="738" y="147" font-size="12">qr : int</text>
+<line x1="730" y1="154" x2="990" y2="154" stroke="#bbb"/>
+<text x="738" y="169" font-size="12">link : int</text>
+<line x1="730" y1="176" x2="990" y2="176" stroke="#bbb"/>
+<text x="738" y="191" font-size="12">views : int</text>
+<line x1="730" y1="198" x2="990" y2="198" stroke="#bbb"/>
+<text x="738" y="213" font-size="12">plays : int</text>
+<line x1="730" y1="220" x2="990" y2="220" stroke="#bbb"/>
+<text x="738" y="235" font-size="12">completes : int</text>
+<rect x="730" y="290" width="260" height="138" rx="5" fill="#fff" stroke="#000" stroke-width="1.5"/>
+<path d="M 730 318 L 730 295 Q 730 290 735 290 L 985 290 Q 990 290 990 295 L 990 318 Z" fill="#e6e6e6" stroke="#000" stroke-width="1.5"/>
+<text x="860.0" y="309" font-size="13" font-weight="700" text-anchor="middle">dish_views</text>
+<text x="738" y="333" font-size="12" font-weight="700">PK  dish_id : text</text>
+<line x1="730" y1="340" x2="990" y2="340" stroke="#bbb"/>
+<text x="738" y="355" font-size="12">views : int</text>
+<line x1="730" y1="362" x2="990" y2="362" stroke="#bbb"/>
+<text x="738" y="377" font-size="12">plays : int</text>
+<line x1="730" y1="384" x2="990" y2="384" stroke="#bbb"/>
+<text x="738" y="399" font-size="12">plays_short : int</text>
+<line x1="730" y1="406" x2="990" y2="406" stroke="#bbb"/>
+<text x="738" y="421" font-size="12">completes : int</text>
+<rect x="730" y="470" width="260" height="160" rx="5" fill="#fff" stroke="#000" stroke-width="1.5"/>
+<path d="M 730 498 L 730 475 Q 730 470 735 470 L 985 470 Q 990 470 990 475 L 990 498 Z" fill="#e6e6e6" stroke="#000" stroke-width="1.5"/>
+<text x="860.0" y="489" font-size="13" font-weight="700" text-anchor="middle">presence</text>
+<text x="738" y="513" font-size="12" font-weight="700">PK  device_id : text</text>
+<line x1="730" y1="520" x2="990" y2="520" stroke="#bbb"/>
+<text x="738" y="535" font-size="12">last_seen : timestamptz</text>
+<line x1="730" y1="542" x2="990" y2="542" stroke="#bbb"/>
+<text x="738" y="557" font-size="12">path : text</text>
+<line x1="730" y1="564" x2="990" y2="564" stroke="#bbb"/>
+<text x="738" y="579" font-size="12">source : text ('qr' | 'link')</text>
+<line x1="730" y1="586" x2="990" y2="586" stroke="#bbb"/>
+<text x="738" y="601" font-size="12">listening : text</text>
+<line x1="730" y1="608" x2="990" y2="608" stroke="#bbb"/>
+<text x="738" y="623" font-size="12">lang : text</text>
+<rect x="730" y="670" width="260" height="116" rx="5" fill="#fff" stroke="#000" stroke-width="1.5"/>
+<path d="M 730 698 L 730 675 Q 730 670 735 670 L 985 670 Q 990 670 990 675 L 990 698 Z" fill="#e6e6e6" stroke="#000" stroke-width="1.5"/>
+<text x="860.0" y="689" font-size="13" font-weight="700" text-anchor="middle">lang_stats</text>
+<text x="738" y="713" font-size="12" font-weight="700">PK  lang : text</text>
+<line x1="730" y1="720" x2="990" y2="720" stroke="#bbb"/>
+<text x="738" y="735" font-size="12">views : int</text>
+<line x1="730" y1="742" x2="990" y2="742" stroke="#bbb"/>
+<text x="738" y="757" font-size="12">plays : int</text>
+<line x1="730" y1="764" x2="990" y2="764" stroke="#bbb"/>
+<text x="738" y="779" font-size="12">completes : int</text>
+<rect x="730" y="810" width="260" height="72" rx="5" fill="#fff" stroke="#000" stroke-width="1.5"/>
+<path d="M 730 838 L 730 815 Q 730 810 735 810 L 985 810 Q 990 810 990 815 L 990 838 Z" fill="#e6e6e6" stroke="#000" stroke-width="1.5"/>
+<text x="860.0" y="829" font-size="13" font-weight="700" text-anchor="middle">feature_uses</text>
+<text x="738" y="853" font-size="12" font-weight="700">PK  feature : text</text>
+<line x1="730" y1="860" x2="990" y2="860" stroke="#bbb"/>
+<text x="738" y="875" font-size="12">uses : int</text>
+<text x="30" y="966" font-size="12" font-weight="700">Ghi chú</text>
+<text x="30" y="983" font-size="12">- Nét liền: quan hệ giữa dữ liệu nội dung trong mã nguồn (đầu chân chim = nhiều; thanh + vòng tròn = 0..1).</text>
+<text x="30" y="1000" font-size="12">- Nét đứt: tham chiếu logic từ bảng Supabase tới thực thể nội dung (mũi tên chỉ về thực thể được tham chiếu); không có khóa ngoại vật lý.</text>
+<text x="30" y="1017" font-size="12">- 5 bảng Supabase là các bộ đếm tổng hợp, không liên kết với nhau bằng khóa ngoại; presence.source là nguồn vào mà visit_days.qr/link cộng dồn.</text>
+<text x="30" y="1034" font-size="12">- Dish, Region, Category, PhotoCredit, GlossaryTerm, Language nằm trong mã nguồn nên không có bảng trong Supabase; Region/Category/Language là tập giá trị cố định.</text>
+<text x="30" y="1051" font-size="12">- Bản dịch dựng sẵn: public/translations/&lt;ngôn ngữ&gt;.json, dạng {chuỗi tiếng Anh: bản dịch}.</text>
+<text x="30" y="1068" font-size="12">- feature_uses.feature có dạng near_me, near_listen, glossary:&lt;id&gt;:term | meaning; phần &lt;id&gt; tham chiếu GlossaryTerm.id.</text>
+</svg>
