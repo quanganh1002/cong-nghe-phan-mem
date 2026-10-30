@@ -195,6 +195,8 @@
     background-attachment: fixed;
   }
   .dark body {
+    /* stars scroll with the page; the glows stay fixed */
+    background-attachment: scroll, fixed, fixed;
     background-image:
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cg fill='white'%3E%3Ccircle cx='24' cy='60' r='1' opacity='.7'/%3E%3Ccircle cx='96' cy='210' r='.8' opacity='.5'/%3E%3Ccircle cx='150' cy='32' r='1.2' opacity='.8'/%3E%3Ccircle cx='212' cy='146' r='.7' opacity='.45'/%3E%3Ccircle cx='268' cy='318' r='1' opacity='.65'/%3E%3Ccircle cx='330' cy='90' r='.9' opacity='.55'/%3E%3Ccircle cx='388' cy='244' r='1.1' opacity='.75'/%3E%3Ccircle cx='60' cy='356' r='.8' opacity='.5'/%3E%3Ccircle cx='180' cy='392' r='1' opacity='.6'/%3E%3Ccircle cx='352' cy='386' r='.7' opacity='.4'/%3E%3C/g%3E%3C/svg%3E"),
       radial-gradient(60rem 38rem at 88% -8%, var(--space-glow-a), transparent 62%),
