@@ -22,12 +22,26 @@ export default function SpotMap({
   spots,
   focus,
   onPick,
+  onSelect,
+  selected,
+  me,
+  meLabel = "",
+  color: mainColor = COLOR,
   className,
 }: {
   spots: Pick<FoodSpot, "id" | "name" | "at" | "radius" | "hidden">[]
   /** Điểm cần phóng to tới; không có thì vừa khít mọi điểm */
   focus?: [number, number] | null
   onPick?: (at: [number, number]) => void
+  /** Bấm vào một điểm (trang người dùng); có thì không mở popup admin */
+  onSelect?: (id: string) => void
+  /** id điểm đang chọn: viền đậm hơn */
+  selected?: string | null
+  /** Vị trí người dùng: chấm xanh, tính vào khung nhìn */
+  me?: [number, number] | null
+  meLabel?: string
+  /** Màu vòng tròn của điểm đang hiển thị (mặc định tím của web) */
+  color?: string
   className?: string
 }) {
   const box = useRef<HTMLDivElement>(null)
@@ -35,6 +49,9 @@ export default function SpotMap({
   const layer = useRef<L.LayerGroup | null>(null)
   const pick = useRef(onPick)
   pick.current = onPick
+  const select = useRef(onSelect)
+  select.current = onSelect
+  const fitted = useRef("")
 
   useEffect(() => {
     const m = L.map(box.current!, { scrollWheelZoom: true }).fitBounds(VIETNAM)
@@ -59,19 +76,42 @@ export default function SpotMap({
     const g = layer.current!
     g.clearLayers()
     for (const s of spots) {
-      const color = s.hidden ? HIDDEN : COLOR
+      const color = s.hidden ? HIDDEN : mainColor
       const r = s.radius ?? SPOT_RADIUS
-      L.circle(s.at, { radius: r, color, weight: 2, fillOpacity: 0.15, dashArray: s.hidden ? "6 6" : undefined })
-        .bindPopup(`<b>${esc(s.name)}</b><br>Bán kính ${r} m${s.hidden ? "<br><i>Đang ẩn</i>" : ""}`)
-        .addTo(g)
+      const on = s.id === selected
+      const circle = L.circle(s.at, {
+        radius: r,
+        color,
+        weight: on ? 4 : 2,
+        fillOpacity: on ? 0.3 : 0.15,
+        dashArray: s.hidden ? "6 6" : undefined,
+      }).addTo(g)
       // chấm tâm để vẫn thấy điểm khi thu nhỏ cả nước
-      L.circleMarker(s.at, { radius: 5, color: "#fff", weight: 2, fillColor: color, fillOpacity: 1 })
-        .bindTooltip(esc(s.name))
+      const dot = L.circleMarker(s.at, { radius: on ? 8 : 6, color: "#fff", weight: 2, fillColor: color, fillOpacity: 1 })
+        .bindTooltip(esc(s.name), { permanent: on, direction: "top" })
         .addTo(g)
+      // Thu nhỏ cả nước thì vòng bán kính (vài trăm mét) chưa tới 1 pixel: bấm vào điểm thì phóng to vừa khít vùng
+      const zoomIn = () => m.fitBounds(circle.getBounds().pad(0.6), { maxZoom: 18 })
+      if (select.current) {
+        for (const x of [circle, dot]) x.on("click", () => (zoomIn(), select.current?.(s.id)))
+      } else {
+        const html = `<b>${esc(s.name)}</b><br>Bán kính ${r} m${s.hidden ? "<br><i>Đang ẩn</i>" : ""}`
+        for (const x of [circle, dot]) x.bindPopup(html).on("click", zoomIn)
+      }
     }
+    if (me) L.circleMarker(me, { radius: 7, color: "#fff", weight: 3, fillColor: "#2563eb", fillOpacity: 1 }).bindTooltip(esc(meLabel)).addTo(g)
+
     if (focus) m.setView(focus, Math.max(m.getZoom(), 16))
-    else if (spots.length) m.fitBounds(L.latLngBounds(spots.map((s) => s.at)).pad(0.15), { maxZoom: 15 })
-  }, [spots, focus])
+    else {
+      // chỉ căn lại khung nhìn khi danh sách điểm hoặc vị trí đổi, không phải mỗi lần chọn điểm
+      const key = JSON.stringify([spots.map((s) => s.at), me])
+      if (key !== fitted.current && (spots.length || me)) {
+        fitted.current = key
+        const pts = [...spots.map((s) => s.at), ...(me ? [me] : [])]
+        m.fitBounds(L.latLngBounds(pts).pad(0.15), { maxZoom: 15 })
+      }
+    }
+  }, [spots, focus, selected, me, meLabel, mainColor])
 
   // isolation: các lớp của Leaflet có z-index 400–1000, không được đè lên hộp thoại của trang
   return <div ref={box} className={className} style={{ cursor: onPick ? "crosshair" : undefined, isolation: "isolate" }} />

@@ -316,7 +316,7 @@ function SpotManager({ pin }: { pin: string }) {
                 <span className="me-1 inline-block size-3 rounded-full border-2 border-dashed border-[#9ca3af] align-middle" />
                 Đang ẩn
               </span>
-              <span>Vòng tròn là vùng theo bán kính; bấm vào để xem tên.</span>
+              <span>Bấm vào một điểm để phóng to và thấy vòng tròn bán kính.</span>
             </p>
           </div>
         )}

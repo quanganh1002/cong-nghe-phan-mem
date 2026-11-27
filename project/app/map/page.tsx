@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { MapPin, Map as MapIcon, LocateFixed, Navigation, Loader2, Landmark, Store, Volume2, Pause } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { DishVisual } from "@/components/dish-card"
@@ -24,6 +25,12 @@ import { useReportListening } from "@/lib/listening"
 import { trackFeature } from "@/lib/track"
 import { useDishText } from "@/lib/use-dish-text"
 import { cn } from "@/lib/utils"
+
+// Bản đồ các điểm ẩm thực (Leaflet) chỉ chạy ở trình duyệt
+const SpotMap = dynamic(() => import("@/components/spot-map"), {
+  ssr: false,
+  loading: () => <div className="h-full animate-pulse bg-muted/60" />,
+})
 
 type Coords = { lat: number; lng: number; accuracy: number }
 type GeoStatus = "idle" | "locating" | "ok" | "error"
@@ -57,6 +64,7 @@ export default function MapPage() {
   // Điểm ẩm thực đang xem; chọn miền/món/chế độ khác thì bỏ chọn
   const [spot, setSpot] = useState<FoodSpot | null>(null)
   const [foodSpots] = useFoodSpots()
+  const me = useMemo<[number, number] | null>(() => (coords ? [coords.lat, coords.lng] : null), [coords])
   // Hai điểm để đo khoảng cách với nhau (id)
   const [pairA, setPairA] = useState("")
   const [pairB, setPairB] = useState("")
@@ -155,6 +163,25 @@ export default function MapPage() {
       : coords
         ? `https://maps.google.com/maps?q=${encodeURIComponent(`${dish.vi.name} near ${coords.lat},${coords.lng}`)}&z=15&output=embed`
         : null
+
+  // Nơi gốc của món / điểm ẩm thực có tọa độ: vẽ bằng Leaflet (vòng tròn bán kính + vị trí người dùng).
+  // "Quán gần tôi" vẫn dùng Google Maps vì cần Google tìm quán quanh người dùng.
+  const mainAt = spot ? spot.at : mode === "origin" ? placeAt : null
+  const mainId = spot ? spot.id : dish.id
+  const mainName = spot ? spot.name : place
+  const mainRadius = spot?.radius ?? SPOT_RADIUS
+  const mainSpots = useMemo(
+    () => (mainAt ? [{ id: mainId, name: mainName, at: mainAt, radius: mainRadius }] : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mainId, mainName, mainRadius, mainAt?.[0], mainAt?.[1]],
+  )
+  // Ở gần (dưới 30 km) thì khung nhìn gồm cả người dùng; xa hơn thì phóng vào địa điểm để thấy vòng tròn
+  const mainNear = !!(me && mainAt && distanceKm(me, mainAt) < 30)
+  const mainFocus = useMemo<[number, number] | null>(
+    () => (mainAt && !mainNear ? [mainAt[0], mainAt[1]] : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mainAt?.[0], mainAt?.[1], mainNear],
+  )
 
   const directions = () => {
     const params = new URLSearchParams({ api: "1", destination })
@@ -262,7 +289,18 @@ export default function MapPage() {
               ))}
             </div>
 
-            {embedSrc ? (
+            {mainAt ? (
+              <SpotMap
+                spots={mainSpots}
+                focus={mainFocus}
+                selected={mainId}
+                onSelect={() => {}} // bấm vào chỉ phóng to, không mở popup tiếng Việt của admin
+                me={me}
+                meLabel={dict.mapYourLocation}
+                color="#dc2626"
+                className="block h-[52vh] min-h-72 w-full lg:h-[26rem]"
+              />
+            ) : embedSrc ? (
               <iframe
                 key={embedSrc}
                 title={dict.mapPlaceholderTitle}
@@ -449,9 +487,28 @@ export default function MapPage() {
             </button>
           )}
         </div>
+
+        {/* All spots with their radius; tapping one selects it and brings its card into view */}
+        <div className="mt-4 h-80 overflow-hidden rounded-2xl border border-border sm:h-96">
+          <SpotMap
+            spots={foodSpots}
+            me={me}
+            meLabel={dict.mapYourLocation}
+            selected={spot?.id}
+            onSelect={(id) => {
+              const s = foodSpots.find((x) => x.id === id)
+              if (!s) return
+              setSpot(s)
+              document.getElementById(`spot-${id}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+            }}
+            className="h-full w-full"
+          />
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">{dict.mapSpotsZoomHint}</p>
+
         <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {spots.map(({ s, km }) => (
-            <li key={s.id}>
+            <li key={s.id} id={`spot-${s.id}`} className="scroll-mt-24">
               <button
                 type="button"
                 onClick={() => showSpot(s)}
