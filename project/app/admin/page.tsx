@@ -3,7 +3,7 @@
 import { Activity, Eye, Headphones, Link2, LogIn, LogOut, QrCode, Users } from "lucide-react"
 import { AdminShell } from "@/components/admin-shell"
 import { StatCard, langLabel } from "@/components/admin-ui"
-import { useLiveEvents, usePresence, useStats } from "@/hooks/use-admin-data"
+import { useLiveEvents, usePresence, useStats, type DayRow } from "@/hooks/use-admin-data"
 import type { Dish } from "@/lib/dishes"
 import { useDishes } from "@/lib/dishes-context"
 import { cn } from "@/lib/utils"
@@ -18,6 +18,42 @@ function pageLabel(path: string, getDish: (id: string) => Dish | undefined) {
   const id = /^\/dishes\/([^/]+)$/.exec(path)?.[1]
   const dish = id ? getDish(id) : undefined
   return dish ? `Món: ${dish.vi.name}` : path
+}
+
+function WeeklyVisits({ days }: { days: DayRow[] | undefined }) {
+  const maxVisits = Math.max(1, ...(days ?? []).map((day) => day.visits))
+
+  return (
+    <section className="mt-4 rounded-2xl border border-border bg-card p-4 shadow-sm" aria-labelledby="weekly-visits-title">
+      <h2 id="weekly-visits-title" className="flex items-center gap-2 font-bold">
+        <Users className="size-4 text-primary" aria-hidden="true" />
+        Lượt truy cập 7 ngày gần nhất
+      </h2>
+      {days ? (
+        <ul className="mt-4 grid grid-cols-7 gap-1 sm:gap-3" role="list">
+          {days.map(({ date, visits }) => (
+            <li key={date} className="min-w-0 text-center">
+              <div className="flex h-28 flex-col justify-end gap-1">
+                <span className="text-xs font-bold tabular-nums sm:text-sm">
+                  {visits}<span className="sr-only"> lượt ngày </span>
+                </span>
+                <div
+                  aria-hidden="true"
+                  className={cn("mx-auto w-full max-w-14 rounded-t-md", visits ? "bg-primary" : "bg-border")}
+                  style={{ height: visits ? Math.max(3, (visits / maxVisits) * 80) : 1 }}
+                />
+              </div>
+              <time dateTime={date} className="mt-1 block text-xs tabular-nums text-muted-foreground">
+                {date.slice(8)}/{date.slice(5, 7)}
+              </time>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-4 text-sm text-muted-foreground">Chưa có số liệu để hiển thị.</p>
+      )}
+    </section>
+  )
 }
 
 function Overview({ pin }: { pin: string }) {
@@ -58,8 +94,9 @@ function Overview({ pin }: { pin: string }) {
         </div>
       </section>
 
-      <section className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard icon={Users} label="Lượt vào hôm nay" value={today?.visits} />
+      <WeeklyVisits days={stats?.days.slice(-7)} />
+
+      <section className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
         <StatCard icon={Eye} label="Lượt xem món hôm nay" value={today?.views} />
         <StatCard icon={QrCode} label="Vào bằng QR hôm nay" value={today?.qr} />
         <StatCard icon={Headphones} label="Lượt nghe thuyết minh hôm nay" value={today?.plays} />
