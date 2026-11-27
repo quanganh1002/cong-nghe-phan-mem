@@ -10,7 +10,9 @@ import { useApp } from "@/lib/store"
 import { useDishes } from "@/lib/dishes-context"
 import { getLanguage } from "@/lib/languages"
 import { useDishText } from "@/lib/use-dish-text"
-import { SPEEDS, splitText, useSpeech } from "@/hooks/use-speech"
+import { SPEEDS, useSpeech } from "@/hooks/use-speech"
+import { narrationSegments, type NarrationMode } from "@/lib/narration"
+import { useAudioFiles } from "@/lib/audio-client"
 import { useReportListening } from "@/lib/listening"
 import { trackComplete, trackPlay } from "@/lib/track"
 import { cn, goBack } from "@/lib/utils"
@@ -24,7 +26,6 @@ const CAT_KEY = {
   festival: "catFestival",
 } as const
 
-type NarrationMode = "short" | "full"
 const MODE_KEY = "foodlingo:narration"
 
 export default function DishDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -32,6 +33,8 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
   const { dict, lang } = useApp()
   const router = useRouter()
   const speech = useSpeech()
+  // File audio ghi sẵn / tạo sẵn cho từng câu (thư mục audio/ hoặc Supabase Storage); câu chưa có file đọc bằng giọng máy
+  const [audioFiles] = useAudioFiles(lang)
   const [unsupported, setUnsupported] = useState(false)
   const currentRef = useRef<HTMLButtonElement>(null)
   const [mode, setMode] = useState<NarrationMode>("full")
@@ -92,20 +95,7 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
 
   const info = text(dish)
   const language = getLanguage(lang)
-  const firstSentence = (s: string) => s.match(/^[^.!?…。！？]+[.!?…。！？]?/)?.[0].trim() ?? s
-  const narration = (
-    mode === "short"
-      ? [info.name, info.summary, firstSentence(info.origin), firstSentence(info.culture)]
-      : [
-          info.name,
-          info.summary,
-          `${dict.sectionOrigin}. ${info.origin}`,
-          `${dict.sectionCulture}. ${info.culture}`,
-          `${dict.sectionIngredients}. ${info.ingredients}`,
-          `${dict.sectionTip}. ${info.tip}`,
-        ]
-  ).join("\n")
-  const segments = splitText(narration)
+  const segments = narrationSegments(info, dict, mode)
   const ingredients = info.ingredients.split(/\s*[,、，،]\s*/).filter(Boolean)
   const isPlaying = speech.speaking && !speech.paused
 
@@ -115,7 +105,7 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
       trackPlay(dish.id, lang, mode === "short")
       countCompleteRef.current = from === 0
     }
-    speech.speak(segments, language.speechLang, from, info.name)
+    speech.speak(segments, language.speechLang, from, info.name, audioFiles)
   }
 
   const pickMode = (m: NarrationMode) => {
@@ -234,7 +224,7 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
               </div>
               {speech.speaking && (
                 <button
-                  onClick={() => speech.speak(segments, language.speechLang, 0)}
+                  onClick={() => speech.speak(segments, language.speechLang, 0, info.name, audioFiles)}
                   aria-label={dict.replay}
                   className="grid size-9 shrink-0 place-items-center rounded-full bg-background/70 text-foreground shadow transition-transform active:scale-90"
                 >

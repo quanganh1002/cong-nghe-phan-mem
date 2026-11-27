@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { audioKey } from "@/lib/narration"
 
 /**
  * Thứ tự ưu tiên giọng có sẵn trong trình duyệt/hệ điều hành:
@@ -30,39 +31,8 @@ function pickVoice(voices: SpeechSynthesisVoice[], lang: string): SpeechSynthesi
   return sameLang.find((v) => norm(v.lang) === norm(lang)) ?? sameLang[0]
 }
 
-/** Cắt một câu quá dài theo từ để mỗi mảnh <= max ký tự */
-function breakLong(s: string, max: number): string[] {
-  if (s.length <= max) return [s]
-  const out: string[] = []
-  let cur = ""
-  for (const w of s.split(/\s+/)) {
-    if ((cur + " " + w).trim().length > max && cur) {
-      out.push(cur)
-      cur = w
-    } else {
-      cur = (cur + " " + w).trim()
-    }
-  }
-  if (cur) out.push(cur)
-  return out
-}
-
-/**
- * Split text into sentences (each <= max chars). One segment = one sentence, so the UI
- * can highlight and seek per sentence. Over-long sentences are broken at commas, then by word.
- */
-export function splitText(text: string, max = 150): string[] {
-  const sentences = (text.match(/[^.!?…。！？\n]+[.!?…。！？]*/g) ?? [text]).map((x) => x.trim()).filter(Boolean)
-  const out: string[] = []
-  for (const sentence of sentences) {
-    if (sentence.length <= max) {
-      out.push(sentence)
-      continue
-    }
-    for (const part of sentence.split(/(?<=[,;:，；：])\s+/)) out.push(...breakLong(part.trim(), max))
-  }
-  return out
-}
+// splitText nằm ở lib/narration.ts (dùng chung với script tạo audio); giữ export ở đây cho các trang đang import
+export { splitText } from "@/lib/narration"
 
 /** Giọng dự phòng: gọi qua /api/tts (server proxy tới Google, không cần API key, cần có mạng) */
 const ttsUrl = (text: string, lang: string) =>
@@ -90,6 +60,8 @@ export function useSpeech() {
   const activeRef = useRef(false)
   const playRef = useRef<(i: number) => void>(() => {})
   const titleRef = useRef("")
+  /** File audio có sẵn: mã câu (audioKey) → URL */
+  const filesRef = useRef<Record<string, string>>({})
   const wakeRef = useRef<{ release: () => Promise<void> } | null>(null)
 
   useEffect(() => {
@@ -171,34 +143,48 @@ export function useSpeech() {
         voicesRef.current = window.speechSynthesis.getVoices()
       }
       const voice = "speechSynthesis" in window ? pickVoice(voicesRef.current, lang) : null
-      if (voice) return speakSynth(voice)
 
-      /* No voice for this language on the device → Google voice through <audio> */
-      modeRef.current = "audio"
-      const audio = new Audio(ttsUrl(text, base))
-      audio.playbackRate = rate
-      audioRef.current = audio
-      // Online voice failed (offline, blocked...) → default device voice so there is still sound
-      const fallback = () => {
-        if (token !== tokenRef.current) return
-        audioRef.current = null
-        if ("speechSynthesis" in window) speakSynth(null)
-        else advance()
+      /** Play a file through <audio>; if it fails, run `onFail` */
+      const playFile = (url: string, onFail: () => void, playbackRate: number) => {
+        modeRef.current = "audio"
+        const audio = new Audio(url)
+        audio.playbackRate = playbackRate
+        audioRef.current = audio
+        const fail = () => {
+          if (token !== tokenRef.current) return
+          audioRef.current = null
+          onFail()
+        }
+        audio.onended = advance
+        audio.onerror = fail
+        audio.play().catch(fail)
       }
-      audio.onended = advance
-      audio.onerror = fallback
-      audio.play().catch(fallback)
+
+      // No voice for this language on the device → Google voice through <audio>; that failing too → default device voice
+      const online = () => {
+        if (voice) return speakSynth(voice)
+        playFile(ttsUrl(text, base), () => ("speechSynthesis" in window ? speakSynth(null) : advance()), rate)
+      }
+
+      /* A recorded / pre-generated file for this exact sentence wins over any voice (already at a natural pace) */
+      const file = filesRef.current[audioKey(text)]
+      if (file) return playFile(file, online, speedRef.current)
+      online()
     },
     [halt, reset],
   )
   playRef.current = playFrom
 
-  /** Start reading the given sentences from `from`; `title` is shown by the OS media controls */
+  /**
+   * Start reading the given sentences from `from`; `title` is shown by the OS media controls.
+   * `files` (audioKey → URL): sentences with a recorded / pre-generated file play that file instead of a voice.
+   */
   const speak = useCallback(
-    (segments: string[], lang: string, from = 0, title = "") => {
+    (segments: string[], lang: string, from = 0, title = "", files: Record<string, string> = {}) => {
       segsRef.current = segments
       langRef.current = lang
       titleRef.current = title
+      filesRef.current = files
       playFrom(from)
     },
     [playFrom],

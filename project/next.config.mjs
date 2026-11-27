@@ -8,6 +8,11 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // File audio thuyết minh được đọc bằng fs lúc chạy, nên phải khai báo để có trong bản deploy (Vercel)
+  outputFileTracingIncludes: {
+    "/api/audio": ["./audio 2/**/*"],
+    "/api/audio/file/[lang]/[file]": ["./audio 2/**/*"],
+  },
 }
 
 export default nextConfig

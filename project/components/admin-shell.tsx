@@ -14,6 +14,7 @@ const TABS = [
   { href: "/admin/thong-ke", label: "Thống kê" },
   { href: "/admin/mon-an", label: "Món ăn" },
   { href: "/admin/diem-an", label: "Điểm ẩm thực" },
+  { href: "/admin/audio", label: "Audio" },
   { href: "/admin/qr", label: "Mã QR" },
 ]
 
