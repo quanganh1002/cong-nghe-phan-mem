@@ -20,12 +20,12 @@ async function run(fn: () => Promise<Response>) {
   }
 }
 
-/** GET /api/spots — công khai: danh sách điểm ẩm thực */
-export function GET() {
-  return run(async () => json(await listSpots()))
+/** GET /api/spots — công khai: các điểm đang hiển thị; gửi kèm PIN admin thì có cả điểm đang ẩn */
+export function GET(req: NextRequest) {
+  return run(async () => json(await listSpots(!denied(req))))
 }
 
-/** POST /api/spots — admin: thêm điểm {name, at: [lat, lng], dishes} */
+/** POST /api/spots — admin: thêm điểm {name, at: [lat, lng], radius, hidden, dishes} */
 export function POST(req: NextRequest) {
   if (denied(req)) return json({ error: "unauthorized" }, 401)
   return run(async () => {

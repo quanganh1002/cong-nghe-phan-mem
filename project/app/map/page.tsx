@@ -10,6 +10,7 @@ import { useFoodSpots } from "@/hooks/use-food-spots"
 import { useDishes } from "@/lib/dishes-context"
 import {
   REGIONS,
+  SPOT_RADIUS,
   distanceKm,
   getDishCoords,
   getDishPlace,
@@ -126,6 +127,13 @@ export default function MapPage() {
   const spotA = foodSpots.find((s) => s.id === pairA)
   const spotB = foodSpots.find((s) => s.id === pairB)
   const pairKm = spotA && spotB ? distanceKm(spotA.at, spotB.at) : null
+
+  // Mở từ link /map?spot=<id> (trang admin): xem ngay điểm đó khi danh sách đã tải
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("spot")
+    const s = id ? foodSpots.find((x) => x.id === id) : undefined
+    if (s) setSpot(s)
+  }, [foodSpots])
 
   const showSpot = (s: FoodSpot) => {
     setSpot(s)
@@ -457,7 +465,12 @@ export default function MapPage() {
                 <span className="flex items-start gap-2">
                   <MapPin className="mt-0.5 size-4 shrink-0 text-destructive" />
                   <span className="min-w-0 flex-1 font-bold leading-tight">{s.name}</span>
-                  {km !== null && <span className="shrink-0 text-sm font-semibold text-primary">{fmtKm(km)}</span>}
+                  {km !== null &&
+                    (km * 1000 <= (s.radius ?? SPOT_RADIUS) ? (
+                      <span className="shrink-0 rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white">{dict.mapSpotHere}</span>
+                    ) : (
+                      <span className="shrink-0 text-sm font-semibold text-primary">{fmtKm(km)}</span>
+                    ))}
                 </span>
                 <span className="line-clamp-2 ps-6 text-xs text-muted-foreground">
                   {s.dishes.flatMap((id) => getDish(id)?.vi.name ?? []).join(" · ")}

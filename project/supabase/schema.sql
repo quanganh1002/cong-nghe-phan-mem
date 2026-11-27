@@ -117,6 +117,9 @@ create table if not exists food_spots (
   lng double precision not null,
   dishes text[] not null default '{}'
 );
+-- Bán kính vùng (mét) và trạng thái ẩn; bảng tạo từ bản cũ thì bổ sung, chạy lại vẫn an toàn
+alter table food_spots add column if not exists radius int not null default 100;
+alter table food_spots add column if not exists hidden boolean not null default false;
 
 -- Dữ liệu ban đầu (giống FOOD_SPOTS trong lib/dishes.ts); chỉ nạp khi bảng còn trống
 insert into food_spots (id, name, lat, lng, dishes)

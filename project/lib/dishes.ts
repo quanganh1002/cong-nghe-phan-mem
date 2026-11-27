@@ -1501,7 +1501,18 @@ export function makeId(name: string, taken: Set<string>): string {
 }
 
 /** Điểm ẩm thực (POI) độc lập với nơi gốc của món: chợ, phố ăn uống... mỗi điểm bán nhiều món. Tọa độ gần đúng, tên không dịch. */
-export type FoodSpot = { id: string; name: string; at: [number, number]; dishes: string[] }
+export type FoodSpot = {
+  id: string
+  name: string
+  /** Tọa độ tâm */
+  at: [number, number]
+  /** Bán kính vùng (mét): khách đứng trong vùng thì trang bản đồ báo "Bạn đang ở đây"; dữ liệu cũ chưa có thì dùng SPOT_RADIUS */
+  radius?: number
+  /** Ẩn khỏi trang bản đồ (admin vẫn thấy) */
+  hidden?: boolean
+  dishes: string[]
+}
+export const SPOT_RADIUS = 100
 export const FOOD_SPOTS: FoodSpot[] = [
   { id: "dong-xuan", name: "Chợ Đồng Xuân, Hà Nội", at: [21.038, 105.849], dishes: ["xoi-gac", "bun-rieu-cua", "thit-dong", "nem-ran"] },
   { id: "ta-hien", name: "Phố Tạ Hiện, Hà Nội", at: [21.0352, 105.852], dishes: ["bun-dau-mam-tom", "nem-ran", "bun-cha"] },

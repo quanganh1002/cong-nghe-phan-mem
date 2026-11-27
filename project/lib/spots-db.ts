@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs"
 import path from "node:path"
-import { FOOD_SPOTS, makeId, type FoodSpot } from "./dishes"
+import { FOOD_SPOTS, SPOT_RADIUS, makeId, type FoodSpot } from "./dishes"
 import { USE_SUPABASE, sb, sbFail } from "./supabase"
 
 /**
@@ -21,9 +21,10 @@ export function parseSpot(x: unknown, dishIds: Set<string>): SpotInput | string 
   const [lat, lng] = at.map(Number)
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return "Tọa độ không hợp lệ"
   const dishes = Array.isArray(o.dishes) ? [...new Set(o.dishes.filter((d): d is string => typeof d === "string"))] : []
-  if (dishes.length === 0) return "Chọn ít nhất 1 món"
   if (dishes.length > 30 || dishes.some((d) => !dishIds.has(d))) return "Danh sách món không hợp lệ"
-  return { name, at: [lat, lng], dishes }
+  const radius = o.radius == null ? SPOT_RADIUS : Number(o.radius)
+  if (!Number.isInteger(radius) || radius < 10 || radius > 5000) return "Bán kính phải là số nguyên 10–5000 m"
+  return { name, at: [lat, lng], radius, hidden: o.hidden === true, dishes }
 }
 
 /* ---------- Lưu trong file ---------- */
@@ -56,19 +57,29 @@ function edit<T>(fn: (all: FoodSpot[]) => T): Promise<T> {
 
 /* ---------- Supabase ---------- */
 
-type Row = { id: string; name: string; lat: number; lng: number; dishes: string[] }
-const fromRow = (r: Row): FoodSpot => ({ id: r.id, name: r.name, at: [r.lat, r.lng], dishes: r.dishes })
-const toRow = (id: string, s: SpotInput): Row => ({ id, name: s.name, lat: s.at[0], lng: s.at[1], dishes: s.dishes })
+type Row = { id: string; name: string; lat: number; lng: number; radius: number; hidden: boolean; dishes: string[] }
+const fromRow = (r: Row): FoodSpot => ({ id: r.id, name: r.name, at: [r.lat, r.lng], radius: r.radius, hidden: r.hidden, dishes: r.dishes })
+const toRow = (id: string, s: SpotInput): Row => ({
+  id,
+  name: s.name,
+  lat: s.at[0],
+  lng: s.at[1],
+  radius: s.radius ?? SPOT_RADIUS,
+  hidden: !!s.hidden,
+  dishes: s.dishes,
+})
 
 /* ---------- API dùng chung ---------- */
 
-export async function listSpots(): Promise<FoodSpot[]> {
+/** `withHidden`: gồm cả điểm đang ẩn (chỉ admin) */
+export async function listSpots(withHidden = false): Promise<FoodSpot[]> {
+  let all: FoodSpot[]
   if (USE_SUPABASE) {
     const res = await sb("food_spots?select=*&order=lat.desc")
     if (!res.ok) await sbFail(res, "đọc điểm ẩm thực")
-    return ((await res.json()) as Row[]).map(fromRow)
-  }
-  return load()
+    all = ((await res.json()) as Row[]).map(fromRow)
+  } else all = await load()
+  return withHidden ? all : all.filter((s) => !s.hidden)
 }
 
 export async function createSpot(s: SpotInput): Promise<FoodSpot> {
@@ -79,7 +90,7 @@ export async function createSpot(s: SpotInput): Promise<FoodSpot> {
       return spot
     })
   }
-  const id = makeId(s.name, new Set((await listSpots()).map((x) => x.id)))
+  const id = makeId(s.name, new Set((await listSpots(true)).map((x) => x.id)))
   const res = await sb("food_spots", { method: "POST", body: toRow(id, s), prefer: "return=minimal" })
   if (!res.ok) await sbFail(res, "thêm điểm ẩm thực")
   return { id, ...s }
