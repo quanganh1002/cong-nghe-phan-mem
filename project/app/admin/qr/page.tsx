@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import QRCode from "qrcode"
 import { Download, Printer, TriangleAlert } from "lucide-react"
 import { AdminShell } from "@/components/admin-shell"
-import { DISHES } from "@/lib/dishes"
+import { useDishes } from "@/lib/dishes-context"
 import { LANGUAGES, type LangCode } from "@/lib/languages"
 import { cn } from "@/lib/utils"
 
@@ -38,7 +38,8 @@ function QrCards() {
   const [mode, setMode] = useState<Mode>("dishes")
   // "" = không gắn ngôn ngữ: web tự chọn theo máy của khách
   const [lang, setLang] = useState<LangCode | "">("")
-  const [dishId, setDishId] = useState(DISHES[0].id)
+  const { dishes } = useDishes()
+  const [dishId, setDishId] = useState(dishes[0].id)
 
   // Mặc định lấy đúng tên miền đang mở trang này
   useEffect(() => {
@@ -53,7 +54,7 @@ function QrCards() {
     if (!validBase) return []
     const withLang = (url: string, code: LangCode | "") => (code ? `${url}&lang=${code}` : url)
     if (mode === "one-dish") {
-      const d = DISHES.find((x) => x.id === dishId) ?? DISHES[0]
+      const d = dishes.find((x) => x.id === dishId) ?? dishes[0]
       return LANGUAGES.map((l) => ({
         key: `${d.id}-${l.code}`,
         title: d.vi.name,
@@ -71,7 +72,7 @@ function QrCards() {
         url: withLang(`${cleanBase}/?src=qr`, lang),
         lang: lang || undefined,
       },
-      ...DISHES.map((d) => ({
+      ...dishes.map((d) => ({
         key: lang ? `${d.id}-${lang}` : d.id,
         title: d.vi.name,
         subtitle: scan,
@@ -79,7 +80,7 @@ function QrCards() {
         lang: lang || undefined,
       })),
     ]
-  }, [cleanBase, validBase, mode, lang, dishId])
+  }, [cleanBase, validBase, mode, lang, dishId, dishes])
 
   // Vẽ QR ngay trên trình duyệt (không phụ thuộc web ngoài)
   useEffect(() => {
@@ -157,7 +158,7 @@ function QrCards() {
               onChange={(e) => setDishId(e.target.value)}
               className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
             >
-              {DISHES.map((d) => (
+              {dishes.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.vi.name}
                 </option>

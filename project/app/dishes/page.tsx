@@ -6,7 +6,8 @@ import { Search } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { DishCard } from "@/components/dish-card"
 import { useApp } from "@/lib/store"
-import { CATEGORIES, DISHES, REGIONS, type DishCategory, type Region } from "@/lib/dishes"
+import { CATEGORIES, REGIONS, type DishCategory, type Region } from "@/lib/dishes"
+import { useDishes } from "@/lib/dishes-context"
 import { useDishText } from "@/lib/use-dish-text"
 import { cn } from "@/lib/utils"
 
@@ -46,7 +47,8 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
 function DishList() {
   const { dict } = useApp()
   const params = useSearchParams()
-  const text = useDishText(DISHES, ["name", "summary"])
+  const { dishes } = useDishes()
+  const text = useDishText(dishes, ["name", "summary"])
 
   const initialRegion = REGIONS.find((r) => r === params.get("region")) ?? null
   const initialCat = CATEGORIES.find((c) => c.key === params.get("cat"))?.key ?? null
@@ -56,7 +58,7 @@ function DishList() {
 
   const list = useMemo(() => {
     const needle = norm(q.trim())
-    return DISHES.filter((d) => {
+    return dishes.filter((d) => {
       if (region && d.region !== region) return false
       if (cat && d.category !== cat) return false
       if (!needle) return true
@@ -64,7 +66,7 @@ function DishList() {
       return norm(`${d.vi.name} ${d.en.name} ${t.name} ${t.summary}`).includes(needle)
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, region, cat, text])
+  }, [q, region, cat, text, dishes])
 
   return (
     <AppShell>

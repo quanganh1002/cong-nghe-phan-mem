@@ -5,7 +5,7 @@ import { Eye, Globe, Headphones, Link2, MapPin, QrCode, TrendingUp, Trophy, User
 import { AdminShell } from "@/components/admin-shell"
 import { StatCard, langLabel } from "@/components/admin-ui"
 import { usePresence, useStats, type DayRow, type StatsData } from "@/hooks/use-admin-data"
-import { DISHES } from "@/lib/dishes"
+import { useDishes } from "@/lib/dishes-context"
 import { GLOSSARY } from "@/lib/glossary"
 import { cn } from "@/lib/utils"
 
@@ -78,10 +78,11 @@ function VisitBars({ days }: { days: DayRow[] }) {
 
 function Dashboard({ stats, online }: { stats: StatsData; online: number | undefined }) {
   const [showAll, setShowAll] = useState(false)
+  const { dishes } = useDishes()
   const { total, days } = stats
   const last7 = days.slice(-7).reduce((n, d) => n + d.visits, 0)
   const qrPct = total.visits ? Math.round((total.qr / total.visits) * 100) : 0
-  const ranked = DISHES.map((d) => {
+  const ranked = dishes.map((d) => {
     const p = stats.dishPlays[d.id]
     return { dish: d, views: stats.dishes[d.id] ?? 0, plays: p?.plays ?? 0, completes: p?.completes ?? 0 }
   }).sort((a, b) => b.views - a.views || b.plays - a.plays)

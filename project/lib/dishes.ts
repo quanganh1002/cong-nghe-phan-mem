@@ -25,6 +25,9 @@ export interface Dish {
   popular?: boolean
   vi: DishText
   en: DishText
+  /** Địa điểm trên bản đồ do admin đặt; không có thì dùng DISH_PLACES / PLACE_COORDS bên dưới */
+  place?: string
+  at?: [number, number]
 }
 
 export const REGIONS: Region[] = ["north", "central", "south"]
@@ -1379,6 +1382,10 @@ export const DISHES: Dish[] = [
   },
 ]
 
+/**
+ * DISHES chỉ là dữ liệu ban đầu: món thật nằm trong database (lib/dishes-db.ts), admin sửa ở /admin/mon-an.
+ * Trang giao diện lấy món bằng useDishes() (lib/dishes-context.tsx), server bằng listDishes()/findDish().
+ */
 export const getDish = (id: string) => DISHES.find((d) => d.id === id)
 
 /** Địa điểm gắn với món ăn (nơi khởi nguồn, phố/chợ nổi tiếng), dùng làm truy vấn Google Maps ở trang bản đồ */
@@ -1432,7 +1439,7 @@ export const DISH_PLACES: Record<string, string> = {
 }
 
 const REGION_FALLBACK: Record<Region, string> = { north: "Hà Nội", central: "Huế", south: "TP. Hồ Chí Minh" }
-export const getDishPlace = (dish: Dish) => DISH_PLACES[dish.id] ?? REGION_FALLBACK[dish.region]
+export const getDishPlace = (dish: Dish) => dish.place || DISH_PLACES[dish.id] || REGION_FALLBACK[dish.region]
 
 /**
  * Tọa độ gần đúng (vĩ độ, kinh độ) của các địa điểm trong DISH_PLACES, dùng để gợi ý món ăn gần người dùng.
@@ -1474,7 +1481,40 @@ const PLACE_COORDS: Record<string, [number, number]> = {
   "TP. Hồ Chí Minh": [10.7769, 106.7009],
 }
 
-export const getDishCoords = (dish: Dish): [number, number] | null => PLACE_COORDS[getDishPlace(dish)] ?? null
+export const getDishCoords = (dish: Dish): [number, number] | null => dish.at ?? PLACE_COORDS[getDishPlace(dish)] ?? null
+
+/** "Chợ Đồng Xuân, Hà Nội" → "cho-dong-xuan-ha-noi"; trùng với `taken` thì thêm -2, -3... */
+export function makeId(name: string, taken: Set<string>): string {
+  const base =
+    name
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/đ/gi, "d")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40)
+      .replace(/-+$/, "") || "muc"
+  let id = base
+  for (let i = 2; taken.has(id); i++) id = `${base}-${i}`
+  return id
+}
+
+/** Điểm ẩm thực (POI) độc lập với nơi gốc của món: chợ, phố ăn uống... mỗi điểm bán nhiều món. Tọa độ gần đúng, tên không dịch. */
+export type FoodSpot = { id: string; name: string; at: [number, number]; dishes: string[] }
+export const FOOD_SPOTS: FoodSpot[] = [
+  { id: "dong-xuan", name: "Chợ Đồng Xuân, Hà Nội", at: [21.038, 105.849], dishes: ["xoi-gac", "bun-rieu-cua", "thit-dong", "nem-ran"] },
+  { id: "ta-hien", name: "Phố Tạ Hiện, Hà Nội", at: [21.0352, 105.852], dishes: ["bun-dau-mam-tom", "nem-ran", "bun-cha"] },
+  { id: "bac-ha", name: "Chợ Bắc Hà, Lào Cai", at: [22.538, 104.288], dishes: ["thang-co"] },
+  { id: "dong-ba", name: "Chợ Đông Ba, Huế", at: [16.4695, 107.587], dishes: ["bun-bo-hue", "banh-beo", "nem-lui", "banh-bot-loc", "me-xung-hue"] },
+  { id: "cho-han", name: "Chợ Hàn, Đà Nẵng", at: [16.0679, 108.2245], dishes: ["mi-quang", "banh-beo", "nem-lui"] },
+  { id: "cho-con", name: "Chợ Cồn, Đà Nẵng", at: [16.068, 108.214], dishes: ["bun-cha-ca", "mi-quang", "banh-xeo"] },
+  { id: "cho-hoi-an", name: "Chợ Hội An, Quảng Nam", at: [15.877, 108.3305], dishes: ["cao-lau", "com-ga-hoi-an", "banh-to-hoi-an", "mi-quang"] },
+  { id: "cho-da-lat", name: "Chợ Đà Lạt, Lâm Đồng", at: [11.943, 108.437], dishes: ["banh-can", "ca-phe-sua-da"] },
+  { id: "ben-thanh", name: "Chợ Bến Thành, TP. Hồ Chí Minh", at: [10.7725, 106.698], dishes: ["banh-mi", "com-tam", "goi-cuon", "che-ba-mau", "nuoc-mia", "banh-da-lon"] },
+  { id: "binh-tay", name: "Chợ Bình Tây (Chợ Lớn), TP. Hồ Chí Minh", at: [10.7497, 106.651], dishes: ["hu-tieu-nam-vang", "banh-pia", "banh-da-lon"] },
+  { id: "cai-rang", name: "Chợ nổi Cái Răng, Cần Thơ", at: [10.0007, 105.7486], dishes: ["hu-tieu-nam-vang", "banh-xeo", "canh-chua-ca-loc"] },
+]
 
 /** Khoảng cách theo đường chim bay (km) giữa hai điểm */
 export function distanceKm(a: [number, number], b: [number, number]): number {

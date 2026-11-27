@@ -4,11 +4,12 @@ import { Activity, Eye, Headphones, Link2, LogIn, LogOut, QrCode, Users } from "
 import { AdminShell } from "@/components/admin-shell"
 import { StatCard, langLabel } from "@/components/admin-ui"
 import { useLiveEvents, usePresence, useStats } from "@/hooks/use-admin-data"
-import { getDish } from "@/lib/dishes"
+import type { Dish } from "@/lib/dishes"
+import { useDishes } from "@/lib/dishes-context"
 import { cn } from "@/lib/utils"
 
 /** Nhãn dễ đọc cho đường dẫn đang xem */
-function pageLabel(path: string) {
+function pageLabel(path: string, getDish: (id: string) => Dish | undefined) {
   if (path === "/" || path === "") return "Trang chủ"
   if (path === "/dishes") return "Danh sách món ăn"
   if (path === "/about") return "Giới thiệu"
@@ -20,6 +21,7 @@ function pageLabel(path: string) {
 }
 
 function Overview({ pin }: { pin: string }) {
+  const { getDish } = useDishes()
   const presence = usePresence(pin)
   const stats = useStats(pin)
   const devices = presence?.devices ?? []
@@ -92,7 +94,7 @@ function Overview({ pin }: { pin: string }) {
                       : "Vừa rời khỏi web"}
                   </span>
                   <span className="block truncate text-xs text-muted-foreground">
-                    {[langLabel(e.device.lang), pageLabel(e.device.path)].filter(Boolean).join(" · ")}
+                    {[langLabel(e.device.lang), pageLabel(e.device.path, getDish)].filter(Boolean).join(" · ")}
                   </span>
                 </span>
                 <time className="shrink-0 text-xs tabular-nums text-muted-foreground">
@@ -121,7 +123,7 @@ function Overview({ pin }: { pin: string }) {
                   {d.source === "qr" ? <QrCode className="size-4" /> : <Link2 className="size-4" />}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-semibold">{pageLabel(d.path)}</span>
+                  <span className="block truncate font-semibold">{pageLabel(d.path, getDish)}</span>
                   {d.listening && (
                     <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
                       <Headphones className="size-3" />

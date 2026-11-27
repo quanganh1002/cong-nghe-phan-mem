@@ -3,12 +3,13 @@
 import Link from "next/link"
 import Image from "next/image"
 import Form from "next/form"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { ArrowRight, Pause, Search, Sparkles, Volume2 } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { DishCard } from "@/components/dish-card"
 import { useApp } from "@/lib/store"
-import { DISHES, REGIONS } from "@/lib/dishes"
+import { REGIONS } from "@/lib/dishes"
+import { useDishes } from "@/lib/dishes-context"
 import { useDishText } from "@/lib/use-dish-text"
 import { getLanguage } from "@/lib/languages"
 import { splitText, useSpeech } from "@/hooks/use-speech"
@@ -19,13 +20,19 @@ const REGION_DICT = {
   south: { name: "regionSouth", desc: "regionSouthDesc", icon: "🛶" },
 } as const
 
-const featured = DISHES.filter((d) => d.popular).slice(0, 4)
-const festival = DISHES.filter((d) => d.category === "festival")
-const listed = [...featured, ...festival]
-const hero = DISHES.find((d) => d.id === "pho-bo") ?? DISHES[0]
-
 export default function HomePage() {
   const { dict, lang } = useApp()
+  const { dishes } = useDishes()
+  const { featured, festival, listed, hero } = useMemo(() => {
+    const featured = dishes.filter((d) => d.popular).slice(0, 4)
+    const festival = dishes.filter((d) => d.category === "festival")
+    return {
+      featured,
+      festival,
+      listed: [...featured, ...festival],
+      hero: dishes.find((d) => d.id === "pho-bo") ?? dishes[0],
+    }
+  }, [dishes])
   const text = useDishText(listed, ["name", "summary"])
   const speech = useSpeech()
 

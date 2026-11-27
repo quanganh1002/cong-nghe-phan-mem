@@ -2,6 +2,9 @@ import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Be_Vietnam_Pro } from "next/font/google"
 import { AppProvider } from "@/lib/store"
+import { DishesProvider } from "@/lib/dishes-context"
+import { DISHES } from "@/lib/dishes"
+import { listDishes } from "@/lib/dishes-db"
 import { PresenceBeacon } from "@/components/presence-beacon"
 import "./globals.css"
 
@@ -25,11 +28,19 @@ export const viewport: Viewport = {
   maximumScale: 1,
 }
 
-export default function RootLayout({
+// Món ăn đọc từ database mỗi lần tải trang (admin sửa là thấy ngay)
+export const dynamic = "force-dynamic"
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // database lỗi thì vẫn hiện món mặc định thay vì sập cả trang
+  const dishes = await listDishes().catch((e) => {
+    console.error(e)
+    return DISHES
+  })
   return (
     <html lang="vi" className={`light ${sans.variable}`} style={{ colorScheme: "light" }} suppressHydrationWarning>
       <head>
@@ -41,8 +52,10 @@ export default function RootLayout({
       </head>
       <body className={`${sans.className} antialiased`}>
         <AppProvider>
-          {children}
-          <PresenceBeacon />
+          <DishesProvider dishes={dishes}>
+            {children}
+            <PresenceBeacon />
+          </DishesProvider>
         </AppProvider>
       </body>
     </html>

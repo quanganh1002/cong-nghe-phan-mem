@@ -7,7 +7,7 @@ import { ArrowLeft, BookOpen, Languages, Leaf, Map as MapIcon, MapPin, Pause, Pl
 import { AppShell } from "@/components/app-shell"
 import { DishCard, DishVisual } from "@/components/dish-card"
 import { useApp } from "@/lib/store"
-import { DISHES, getDish } from "@/lib/dishes"
+import { useDishes } from "@/lib/dishes-context"
 import { getLanguage } from "@/lib/languages"
 import { useDishText } from "@/lib/use-dish-text"
 import { SPEEDS, splitText, useSpeech } from "@/hooks/use-speech"
@@ -48,9 +48,10 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
     } catch {}
   }, [])
 
+  const { dishes, getDish } = useDishes()
   const dish = getDish(id)
   const related = dish
-    ? DISHES.filter((d) => d.id !== dish.id && (d.region === dish.region || d.category === dish.category)).slice(0, 4)
+    ? dishes.filter((d) => d.id !== dish.id && (d.region === dish.region || d.category === dish.category)).slice(0, 4)
     : []
   const text = useDishText(dish ? [dish, ...related] : [], ["name", "summary", "origin", "culture", "ingredients", "tip"])
 

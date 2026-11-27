@@ -109,7 +109,43 @@ language sql as $$
   on conflict (feature) do update set uses = feature_uses.uses + 1;
 $$;
 
+-- Điểm ẩm thực (POI) do admin thêm/sửa/xóa ở /admin/diem-an
+create table if not exists food_spots (
+  id text primary key,
+  name text not null,
+  lat double precision not null,
+  lng double precision not null,
+  dishes text[] not null default '{}'
+);
+
+-- Dữ liệu ban đầu (giống FOOD_SPOTS trong lib/dishes.ts); chỉ nạp khi bảng còn trống
+insert into food_spots (id, name, lat, lng, dishes)
+select * from (values
+  ('dong-xuan', 'Chợ Đồng Xuân, Hà Nội', 21.038, 105.849, array['xoi-gac','bun-rieu-cua','thit-dong','nem-ran']),
+  ('ta-hien', 'Phố Tạ Hiện, Hà Nội', 21.0352, 105.852, array['bun-dau-mam-tom','nem-ran','bun-cha']),
+  ('bac-ha', 'Chợ Bắc Hà, Lào Cai', 22.538, 104.288, array['thang-co']),
+  ('dong-ba', 'Chợ Đông Ba, Huế', 16.4695, 107.587, array['bun-bo-hue','banh-beo','nem-lui','banh-bot-loc','me-xung-hue']),
+  ('cho-han', 'Chợ Hàn, Đà Nẵng', 16.0679, 108.2245, array['mi-quang','banh-beo','nem-lui']),
+  ('cho-con', 'Chợ Cồn, Đà Nẵng', 16.068, 108.214, array['bun-cha-ca','mi-quang','banh-xeo']),
+  ('cho-hoi-an', 'Chợ Hội An, Quảng Nam', 15.877, 108.3305, array['cao-lau','com-ga-hoi-an','banh-to-hoi-an','mi-quang']),
+  ('cho-da-lat', 'Chợ Đà Lạt, Lâm Đồng', 11.943, 108.437, array['banh-can','ca-phe-sua-da']),
+  ('ben-thanh', 'Chợ Bến Thành, TP. Hồ Chí Minh', 10.7725, 106.698, array['banh-mi','com-tam','goi-cuon','che-ba-mau','nuoc-mia','banh-da-lon']),
+  ('binh-tay', 'Chợ Bình Tây (Chợ Lớn), TP. Hồ Chí Minh', 10.7497, 106.651, array['hu-tieu-nam-vang','banh-pia','banh-da-lon']),
+  ('cai-rang', 'Chợ nổi Cái Răng, Cần Thơ', 10.0007, 105.7486, array['hu-tieu-nam-vang','banh-xeo','canh-chua-ca-loc'])
+) as v(id, name, lat, lng, dishes)
+where not exists (select 1 from food_spots);
+
+-- Món ăn do admin thêm/sửa/xóa ở /admin/mon-an. data là nội dung món (vùng, loại, emoji, ảnh, chữ vi/en, địa điểm),
+-- cùng dạng với kiểu Dish trong lib/dishes.ts trừ id. Bảng trống thì server tự nạp các món có sẵn trong lib/dishes.ts.
+create table if not exists dishes (
+  id text primary key,
+  position int not null default 0,
+  data jsonb not null
+);
+
 -- Chỉ server (secret key) được truy cập; chặn truy cập công khai bằng anon key
+alter table dishes enable row level security;
+alter table food_spots enable row level security;
 alter table presence enable row level security;
 alter table visit_days enable row level security;
 alter table dish_views enable row level security;

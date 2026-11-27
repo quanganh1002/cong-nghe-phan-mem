@@ -4,11 +4,12 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
 import { useApp } from "@/lib/store"
-import { getDish } from "@/lib/dishes"
+import { useDishes } from "@/lib/dishes-context"
 import { PHOTO_CREDITS } from "@/lib/photo-credits"
 
 export default function AboutPage() {
   const { dict } = useApp()
+  const { getDish } = useDishes()
   const steps = [dict.aboutHow1, dict.aboutHow2, dict.aboutHow3]
 
   return (

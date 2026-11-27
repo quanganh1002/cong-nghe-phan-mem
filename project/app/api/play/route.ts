@@ -1,4 +1,4 @@
-import { getDish } from "@/lib/dishes"
+import { findDish } from "@/lib/dishes-db"
 import { LANGUAGES } from "@/lib/languages"
 import { recordComplete, recordPlay } from "@/lib/visits-db"
 
@@ -12,9 +12,9 @@ export const runtime = "nodejs"
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as { dish?: unknown; lang?: unknown; short?: unknown; done?: unknown } | null
   const dish = typeof body?.dish === "string" ? body.dish : ""
-  if (!getDish(dish)) return Response.json({ error: "bad_dish" }, { status: 400 })
   const lang = LANGUAGES.find((l) => l.code === body?.lang)?.code ?? ""
   try {
+    if (!(await findDish(dish))) return Response.json({ error: "bad_dish" }, { status: 400 })
     if (body?.done === true) await recordComplete(dish, lang)
     else await recordPlay(dish, lang, body?.short === true)
   } catch {

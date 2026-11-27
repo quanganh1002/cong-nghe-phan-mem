@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { isAdminPin } from "@/lib/admin-auth"
-import { getDish } from "@/lib/dishes"
+import { findDish } from "@/lib/dishes-db"
 import { LANGUAGES } from "@/lib/languages"
 import { listOnline, removeDevice, touchDevice, type Source } from "@/lib/presence-db"
 import { recordDishView, recordVisit } from "@/lib/visits-db"
@@ -27,11 +27,11 @@ export async function POST(req: NextRequest) {
       const path = clip(body?.path, 200)
       const source: Source = body?.src === "qr" ? "qr" : "link"
       const lang = LANGUAGES.some((l) => l.code === body?.lang) ? (body?.lang as string) : ""
-      const listening = typeof body?.listening === "string" && getDish(body.listening) ? body.listening : ""
+      const listening = typeof body?.listening === "string" && (await findDish(body.listening)) ? body.listening : ""
       const counted = await touchDevice(id, path, source, lang, listening, body?.hit === true)
       if (body?.start === true) await recordVisit(source)
       const dishId = /^\/dishes\/([a-z0-9-]+)$/.exec(path)?.[1]
-      if (counted && dishId && getDish(dishId)) await recordDishView(dishId, lang)
+      if (counted && dishId && (await findDish(dishId))) await recordDishView(dishId, lang)
     }
   } catch {
     return Response.json({ error: "server" }, { status: 500 })

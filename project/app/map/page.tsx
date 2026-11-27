@@ -6,7 +6,17 @@ import { MapPin, Map as MapIcon, LocateFixed, Navigation, Loader2, Landmark, Sto
 import { AppShell } from "@/components/app-shell"
 import { DishVisual } from "@/components/dish-card"
 import { useApp } from "@/lib/store"
-import { DISHES, REGIONS, distanceKm, getDish, getDishCoords, getDishPlace, type Region } from "@/lib/dishes"
+import { useFoodSpots } from "@/hooks/use-food-spots"
+import { useDishes } from "@/lib/dishes-context"
+import {
+  REGIONS,
+  distanceKm,
+  getDishCoords,
+  getDishPlace,
+  type Dish,
+  type FoodSpot,
+  type Region,
+} from "@/lib/dishes"
 import { getLanguage } from "@/lib/languages"
 import { useSpeech } from "@/hooks/use-speech"
 import { useReportListening } from "@/lib/listening"
@@ -36,12 +46,19 @@ export default function MapPage() {
   const speech = useSpeech()
   const [playingId, setPlayingId] = useState<string | null>(null)
   useReportListening(speech.speaking && !speech.paused ? playingId : null)
-  const dishText = useDishText(DISHES, ["name", "summary"])
+  const { dishes, getDish } = useDishes()
+  const dishText = useDishText(dishes, ["name", "summary"])
   const [region, setRegion] = useState<Region>("north")
-  const [dishId, setDishId] = useState(DISHES.find((d) => d.region === "north")!.id)
+  const [dishId, setDishId] = useState((dishes.find((d) => d.region === "north") ?? dishes[0]).id)
   const [mode, setMode] = useState<Mode>("origin")
   const [coords, setCoords] = useState<Coords | null>(null)
   const [status, setStatus] = useState<GeoStatus>("idle")
+  // Điểm ẩm thực đang xem; chọn miền/món/chế độ khác thì bỏ chọn
+  const [spot, setSpot] = useState<FoodSpot | null>(null)
+  const [foodSpots] = useFoodSpots()
+  // Hai điểm để đo khoảng cách với nhau (id)
+  const [pairA, setPairA] = useState("")
+  const [pairB, setPairB] = useState("")
 
   // Mở từ trang chi tiết món: /map?dish=<id>
   useEffect(() => {
@@ -52,14 +69,18 @@ export default function MapPage() {
     }
   }, [])
 
-  const regionDishes = DISHES.filter((d) => d.region === region)
-  const dish = getDish(dishId) ?? regionDishes[0]
+  const regionDishes = dishes.filter((d) => d.region === region)
+  const dish = getDish(dishId) ?? regionDishes[0] ?? dishes[0]
   const info = dishText(dish)
   const place = getDishPlace(dish)
+  const fmtKm = (km: number) => `${km < 10 ? km.toFixed(1) : Math.round(km)} km`
+  const placeAt = getDishCoords(dish)
+  const placeKm = coords && placeAt ? distanceKm([coords.lat, coords.lng], placeAt) : null
 
   const pickRegion = (r: Region) => {
+    setSpot(null)
     setRegion(r)
-    setDishId(DISHES.find((d) => d.region === r)!.id)
+    setDishId(dishes.find((d) => d.region === r)?.id ?? dishId)
   }
 
   const locate = () => {
@@ -80,7 +101,7 @@ export default function MapPage() {
 
   // Dishes whose place is closest to the visitor (straight-line distance)
   const nearest = coords
-    ? DISHES.flatMap((d) => {
+    ? dishes.flatMap((d) => {
         const at = getDishCoords(d)
         return at ? [{ dish: d, km: distanceKm([coords.lat, coords.lng], at) }] : []
       })
@@ -88,7 +109,7 @@ export default function MapPage() {
         .slice(0, 4)
     : []
 
-  const listenNear = (d: (typeof DISHES)[number]) => {
+  const listenNear = (d: Dish) => {
     if (playingId === d.id && speech.speaking) {
       speech.stop()
       return
@@ -99,15 +120,29 @@ export default function MapPage() {
     speech.speak([t.name, ...t.summary.split(/(?<=[.!?。！？])\s+/)], getLanguage(lang).speechLang, 0, t.name)
   }
 
+  const spots = coords
+    ? foodSpots.map((s) => ({ s, km: distanceKm([coords.lat, coords.lng], s.at) })).sort((a, b) => a.km - b.km)
+    : foodSpots.map((s) => ({ s, km: null }))
+  const spotA = foodSpots.find((s) => s.id === pairA)
+  const spotB = foodSpots.find((s) => s.id === pairB)
+  const pairKm = spotA && spotB ? distanceKm(spotA.at, spotB.at) : null
+
+  const showSpot = (s: FoodSpot) => {
+    setSpot(s)
+    document.getElementById("map-view")?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
+
   const pickMode = (m: Mode) => {
+    setSpot(null)
     setMode(m)
     if (m === "nearby" && !coords && status !== "locating") locate()
   }
 
   // Tìm trên Google Maps bằng tên tiếng Việt cho khớp với tên quán/địa danh trong nước
-  const destination = mode === "origin" ? place : dish.vi.name
-  const embedSrc =
-    mode === "origin"
+  const destination = spot ? spot.name : mode === "origin" ? place : dish.vi.name
+  const embedSrc = spot
+    ? `https://maps.google.com/maps?q=${encodeURIComponent(spot.name)}&z=16&output=embed`
+    : mode === "origin"
       ? `https://maps.google.com/maps?q=${encodeURIComponent(place)}&z=14&output=embed`
       : coords
         ? `https://maps.google.com/maps?q=${encodeURIComponent(`${dish.vi.name} near ${coords.lat},${coords.lng}`)}&z=15&output=embed`
@@ -116,7 +151,7 @@ export default function MapPage() {
   const directions = () => {
     const params = new URLSearchParams({ api: "1", destination })
     if (coords) params.set("origin", `${coords.lat},${coords.lng}`)
-    if (mode === "nearby") params.set("travelmode", "walking")
+    if (mode === "nearby" && !spot) params.set("travelmode", "walking")
     window.open(`https://www.google.com/maps/dir/?${params}`, "_blank", "noopener")
   }
 
@@ -169,7 +204,10 @@ export default function MapPage() {
                   <button
                     key={d.id}
                     type="button"
-                    onClick={() => setDishId(d.id)}
+                    onClick={() => {
+                      setSpot(null)
+                      setDishId(d.id)
+                    }}
                     aria-pressed={on}
                     className={cn(
                       "flex w-36 shrink-0 snap-start flex-col overflow-hidden rounded-2xl border text-start transition-all lg:w-full lg:flex-row lg:items-center lg:gap-3 lg:p-2",
@@ -190,7 +228,7 @@ export default function MapPage() {
         </div>
 
         {/* Right: the map is the main thing; mode toggle on top, actions underneath */}
-        <div className="min-w-0 lg:sticky lg:top-24">
+        <div id="map-view" className="min-w-0 scroll-mt-24 lg:sticky lg:top-24">
           <Label n={3}>{dict.mapStep3}</Label>
           <div className="overflow-hidden rounded-3xl border border-primary/25 bg-card shadow-lg shadow-primary/10">
             <div className="grid grid-cols-2 gap-1 border-b border-border bg-muted/50 p-1.5">
@@ -204,10 +242,10 @@ export default function MapPage() {
                   key={key}
                   type="button"
                   onClick={() => pickMode(key)}
-                  aria-pressed={mode === key}
+                  aria-pressed={!spot && mode === key}
                   className={cn(
                     "flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition-all",
-                    mode === key ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground",
+                    !spot && mode === key ?"bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   <Icon className="size-4" />
@@ -248,9 +286,24 @@ export default function MapPage() {
                 <MapPin className="mt-0.5 size-5 shrink-0 text-destructive" />
                 <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{dict.mapDestination}</p>
-                  {mode === "origin" ? (
+                  {spot ? (
                     <>
-                      <p className="font-bold">{place}</p>
+                      <p className="font-bold">
+                        {spot.name}
+                        {coords && (
+                          <span className="ms-2 text-sm font-semibold text-primary">
+                            · {fmtKm(distanceKm([coords.lat, coords.lng], spot.at))}
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-sm text-muted-foreground">{dict.mapSpotsTitle}</p>
+                    </>
+                  ) : mode === "origin" ? (
+                    <>
+                      <p className="font-bold">
+                        {place}
+                        {placeKm !== null && <span className="ms-2 text-sm font-semibold text-primary">· {fmtKm(placeKm)}</span>}
+                      </p>
                       <p className="text-sm text-muted-foreground">{dict.mapModeOriginDesc}</p>
                     </>
                   ) : (
@@ -347,7 +400,7 @@ export default function MapPage() {
                       {d.vi.name}
                     </Link>
                     <p className="truncate text-xs text-muted-foreground">
-                      {km < 10 ? km.toFixed(1) : Math.round(km)} km · {getDishPlace(d)}
+                      {fmtKm(km)} · {getDishPlace(d)}
                     </p>
                   </div>
                   <button
@@ -364,6 +417,101 @@ export default function MapPage() {
             })}
           </ul>
         )}
+      </section>
+
+      {/* Food spots (POI): markets and food streets, sorted by distance once located */}
+      <section className="mx-5 mt-6 rounded-3xl border border-border bg-card p-5 shadow-sm md:mx-8 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="flex items-center gap-2 text-xl font-bold leading-tight">
+              <Store className="size-5 text-primary" />
+              {dict.mapSpotsTitle}
+            </h2>
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{dict.mapSpotsDesc}</p>
+          </div>
+          {!coords && (
+            <button
+              type="button"
+              onClick={locate}
+              disabled={status === "locating"}
+              className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-bold transition-colors hover:bg-accent disabled:opacity-60"
+            >
+              {status === "locating" ? <Loader2 className="size-4 animate-spin" /> : <LocateFixed className="size-4" />}
+              {dict.mapMyLocation}
+            </button>
+          )}
+        </div>
+        <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {spots.map(({ s, km }) => (
+            <li key={s.id}>
+              <button
+                type="button"
+                onClick={() => showSpot(s)}
+                aria-pressed={spot?.id === s.id}
+                aria-label={`${dict.mapSpotsShow}: ${s.name}`}
+                className={cn(
+                  "flex h-full w-full flex-col gap-1.5 rounded-2xl border p-3 text-start transition-all",
+                  spot?.id === s.id ? "border-primary bg-accent ring-2 ring-primary/30" : "border-border hover:border-primary/40",
+                )}
+              >
+                <span className="flex items-start gap-2">
+                  <MapPin className="mt-0.5 size-4 shrink-0 text-destructive" />
+                  <span className="min-w-0 flex-1 font-bold leading-tight">{s.name}</span>
+                  {km !== null && <span className="shrink-0 text-sm font-semibold text-primary">{fmtKm(km)}</span>}
+                </span>
+                <span className="line-clamp-2 ps-6 text-xs text-muted-foreground">
+                  {s.dishes.flatMap((id) => getDish(id)?.vi.name ?? []).join(" · ")}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        {/* Distance between two spots (straight line), with a Google Maps route between them */}
+        <div className="mt-6 rounded-2xl bg-accent/50 p-4">
+          <h3 className="flex items-center gap-2 font-bold">
+            <Navigation className="size-4 text-primary" />
+            {dict.mapPairTitle}
+          </h3>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {(
+              [
+                [dict.mapPairFrom, pairA, setPairA],
+                [dict.mapPairTo, pairB, setPairB],
+              ] as const
+            ).map(([label, value, set]) => (
+              <label key={label} className="block text-sm font-semibold">
+                {label}
+                <select
+                  value={value}
+                  onChange={(e) => set(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-normal outline-none focus:border-primary"
+                >
+                  <option value="">{dict.mapPairPick}</option>
+                  {foodSpots.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ))}
+          </div>
+          {pairKm !== null && spotA && spotB && (
+            <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm" aria-live="polite">
+              <span className="text-lg font-extrabold text-primary">{fmtKm(pairKm)}</span>
+              <span className="text-muted-foreground">{dict.mapPairStraight}</span>
+              <a
+                href={`https://www.google.com/maps/dir/?${new URLSearchParams({ api: "1", origin: spotA.name, destination: spotB.name })}`}
+                target="_blank"
+                rel="noopener"
+                className="font-bold text-primary hover:underline"
+              >
+                {dict.mapDirections}
+              </a>
+            </p>
+          )}
+        </div>
       </section>
 
       <p className="px-5 pt-6 text-xs text-muted-foreground md:px-8">{dict.mapNote}</p>
